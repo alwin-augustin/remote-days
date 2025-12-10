@@ -1,0 +1,26 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install turbo globaly to help with pruning (though we might not prune in dev)
+# RUN npm install -g turbo
+
+# Copy root package files
+COPY package.json package-lock.json ./
+
+# Copy workspace package files
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+COPY packages/types/package.json ./packages/types/
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Expose Vite port
+EXPOSE 5173
+
+# Run the dev command
+CMD ["npm", "run", "dev", "--workspace=apps/web"]

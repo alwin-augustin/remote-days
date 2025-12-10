@@ -1,0 +1,13 @@
+{
+    "name": "@tracker/types",
+    "version": "1.0.0",
+    "main": "index.ts",
+    "types": "index.ts",
+    "private": true,
+    "scripts": {
+        "test": "echo 'No tests for types yet'"
+    },
+    "peerDependencies": {
+        "typescript": "^5.0.0"
+    }
+}
