@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';

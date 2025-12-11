@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { work_status } from '@tracker/types';
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Home, Building, Plane, Stethoscope, HelpCircle, type LucideIcon } from 'lucide-react';
@@ -64,15 +64,17 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
                             key={status}
                             variant="outline"
                             className={cn(
-                                "h-24 flex-col gap-2 border-2 transition-all",
-                                isActive ? cn(config.color, "border-current ring-2 ring-offset-2") : "hover:border-primary/50",
+                                "h-24 flex-col gap-2 border-2 transition-all duration-200 active:scale-95",
+                                isActive
+                                    ? cn(config.color, "border-current ring-2 ring-offset-2 ring-primary/20 shadow-sm")
+                                    : "hover:border-primary/50 hover:bg-muted/50",
                                 mutation.isPending && "opacity-50 cursor-not-allowed"
                             )}
                             onClick={() => handleStatusChange(status)}
                             disabled={mutation.isPending}
                         >
                             {mutation.isPending && isActive ? <Loader2 className="h-6 w-6 animate-spin" /> : <Icon className="h-6 w-6" />}
-                            <span>{config.label}</span>
+                            <span className="font-medium">{config.label}</span>
                         </Button>
                     );
                 })}

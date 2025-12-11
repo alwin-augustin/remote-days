@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 import type { User } from '@tracker/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 // Schema for Create/Update User
 const userSchema = z.object({
@@ -58,23 +60,49 @@ import { TablePagination } from '@/components/TablePagination';
 
 export default function UserManagement() {
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [roleFilter, setRoleFilter] = useState('all');
+    const [countryFilter, setCountryFilter] = useState('all');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [page, setPage] = useState(1);
     const pageSize = 10;
     const queryClient = useQueryClient();
 
     // Fetch Users
     const { data, isLoading } = useQuery({
-        queryKey: ['admin', 'users', search],
+        queryKey: ['admin', 'users', search, page, roleFilter, countryFilter],
         queryFn: async () => {
-            const res = await api.get<{ users: User[]; total: number }>(`/admin/users?search=${search}`);
+            const offset = (page - 1) * pageSize;
+            const params = new URLSearchParams({
+                limit: pageSize.toString(),
+                offset: offset.toString(),
+            });
+            if (search) params.append('search', search);
+            if (roleFilter !== 'all') params.append('role', roleFilter);
+            if (countryFilter !== 'all') params.append('country', countryFilter);
+
+            const res = await api.get<{ users: User[]; total: number }>(`/admin/users?${params.toString()}`);
             return res.data;
         },
     });
 
     const users = data?.users || [];
-    const paginatedUsers = users.slice((page - 1) * pageSize, page * pageSize);
+    const totalUsers = data?.total || 0;
+    const totalPages = Math.ceil(totalUsers / pageSize);
+
+    // Reset page when filters change
+    const handleSearchChange = (val: string) => {
+        setSearch(val);
+        setPage(1);
+    };
+    const handleRoleChange = (val: string) => {
+        setRoleFilter(val);
+        setPage(1);
+    };
+    const handleCountryChange = (val: string) => {
+        setCountryFilter(val);
+        setPage(1);
+    };
 
     // Mutations
     const createMutation = useMutation({
@@ -132,16 +160,41 @@ export default function UserManagement() {
                 </Button>
             </div>
 
-            <div className="flex items-center space-x-2">
-                <div className="relative max-w-sm flex-1">
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+                <div className="relative max-w-sm flex-1 w-full">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search users..."
                         className="pl-8"
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => handleSearchChange(e.target.value)}
                     />
                 </div>
+                <Select value={roleFilter} onValueChange={handleRoleChange}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder="All Roles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="employee">Employee</SelectItem>
+                        <SelectItem value="hr">HR</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={countryFilter} onValueChange={handleCountryChange}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder="All Countries" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Countries</SelectItem>
+                        <SelectItem value="FR">France</SelectItem>
+                        <SelectItem value="US">USA</SelectItem>
+                        <SelectItem value="DE">Germany</SelectItem>
+                        <SelectItem value="ES">Spain</SelectItem>
+                        <SelectItem value="IT">Italy</SelectItem>
+                        {/* In a real app, fetch available countries dynamically */}
+                    </SelectContent>
+                </Select>
             </div>
 
             <div className="rounded-md border">
@@ -155,23 +208,42 @@ export default function UserManagement() {
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
+
                     <TableBody>
                         {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
-                                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                                </TableCell>
-                            </TableRow>
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <TableRow key={i}>
+                                    <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                                    <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto inline-block" /></TableCell>
+                                </TableRow>
+                            ))
                         ) : users.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">No users found.</TableCell>
+                                <TableCell colSpan={5} className="h-32 text-center">
+                                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                        <Search className="h-8 w-8 mb-2 opacity-50" />
+                                        <p>No users found matching your search.</p>
+                                    </div>
+                                </TableCell>
                             </TableRow>
                         ) : (
-                            paginatedUsers.map((user) => (
+                            users.map((user) => (
                                 <TableRow key={user.user_id}>
                                     <TableCell className="font-medium">{user.first_name} {user.last_name}</TableCell>
                                     <TableCell>{user.email}</TableCell>
-                                    <TableCell className="capitalize">{user.role}</TableCell>
+                                    <TableCell className="capitalize">
+                                        <span className={cn(
+                                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                                            user.role === 'admin' ? "bg-primary/10 text-primary" :
+                                                user.role === 'hr' ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" :
+                                                    "bg-muted text-muted-foreground"
+                                        )}>
+                                            {user.role}
+                                        </span>
+                                    </TableCell>
                                     <TableCell>{user.country_of_residence} / {user.work_country}</TableCell>
                                     <TableCell className="text-right space-x-2">
                                         <Button variant="ghost" size="icon" onClick={() => setEditingUser(user)}>
@@ -180,7 +252,7 @@ export default function UserManagement() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="text-red-500 hover:text-red-700"
+                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                             onClick={() => {
                                                 if (confirm('Are you sure you want to delete this user?')) {
                                                     deleteMutation.mutate(user.user_id);
@@ -199,7 +271,7 @@ export default function UserManagement() {
 
             <TablePagination
                 currentPage={page}
-                totalPages={Math.ceil(users.length / pageSize)}
+                totalPages={totalPages}
                 onPageChange={setPage}
             />
 
