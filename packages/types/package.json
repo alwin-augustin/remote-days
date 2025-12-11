@@ -5,6 +5,7 @@
     "types": "index.ts",
     "private": true,
     "scripts": {
+        "build": "echo 'No build needed for types'",
         "test": "echo 'No tests for types yet'"
     },
     "peerDependencies": {
