@@ -24,8 +24,8 @@ export class UserService {
     return this.userRepo.findByEmail(email);
   }
 
-  async getUsers(limit: number, offset: number, search?: string) {
-    return this.userRepo.findAll(limit, offset, search);
+  async getUsers(limit: number, offset: number, search?: string, filters?: { role?: string; country?: string }) {
+    return this.userRepo.findAll(limit, offset, search, filters);
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | null> {

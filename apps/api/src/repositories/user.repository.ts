@@ -6,7 +6,7 @@ export interface IUserRepository {
   findById(id: string): Promise<User | null>;
   create(user: Partial<User> & { password_hash: string }): Promise<User>;
   updatePassword(userId: string, newHash: string): Promise<void>;
-  findAll(limit: number, offset: number, search?: string): Promise<{ users: User[]; total: number }>;
+  findAll(limit: number, offset: number, search?: string, filters?: { role?: string; country?: string }): Promise<{ users: User[]; total: number }>;
   update(id: string, updates: Partial<User>): Promise<User | null>;
   softDelete(id: string): Promise<void>;
 }
@@ -66,28 +66,33 @@ export class UserRepository implements IUserRepository {
     );
   }
 
-  async findAll(limit: number, offset: number, search?: string): Promise<{ users: User[]; total: number }> {
+  async findAll(limit: number, offset: number, search?: string, filters?: { role?: string; country?: string }): Promise<{ users: User[]; total: number }> {
     let query = 'SELECT * FROM users WHERE is_active = true';
     const params: any[] = [];
 
     if (search) {
-      query += ` AND (email ILIKE $1 OR first_name ILIKE $1 OR last_name ILIKE $1)`;
       params.push(`%${search}%`);
+      query += ` AND (email ILIKE $${params.length} OR first_name ILIKE $${params.length} OR last_name ILIKE $${params.length})`;
     }
+
+    if (filters?.role && filters.role !== 'all') {
+      params.push(filters.role);
+      query += ` AND role = $${params.length}`;
+    }
+
+    if (filters?.country && filters.country !== 'all') {
+      params.push(filters.country);
+      query += ` AND (work_country = $${params.length} OR country_of_residence = $${params.length})`;
+    }
+
+    const countQuery = query.replace('SELECT *', 'SELECT COUNT(*)');
+    // We need to execute count query with current params before adding limit/offset
+    const { rows: countRows } = await this.pool.query(countQuery, params);
 
     query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limit, offset);
 
     const { rows } = await this.pool.query<User>(query, params);
-
-    // Get total count
-    let countQuery = 'SELECT COUNT(*) FROM users WHERE is_active = true';
-    const countParams: any[] = [];
-    if (search) {
-      countQuery += ` AND (email ILIKE $1 OR first_name ILIKE $1 OR last_name ILIKE $1)`;
-      countParams.push(`%${search}%`);
-    }
-    const { rows: countRows } = await this.pool.query(countQuery, countParams);
 
     return { users: rows, total: parseInt(countRows[0].count, 10) };
   }

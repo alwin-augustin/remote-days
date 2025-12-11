@@ -9,20 +9,10 @@ export class CtaService {
         private entryRepo: IEntryRepository
     ) { }
 
-    async recordStatusFromToken(token: string): Promise<void> {
+    async recordStatusFromToken(token: string): Promise<{ status: string; date: string }> {
         if (!token) {
             throw new AppError('Token is required', 400);
         }
-
-        // Since tokenRepo.findByTokenAndAction requires action, but here we don't know the action yet (it's in the token data),
-        // we might need a general findByToken. 
-        // However, existing cta.controller just does `SELECT * FROM email_cta_tokens WHERE token = $1`.
-        // And verifies action != 'password-reset'.
-        // `ITokenRepository` currently has `findByTokenAndAction`.
-        // I should create `findByToken` in ITokenRepository or misuse `findByTokenAndAction`?
-        // Misusing it is bad. I should assume I need `findByToken` on ITokenRepo.
-        // Let's assume I will add `findByToken` to Repo first.
-        // For now, I will use `findByToken` assuming I update the repo in next step.
 
         const tokenData = await this.tokenRepo.findByToken(token);
 
@@ -58,5 +48,7 @@ export class CtaService {
         );
 
         await this.tokenRepo.markAsUsed(token);
+
+        return { status, date: tokenData.target_date };
     }
 }

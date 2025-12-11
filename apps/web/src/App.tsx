@@ -16,6 +16,7 @@ import CalendarPage from '@/pages/CalendarPage';
 
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import CtaPage from "@/pages/CtaPage";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/cta" element={<CtaPage />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>

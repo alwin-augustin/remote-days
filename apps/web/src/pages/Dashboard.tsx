@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 import StatusCard from '@/components/StatusCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import type { work_status } from '@tracker/types';
-import { Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
     const today = new Date();
@@ -41,18 +42,27 @@ export default function Dashboard() {
 
     const currentStatus = getTodayStatus();
 
-    if (isLoadingEntries || isLoadingStats) {
-        return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-    }
-
     return (
         <div className="space-y-6">
             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {/* Status Card */}
+                {/* Status Card - Needs to handle loading internally or we wrap it */}
                 <div className="col-span-full lg:col-span-2">
-                    <StatusCard currentStatus={currentStatus} />
+                    {isLoadingEntries ? (
+                        <div className="space-y-3">
+                            <Skeleton className="h-8 w-1/3" />
+                            <Skeleton className="h-4 w-1/2" />
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+                                <Skeleton className="h-24 w-full" />
+                                <Skeleton className="h-24 w-full" />
+                                <Skeleton className="h-24 w-full" />
+                                <Skeleton className="h-24 w-full" />
+                            </div>
+                        </div>
+                    ) : (
+                        <StatusCard currentStatus={currentStatus} />
+                    )}
                 </div>
 
                 {/* Stats Card */}
@@ -61,22 +71,26 @@ export default function Dashboard() {
                         <CardTitle>Remote Days (Year)</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-4xl font-bold">
-                            {stats?.days_used_current_year ?? 0}
-                            <span className="text-sm font-normal text-muted-foreground ml-2">used</span>
-                        </div>
-                        {/* <p className="text-xs text-muted-foreground mt-2">
-              {stats?.days_remaining} days remaining (limit based on country)
-            </p> */}
-                        <div className="mt-4 h-2 w-full bg-secondary rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-primary"
-                                style={{ width: `${Math.min(stats?.percent_used || 0, 100)}%` }}
-                            />
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2 text-right">
-                            {stats?.percent_used?.toFixed(1)}% of allowance
-                        </p>
+                        {isLoadingStats ? (
+                            <div className="space-y-4">
+                                <Skeleton className="h-8 w-1/2" />
+                                <Skeleton className="h-2 w-full rounded-full" />
+                                <Skeleton className="h-4 w-1/3 ml-auto" />
+                            </div>
+                        ) : (
+                            <>
+                                <div className="text-4xl font-bold">
+                                    {stats?.days_used_current_year ?? 0}
+                                    <span className="text-sm font-normal text-muted-foreground ml-2">used</span>
+                                </div>
+                                <div className="mt-4">
+                                    <Progress value={stats?.percent_used} className="h-2" />
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2 text-right">
+                                    {stats?.percent_used?.toFixed(1)}% of allowance
+                                </p>
+                            </>
+                        )}
                     </CardContent>
                 </Card>
             </div>

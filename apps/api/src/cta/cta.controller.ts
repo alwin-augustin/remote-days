@@ -6,16 +6,16 @@ export class CtaController {
   constructor(private readonly ctaService: CtaService) { }
 
   recordStatusHandler = async (
-    request: FastifyRequest<{ Querystring: { token: string } }>,
+    request: FastifyRequest<{ Body: { token: string } }>,
     reply: FastifyReply
   ) => {
-    const { token } = request.query;
+    const { token } = request.body;
 
     if (!token) {
       throw new AppError('Token is required', 400);
     }
 
-    await this.ctaService.recordStatusFromToken(token);
-    reply.code(200).send({ message: 'Status recorded' });
+    const result = await this.ctaService.recordStatusFromToken(token);
+    reply.code(200).send({ message: 'Status recorded', ...result });
   }
 }

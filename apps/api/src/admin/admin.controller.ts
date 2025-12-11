@@ -36,11 +36,11 @@ export class AdminController {
   }
 
   getUsersHandler = async (
-    request: FastifyRequest<{ Querystring: { limit?: number; offset?: number; search?: string } }>,
+    request: FastifyRequest<{ Querystring: { limit?: number; offset?: number; search?: string; role?: string; country?: string } }>,
     reply: FastifyReply
   ) => {
-    const { limit = 10, offset = 0, search } = request.query;
-    const result = await this.userService.getUsers(Number(limit), Number(offset), search);
+    const { limit = 10, offset = 0, search, role, country } = request.query;
+    const result = await this.userService.getUsers(Number(limit), Number(offset), search, { role, country });
     reply.code(200).send(result);
   }
 

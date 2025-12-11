@@ -1,0 +1,106 @@
+services:
+  # 1. The Database (Postgres 15)
+  db:
+    image: postgres:15-alpine
+    container_name: tracker-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASS:-password}
+      POSTGRES_DB: ${DB_NAME:-tracker}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: Auto-run SQL scripts on first boot
+      - ./docker/postgres:/docker-entrypoint-initdb.d
+    networks:
+      - tracker-network
+
+  # 2. The Backend (Node API)
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: tracker-api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/node_modules
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-admin}:${DB_PASS:-password}@db:5432/${DB_NAME:-tracker}
+      PORT: 3000
+      JWT_SECRET: "dev-secret-do-not-use-in-prod"
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_SECURE: "false"
+      SMTP_FROM: "no-reply@tracker.local"
+    depends_on:
+      - db
+      - mailpit
+    networks:
+      - tracker-network
+
+  # 3. The Frontend (React)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    container_name: tracker-web
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/web/node_modules
+    environment:
+      VITE_API_URL: http://localhost:3000
+      VITE_PROXY_TARGET: "http://api:3000"
+    networks:
+      - tracker-network
+
+  # 4. Email Catching (Mailpit)
+  mailpit:
+    image: axllent/mailpit
+    container_name: tracker-mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - tracker-network
+
+  # 5. Seeding (Run once on startup)
+  seed:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: tracker-seed
+    # Override the default command to run the seed script
+    command: [ "npm", "run", "db:seed:fake", "--workspace=apps/api" ]
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/node_modules
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-admin}:${DB_PASS:-password}@db:5432/${DB_NAME:-tracker}
+      JWT_SECRET: "dev-secret-do-not-use-in-prod"
+    depends_on:
+      db:
+        condition: service_started
+      api:
+        condition: service_started
+    networks:
+      - tracker-network
+    # Only run this profile if specifically requested or if we want it to run every time 'up' is called without arguments?
+    # User said "so that it will work in the launch".
+    # Defaulting to standard execution, but it will exit after completion.
+
+volumes:
+  postgres_data:
+
+
+networks:
+  tracker-network:
+    driver: bridge

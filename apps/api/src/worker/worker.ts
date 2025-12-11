@@ -107,6 +107,10 @@ async function generateAuthTokens(
   return links;
 }
 
+import { generateEmailHtml } from '../services/email-templates';
+
+// ...
+
 /**
  * Sends the daily prompt email to the user.
  */
@@ -118,16 +122,16 @@ async function sendDailyPromptEmail(
 ): Promise<void> {
   const subject = `Where are you working today? (${todayDateString})`;
   const text = `Hello ${user.first_name},\n\nPlease let us know where you are working today:\n\nHome: ${links['home']}\nOffice: ${links['office']}\n\nHave a great day!`;
-  const html = `
-    <p>Hello ${user.first_name},</p>
-    <p>Please let us know where you are working today:</p>
-    <p>
-      <a href="${links['home']}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Working from Home</a>
-      <br><br>
-      <a href="${links['office']}" style="padding: 10px 20px; background-color: #008CBA; color: white; text-decoration: none; border-radius: 5px;">Working from Office</a>
-    </p>
-    <p>Have a great day!</p>
-  `;
+
+  const html = generateEmailHtml(
+    `Where are you working today?`,
+    user.first_name,
+    `Please let us know your work location for today (${todayDateString}).`,
+    [
+      { label: 'Working from Home', url: links['home'], color: 'success' },
+      { label: 'Working from Office', url: links['office'], color: 'info' }
+    ]
+  );
 
   await emailService.sendEmail(user.email, subject, text, html);
   fastify.log.info(`Sent email prompt to ${user.email}`);
@@ -135,7 +139,7 @@ async function sendDailyPromptEmail(
 
 // --- Main Worker Function ---
 
-async function sendEmailPrompts(fastify: FastifyInstance) {
+export async function sendEmailPrompts(fastify: FastifyInstance) {
   fastify.log.info('Running daily email prompt worker...');
 
   const dateInfo = getTodayDateInfo();

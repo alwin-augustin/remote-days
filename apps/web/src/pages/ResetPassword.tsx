@@ -4,10 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import api from '@/lib/api';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import {
     Form,
