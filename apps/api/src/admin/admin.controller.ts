@@ -66,4 +66,28 @@ export class AdminController {
     await this.userService.deleteUser(id);
     reply.code(204).send();
   }
+
+  importUsersHandler = async (
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) => {
+    const data = await (request as any).file();
+
+    if (!data) {
+      throw new AppError('No file uploaded', 400);
+    }
+
+    // Basic type check
+    // if (data.mimetype !== 'text/csv' && ...)
+
+    const buffer = await data.toBuffer();
+
+    try {
+      const result = await this.userService.importUsers(buffer);
+      reply.code(200).send(result);
+    } catch (err: any) {
+      request.log.error(err);
+      throw new AppError('Failed to process CSV', 500);
+    }
+  }
 }

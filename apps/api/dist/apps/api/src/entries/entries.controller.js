@@ -1,40 +1,33 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createEntryHandler = createEntryHandler;
-exports.getEntriesHandler = getEntriesHandler;
-async function createEntryHandler(request, reply) {
-    const { status, date } = request.body;
-    const user = request.user;
-    if (!status || !date) {
-        return reply.code(400).send({ message: 'Status and date are required' });
-    }
-    try {
-        const { rows } = await request.server.pg.query(`INSERT INTO entries (user_id, date, status, source)
-       VALUES ($1, $2, $3, 'web')
-       ON CONFLICT (user_id, date) DO UPDATE SET status = $3, source = 'web'
-       RETURNING *`, [user.user_id, date, status]);
-        reply.code(201).send(rows[0]);
-    }
-    catch (err) {
-        request.log.error(err, 'Error creating entry');
-        reply.code(500).send({ message: 'Error creating entry' });
-    }
-}
-async function getEntriesHandler(request, reply) {
-    const { year, month } = request.query;
-    const user = request.user;
-    if (!year || !month) {
-        return reply.code(400).send({ message: 'Year and month are required' });
-    }
-    try {
-        const { rows } = await request.server.pg.query(`SELECT * FROM entries
-       WHERE user_id = $1
-       AND date_part('year', date) = $2
-       AND date_part('month', date) = $3`, [user.user_id, year, month]);
-        reply.code(200).send(rows);
-    }
-    catch (err) {
-        request.log.error(err, 'Error fetching entries');
-        reply.code(500).send({ message: 'Error fetching entries' });
+exports.EntriesController = void 0;
+const app_error_1 = require("../errors/app-error");
+class EntriesController {
+    constructor(entryService) {
+        this.entryService = entryService;
+        this.createEntryHandler = async (request, reply) => {
+            const { status, date } = request.body;
+            const user = request.user;
+            if (!status || !date) {
+                throw new app_error_1.AppError('Status and date are required', 400);
+            }
+            const entry = await this.entryService.createOrUpdateEntry(user.user_id, date, status, user.role, user.user_id);
+            reply.code(201).send(entry);
+        };
+        this.getEntriesHandler = async (request, reply) => {
+            const { year, month } = request.query;
+            const user = request.user;
+            if (!year || !month) {
+                throw new app_error_1.AppError('Year and month are required', 400);
+            }
+            const entries = await this.entryService.getEntriesForMonth(user.user_id, year, month);
+            reply.code(200).send(entries);
+        };
+        this.getStatsHandler = async (request, reply) => {
+            const user = request.user;
+            const stats = await this.entryService.getUserStats(user.user_id);
+            reply.code(200).send(stats);
+        };
     }
 }
+exports.EntriesController = EntriesController;

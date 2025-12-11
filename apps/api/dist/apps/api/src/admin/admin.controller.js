@@ -1,56 +1,70 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createUserHandler = createUserHandler;
-const bcrypt = __importStar(require("bcrypt"));
-async function createUserHandler(request, reply) {
-    const { email, first_name, last_name, country_of_residence, work_country, temp_password, role } = request.body;
-    if (!email || !first_name || !last_name || !country_of_residence || !work_country || !temp_password) {
-        return reply.code(400).send({ message: 'Missing required fields' });
-    }
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(temp_password, saltRounds);
-    try {
-        const { rows } = await request.server.pg.query("INSERT INTO users (email, first_name, last_name, country_of_residence, work_country, password_hash, role) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING user_id", [email, first_name, last_name, country_of_residence, work_country, hashedPassword, role || 'employee']);
-        reply.code(201).send({ user_id: rows[0].user_id });
-    }
-    catch (err) {
-        if (err.code === '23505') { // unique_violation
-            return reply.code(409).send({ message: 'Email already exists' });
-        }
-        request.log.error(err, 'Error creating user');
-        reply.code(500).send({ message: 'Error creating user' });
+exports.AdminController = void 0;
+const app_error_1 = require("../errors/app-error");
+class AdminController {
+    constructor(userService) {
+        this.userService = userService;
+        this.createUserHandler = async (request, reply) => {
+            const { email, first_name, last_name, country_of_residence, work_country, temp_password, role } = request.body;
+            if (!email || !first_name || !last_name || !country_of_residence || !work_country || !temp_password) {
+                throw new app_error_1.AppError('Missing required fields', 400);
+            }
+            try {
+                const newUser = await this.userService.createUser({
+                    email,
+                    first_name,
+                    last_name,
+                    country_of_residence,
+                    work_country,
+                    temp_password,
+                    role: role || 'employee',
+                });
+                reply.code(201).send({ user_id: newUser.user_id });
+            }
+            catch (err) {
+                if (err.code === '23505') { // unique_violation
+                    throw new app_error_1.AppError('Email already exists', 409);
+                }
+                throw err;
+            }
+        };
+        this.getUsersHandler = async (request, reply) => {
+            const { limit = 10, offset = 0, search, role, country } = request.query;
+            const result = await this.userService.getUsers(Number(limit), Number(offset), search, { role, country });
+            reply.code(200).send(result);
+        };
+        this.updateUserHandler = async (request, reply) => {
+            const { id } = request.params;
+            const updates = request.body;
+            const updatedUser = await this.userService.updateUser(id, updates);
+            if (!updatedUser) {
+                throw new app_error_1.AppError('User not found', 404);
+            }
+            reply.code(200).send(updatedUser);
+        };
+        this.deleteUserHandler = async (request, reply) => {
+            const { id } = request.params;
+            await this.userService.deleteUser(id);
+            reply.code(204).send();
+        };
+        this.importUsersHandler = async (request, reply) => {
+            const data = await request.file();
+            if (!data) {
+                throw new app_error_1.AppError('No file uploaded', 400);
+            }
+            // Basic type check
+            // if (data.mimetype !== 'text/csv' && ...)
+            const buffer = await data.toBuffer();
+            try {
+                const result = await this.userService.importUsers(buffer);
+                reply.code(200).send(result);
+            }
+            catch (err) {
+                request.log.error(err);
+                throw new app_error_1.AppError('Failed to process CSV', 500);
+            }
+        };
     }
 }
+exports.AdminController = AdminController;

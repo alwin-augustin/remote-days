@@ -4,9 +4,21 @@ import { CountryController } from './country.controller';
 
 async function adminRoutes(
   server: FastifyInstance,
-  options: { adminController: AdminController; countryController: CountryController }
+  options: {
+    adminController: AdminController;
+    countryController: CountryController;
+  }
 ) {
   const { adminController, countryController } = options;
+
+  // User Import
+  server.post(
+    '/admin/users/import',
+    {
+      preHandler: [server.authenticate, server.authorize('admin')],
+    },
+    adminController.importUsersHandler as any
+  );
 
   // User Management
   server.post(

@@ -9,6 +9,7 @@ import UserManagement from '@/pages/admin/UserManagement';
 import CountryThresholds from '@/pages/admin/CountryThresholds';
 import NotificationHistory from '@/pages/admin/NotificationHistory';
 import AuditLogs from '@/pages/admin/AuditLogs';
+import UserImport from '@/pages/admin/UserImport';
 
 // Placeholder pages
 import Home from '@/pages/Home';
@@ -47,6 +48,7 @@ function App() {
         <Route element={<ProtectedRoute roles={['admin']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/users/import" element={<UserImport />} />
             <Route path="/admin/countries" element={<CountryThresholds />} />
             <Route path="/admin/notifications/stats" element={<NotificationHistory />} />
             <Route path="/admin/audit" element={<AuditLogs />} />

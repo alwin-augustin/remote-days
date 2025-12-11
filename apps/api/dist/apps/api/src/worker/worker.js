@@ -33,62 +33,102 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.sendEmailPrompts = sendEmailPrompts;
 exports.startWorker = startWorker;
 const cron = __importStar(require("node-cron"));
 const crypto_1 = require("crypto");
 const date_fns_tz_1 = require("date-fns-tz");
 const email_service_1 = require("../services/email.service");
-async function sendEmailPrompts(fastify) {
-    fastify.log.info('Running daily email prompt worker...');
-    const timeZone = 'Europe/Paris';
+const env_1 = require("../config/env");
+// --- Helper Functions ---
+/**
+ * Calculates current date information based on the configured timezone.
+ */
+function getTodayDateInfo() {
+    const timeZone = 'Europe/Paris'; // Could be moved to config
     const now = new Date();
     const zonedDate = (0, date_fns_tz_1.utcToZonedTime)(now, timeZone);
     const todayDateString = (0, date_fns_tz_1.format)(zonedDate, 'yyyy-MM-dd', { timeZone });
-    // 1. Fetch all today's holidays
-    const { rows: holidaysToday } = await fastify.pg.query('SELECT country_code FROM holidays WHERE date = $1', [todayDateString]);
+    return { zonedDate, todayDateString };
+}
+/**
+ * Fetches holidays for the current date from the database.
+ */
+async function getHolidayData(fastify, dateString) {
+    const { rows: holidaysToday } = await fastify.pg.query('SELECT country_code FROM holidays WHERE date = $1', [dateString]);
     const holidayCountries = new Set(holidaysToday.map(h => h.country_code));
     const isGlobalHoliday = holidayCountries.has(null);
+    return { isGlobalHoliday, holidayCountries };
+}
+/**
+ * Fetches all active users from the database.
+ */
+async function getActiveUsers(fastify) {
     const { rows: users } = await fastify.pg.query('SELECT * FROM users WHERE is_active = true');
     fastify.log.info(`Found ${users.length} active users.`);
-    const appUrl = process.env.APP_URL || 'http://localhost:5173';
+    return users;
+}
+/**
+ * Determines if an email should be sent to a specific user.
+ */
+function shouldSendEmailToUser(user, dateInfo, holidayData, fastify) {
+    const dayOfWeek = dateInfo.zonedDate.getDay();
+    // Skip weekends (Sunday=0, Saturday=6)
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+        fastify.log.info(`Skipping email for ${user.email} because it's a weekend.`);
+        return false;
+    }
+    // Check for holidays
+    if (holidayData.isGlobalHoliday || holidayData.holidayCountries.has(user.country_of_residence)) {
+        fastify.log.info(`Skipping email for ${user.email} because it's a holiday.`);
+        return false;
+    }
+    return true;
+}
+/**
+ * Generates CTA tokens for home and office actions.
+ */
+async function generateAuthTokens(fastify, user, todayDateString, appUrl) {
+    const actions = ['home', 'office'];
+    const links = {};
+    for (const action of actions) {
+        const token = (0, crypto_1.randomUUID)();
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiration
+        await fastify.pg.query("INSERT INTO email_cta_tokens (token, user_id, action, target_date, expires_at) VALUES ($1, $2, $3, $4, $5)", [token, user.user_id, action, todayDateString, expiresAt]);
+        links[action] = `${appUrl}/cta?token=${token}`;
+        fastify.log.info(`Generated token for ${user.email}, action ${action}`);
+    }
+    return links;
+}
+const email_templates_1 = require("../services/email-templates");
+// ...
+/**
+ * Sends the daily prompt email to the user.
+ */
+async function sendDailyPromptEmail(fastify, user, links, todayDateString) {
+    const subject = `Where are you working today? (${todayDateString})`;
+    const text = `Hello ${user.first_name},\n\nPlease let us know where you are working today:\n\nHome: ${links['home']}\nOffice: ${links['office']}\n\nHave a great day!`;
+    const html = (0, email_templates_1.generateEmailHtml)(`Where are you working today?`, user.first_name, `Please let us know your work location for today (${todayDateString}).`, [
+        { label: 'Working from Home', url: links['home'], color: 'success' },
+        { label: 'Working from Office', url: links['office'], color: 'info' }
+    ]);
+    await email_service_1.emailService.sendEmail(user.email, subject, text, html);
+    fastify.log.info(`Sent email prompt to ${user.email}`);
+}
+// --- Main Worker Function ---
+async function sendEmailPrompts(fastify) {
+    fastify.log.info('Running daily email prompt worker...');
+    const dateInfo = getTodayDateInfo();
+    const holidayData = await getHolidayData(fastify, dateInfo.todayDateString);
+    const users = await getActiveUsers(fastify);
+    const appUrl = env_1.config.APP_URL;
     for (const user of users) {
-        const dayOfWeek = zonedDate.getDay();
-        // Skip weekends
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            fastify.log.info(`Skipping email for ${user.email} because it's a weekend.`);
+        if (!shouldSendEmailToUser(user, dateInfo, holidayData, fastify)) {
             continue;
         }
-        // Check for holidays
-        if (isGlobalHoliday || holidayCountries.has(user.country_of_residence)) {
-            fastify.log.info(`Skipping email for ${user.email} because it's a holiday.`);
-            continue;
-        }
-        // Generate CTA tokens
-        const actions = ['home', 'office'];
-        const links = {};
-        for (const action of actions) {
-            const token = (0, crypto_1.randomUUID)();
-            const expiresAt = new Date();
-            expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiration
-            await fastify.pg.query("INSERT INTO email_cta_tokens (token, user_id, action, target_date, expires_at) VALUES ($1, $2, $3, $4, $5)", [token, user.user_id, action, todayDateString, expiresAt]);
-            links[action] = `${appUrl}/cta?token=${token}`;
-            fastify.log.info(`Generated token for ${user.email}, action ${action}`);
-        }
-        // Send Email
-        const subject = `Where are you working today? (${todayDateString})`;
-        const text = `Hello ${user.first_name},\n\nPlease let us know where you are working today:\n\nHome: ${links['home']}\nOffice: ${links['office']}\n\nHave a great day!`;
-        const html = `
-      <p>Hello ${user.first_name},</p>
-      <p>Please let us know where you are working today:</p>
-      <p>
-        <a href="${links['home']}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Working from Home</a>
-        <br><br>
-        <a href="${links['office']}" style="padding: 10px 20px; background-color: #008CBA; color: white; text-decoration: none; border-radius: 5px;">Working from Office</a>
-      </p>
-      <p>Have a great day!</p>
-    `;
-        await email_service_1.emailService.sendEmail(user.email, subject, text, html);
-        fastify.log.info(`Sent email prompt to ${user.email}`);
+        const links = await generateAuthTokens(fastify, user, dateInfo.todayDateString, appUrl);
+        await sendDailyPromptEmail(fastify, user, links, dateInfo.todayDateString);
     }
 }
 function startWorker(fastify) {

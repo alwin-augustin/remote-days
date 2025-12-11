@@ -57,11 +57,19 @@ async function authPlugin(fastify) {
             reply.code(401).send({ message: 'Invalid token' });
         }
     });
-    fastify.decorate('authorize', (role) => {
+    fastify.decorate('authorize', (requiredRole) => {
         return async (request, reply) => {
-            if (request.user?.role !== role) {
+            const userRole = request.user?.role;
+            if (!userRole) {
                 return reply.code(403).send({ message: 'Forbidden' });
             }
+            if (requiredRole === 'admin' && userRole !== 'admin') {
+                return reply.code(403).send({ message: 'Forbidden' });
+            }
+            if (requiredRole === 'hr' && !['admin', 'hr'].includes(userRole)) {
+                return reply.code(403).send({ message: 'Forbidden' });
+            }
+            // 'employee' role implies access for everyone if authenticated, which is handled by 'authenticate'
         };
     });
 }

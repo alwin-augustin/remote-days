@@ -38,7 +38,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, Plus, Pencil, Trash2, Search, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -151,13 +152,20 @@ export default function UserManagement() {
     });
 
 
+    const navigate = useNavigate();
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-                <Button onClick={() => setIsCreateOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Add User
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => navigate('/admin/users/import')}>
+                        <Upload className="mr-2 h-4 w-4" /> Import CSV
+                    </Button>
+                    <Button onClick={() => setIsCreateOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" /> Add User
+                    </Button>
+                </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 items-center">

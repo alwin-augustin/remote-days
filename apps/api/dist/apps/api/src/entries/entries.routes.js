@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const entries_controller_1 = require("./entries.controller");
-async function entriesRoutes(server) {
+async function entriesRoutes(server, options) {
     server.addHook('preHandler', server.authenticate);
-    server.post('/entries', entries_controller_1.createEntryHandler);
-    server.get('/entries', entries_controller_1.getEntriesHandler);
+    const { controller } = options;
+    server.post('/entries', controller.createEntryHandler);
+    server.get('/entries', controller.getEntriesHandler);
+    server.get('/entries/stats', controller.getStatsHandler);
 }
 exports.default = entriesRoutes;

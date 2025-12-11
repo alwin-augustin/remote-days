@@ -35,4 +35,60 @@ export class UserService {
   async deleteUser(id: string): Promise<void> {
     return this.userRepo.softDelete(id);
   }
+
+  async importUsers(fileBuffer: Buffer): Promise<{ total: number; inserted: number; errors: any[] }> {
+    const { parse } = await import('csv-parse'); // Dynamic import or top level
+
+    const results: any[] = [];
+    const errors: any[] = [];
+    let insertedCount = 0;
+
+    const parser = parse(fileBuffer, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+    });
+
+    for await (const record of parser) {
+      results.push(record);
+    }
+
+    for (let i = 0; i < results.length; i++) {
+      const row = results[i];
+      const rowNum = i + 2;
+
+      if (!row.email || !row.first_name || !row.last_name || !row.country_of_residence || !row.work_country) {
+        errors.push({ row: rowNum, error: 'Missing mandatory fields' });
+        continue;
+      }
+
+      const hash = await bcrypt.hash('changeMe123!', 10);
+
+      try {
+        const userId = await this.userRepo.createOrSkip({
+          email: row.email,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          country_of_residence: row.country_of_residence.toUpperCase(),
+          work_country: row.work_country.toUpperCase(),
+          password_hash: hash,
+          role: 'employee'
+        });
+
+        if (userId) {
+          insertedCount++;
+        } else {
+          errors.push({ row: rowNum, email: row.email, error: 'User already exists (skipped)' });
+        }
+      } catch (err: any) {
+        errors.push({ row: rowNum, email: row.email, error: err.message });
+      }
+    }
+
+    return {
+      total: results.length,
+      inserted: insertedCount,
+      errors
+    };
+  }
 }
