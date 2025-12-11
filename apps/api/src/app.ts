@@ -18,7 +18,12 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
   const server = fastify(opts);
 
   server.register(cors, {
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: [
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'https://teletravail-tracker-web.onrender.com',
+      process.env.APP_URL || ''
+    ].filter(Boolean),
     credentials: true,
   });
   server.register(cookie);
