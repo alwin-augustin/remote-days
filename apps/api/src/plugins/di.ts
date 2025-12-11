@@ -43,13 +43,13 @@ const diPlugin: FastifyPluginAsync = async (server) => {
   const countryRepo = new CountryRepository(pool);
   const countryService = new CountryService(countryRepo);
 
+  const emailService = new EmailService(); // Moved instantiation of emailService before notificationService
+
   const notificationRepo = new NotificationRepository(pool);
-  const notificationService = new NotificationService(notificationRepo);
+  const notificationService = new NotificationService(notificationRepo, emailService); // Injected emailService
 
   const auditRepo = new AuditRepository(pool);
   const auditService = new AuditService(auditRepo);
-
-  const emailService = new EmailService();
 
   server.decorate('services', {
     user: userService,

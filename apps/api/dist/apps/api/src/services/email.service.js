@@ -5,31 +5,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.emailService = exports.EmailService = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
+const env_1 = require("../config/env");
 class EmailService {
     constructor() {
         // Use environment variables for configuration
         // If not present, it will likely fail or use a default if configured so.
         // For dev, we can print credentials if using Ethereal, but let's stick to env vars.
         this.transporter = nodemailer_1.default.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            secure: process.env.SMTP_SECURE === 'true',
+            host: env_1.config.SMTP_HOST || 'smtp.ethereal.email',
+            port: env_1.config.SMTP_PORT || 587,
+            secure: env_1.config.SMTP_SECURE,
             auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
+                user: env_1.config.SMTP_USER,
+                pass: env_1.config.SMTP_PASS,
             },
         });
     }
     async sendEmail(to, subject, text, html) {
         try {
             const info = await this.transporter.sendMail({
-                from: process.env.SMTP_FROM || '"Teletravail Tracker" <no-reply@example.com>',
+                from: env_1.config.SMTP_FROM || '"Teletravail Tracker" <no-reply@example.com>',
                 to,
                 subject,
                 text,
                 html: html || text,
             });
-            console.log(`Message sent: ${info.messageId}`);
+            // console.log(`Message sent: ${info.messageId}`);
         }
         catch (error) {
             console.error('Error sending email:', error);
