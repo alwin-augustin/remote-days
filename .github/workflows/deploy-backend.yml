@@ -42,6 +42,7 @@ jobs:
           
           # Create .env file from Secret
           echo "${{ secrets.ENV_FILE }}" > deploy/.env
+          echo "NODE_ENV=production" >> deploy/.env
           
           # Copy Shared Packages (needed for workspace install)
           cp -r packages/types deploy/packages/
