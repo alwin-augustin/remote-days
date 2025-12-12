@@ -48,7 +48,8 @@ jobs:
           
           # Copy API files
           cp apps/api/package.json deploy/apps/api/
-          cp -r apps/api/dist deploy/apps/api/
+          # Move dist to root of deploy (as requested)
+          cp -r apps/api/dist deploy/
           
           # Compress for transfer
           tar -czf artifact.tar.gz -C deploy .
@@ -60,7 +61,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "artifact.tar.gz"
-          target: "/home/${{ secrets.EC2_USER }}/app"
+          target: "/home/${{ secrets.EC2_USER }}/tracker"
 
       - name: Execute Remote Deployment
         uses: appleboy/ssh-action@v1.0.3
@@ -70,8 +71,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             # Create app directory if it doesn't exist
-            mkdir -p /home/${{ secrets.EC2_USER }}/app
-            cd /home/${{ secrets.EC2_USER }}/app
+            mkdir -p /home/${{ secrets.EC2_USER }}/tracker
+            cd /home/${{ secrets.EC2_USER }}/tracker
             
             # Extract artifact
             tar -xzf artifact.tar.gz
