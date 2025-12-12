@@ -40,6 +40,9 @@ jobs:
           cp package-lock.json deploy/
           cp ecosystem.config.js deploy/
           
+          # Create .env file from Secret
+          echo "${{ secrets.ENV_FILE }}" > deploy/.env
+          
           # Copy Shared Packages (needed for workspace install)
           cp -r packages/types deploy/packages/
           
