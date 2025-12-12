@@ -1,0 +1,89 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "apps/api/**"
+      - "packages/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-backend.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build API
+        run: npm run build --workspace=apps/api
+
+      - name: Prepare Deployment Artifact
+        run: |
+          mkdir -p deploy/apps/api
+          mkdir -p deploy/packages
+          
+          # Copy Root Configs
+          cp package.json deploy/
+          cp package-lock.json deploy/
+          cp ecosystem.config.js deploy/
+          
+          # Copy Shared Packages (needed for workspace install)
+          cp -r packages/types deploy/packages/
+          
+          # Copy API files
+          cp apps/api/package.json deploy/apps/api/
+          cp -r apps/api/dist deploy/apps/api/
+          
+          # Compress for transfer
+          tar -czf artifact.tar.gz -C deploy .
+
+      - name: Copy Files to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "artifact.tar.gz"
+          target: "/home/${{ secrets.EC2_USER }}/app"
+
+      - name: Execute Remote Deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Create app directory if it doesn't exist
+            mkdir -p /home/${{ secrets.EC2_USER }}/app
+            cd /home/${{ secrets.EC2_USER }}/app
+            
+            # Extract artifact
+            tar -xzf artifact.tar.gz
+            rm artifact.tar.gz
+            
+            # Install production dependencies
+            npm ci --omit=dev --foreground-scripts
+            
+            # Start/Reload App with PM2
+            # Check if PM2 is managing the app, if not start it, else reload
+            if pm2 list | grep -q "tracker-api"; then
+              pm2 reload tracker-api
+            else
+              pm2 start ecosystem.config.js
+            fi
+            
+            # Save PM2 list so it restarts on reboot
+            pm2 save
