@@ -79,8 +79,8 @@ jobs:
             tar -xzf artifact.tar.gz
             rm artifact.tar.gz
             
-            # Install production dependencies
-            npm ci --omit=dev --foreground-scripts
+            # Install all dependencies (safer for partial monorepo)
+            npm install --foreground-scripts
             
             # Start/Reload App with PM2
             # Check if PM2 is managing the app, if not start it, else reload
