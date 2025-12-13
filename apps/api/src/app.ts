@@ -22,6 +22,7 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
       'http://localhost:5173',
       'http://127.0.0.1:5173',
       'https://teletravail-tracker-web.onrender.com',
+      'https://teletravail-tracker-web.vercel.app',
       process.env.APP_URL || ''
     ].filter(Boolean),
     credentials: true,
