@@ -27,6 +27,28 @@ export class EntriesController {
     reply.code(201).send(entry);
   }
 
+  overrideEntryHandler = async (
+    request: FastifyRequest<{ Body: { targetUserId: string; date: string; status: work_status; reason: string } }>,
+    reply: FastifyReply
+  ) => {
+    const { targetUserId, date, status, reason } = request.body;
+    const user = request.user;
+
+    if (!targetUserId || !date || !status || !reason) {
+      throw new AppError('Target user, date, status, and reason are required', 400);
+    }
+
+    const entry = await this.entryService.overrideEntry(
+      targetUserId,
+      date,
+      status,
+      reason,
+      user.user_id,
+      user.role
+    );
+    reply.code(200).send(entry);
+  }
+
   getEntriesHandler = async (
     request: FastifyRequest<{ Querystring: { year: string; month: string } }>,
     reply: FastifyReply

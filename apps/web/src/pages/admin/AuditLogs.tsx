@@ -21,9 +21,18 @@ type AuditLog = {
     action: string;
     actor_id: string;
     target_id?: string;
-    details: unknown;
+    details: any;
     created_at: string;
-    actor_email?: string; // If joined
+    actor_email?: string;
+    actor_first_name?: string;
+    actor_last_name?: string;
+    target_email?: string;
+    target_first_name?: string;
+    target_last_name?: string;
+    reason?: string;
+    entry_date?: string;
+    previous_status?: string;
+    new_status?: string;
 };
 
 import { TablePagination } from '@/components/TablePagination';
@@ -41,7 +50,6 @@ export default function AuditLogs() {
         queryFn: async () => {
             const from = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '';
             const to = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : '';
-            // If from/to empty, logic handles undefined
             const res = await api.get<AuditLog[]>(`/admin/audit?startDate=${from}&endDate=${to}`);
             return res.data;
         },
@@ -55,8 +63,6 @@ export default function AuditLogs() {
         const from = format(dateRange.from, 'yyyy-MM-dd');
         const to = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : '';
 
-        // Trigger download via window.open or fetch blob
-        // Using fetch blob to handle auth headers
         try {
             const response = await api.get(`/admin/audit?startDate=${from}&endDate=${to}&format=excel`, {
                 responseType: 'blob',
@@ -71,6 +77,11 @@ export default function AuditLogs() {
         } catch (e) {
             console.error("Failed to download excel", e);
         }
+    };
+
+    const formatUser = (first?: string, last?: string, email?: string) => {
+        if (!email) return 'System';
+        return `${first || ''} ${last || ''} (${email})`.trim();
     };
 
     return (
@@ -102,18 +113,33 @@ export default function AuditLogs() {
                                         <TableHead>Time</TableHead>
                                         <TableHead>Action</TableHead>
                                         <TableHead>Actor</TableHead>
+                                        <TableHead>Target</TableHead>
+                                        <TableHead>Reason</TableHead>
                                         <TableHead>Details</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {paginatedLogs.map(log => (
                                         <TableRow key={log.id}>
-                                            <TableCell className="whitespace-nowrap">
+                                            <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                                                 {format(new Date(log.created_at), 'yyyy-MM-dd HH:mm')}
                                             </TableCell>
-                                            <TableCell>{log.action}</TableCell>
-                                            <TableCell>{log.actor_email || log.actor_id}</TableCell>
-                                            <TableCell className="max-w-[300px] truncate" title={JSON.stringify(log.details)}>
+                                            <TableCell>
+                                                <span className="font-medium">{log.action}</span>
+                                            </TableCell>
+                                            <TableCell>
+                                                {formatUser(log.actor_first_name, log.actor_last_name, log.actor_email)}
+                                            </TableCell>
+                                            <TableCell>
+                                                {log.target_email && log.target_email !== 'N/A'
+                                                    ? formatUser(log.target_first_name, log.target_last_name, log.target_email)
+                                                    : '-'
+                                                }
+                                            </TableCell>
+                                            <TableCell className="max-w-[200px] break-words">
+                                                {log.reason || '-'}
+                                            </TableCell>
+                                            <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground" title={JSON.stringify(log.details, null, 2)}>
                                                 {JSON.stringify(log.details)}
                                             </TableCell>
                                         </TableRow>

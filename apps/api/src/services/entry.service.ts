@@ -3,8 +3,13 @@ import { work_status } from '@tracker/types';
 import { AppError } from '../errors/app-error';
 import { config } from '../config/env';
 
+import { IAuditRepository } from '../repositories/audit.repository';
+
 export class EntryService {
-  constructor(private entryRepo: IEntryRepository) { }
+  constructor(
+    private entryRepo: IEntryRepository,
+    private auditRepo: IAuditRepository
+  ) { }
 
   async createOrUpdateEntry(
     userId: string,
@@ -26,6 +31,48 @@ export class EntryService {
     }
 
     return this.entryRepo.upsert(userId, date, status, 'web');
+  }
+
+  async overrideEntry(
+    targetUserId: string,
+    date: string,
+    status: work_status,
+    reason: string,
+    actorId: string,
+    actorRole: string
+  ): Promise<any> {
+    if (!reason || reason.trim().length === 0) {
+      throw new AppError('Reason is required for overriding an entry.', 400);
+    }
+
+    if (!['hr', 'admin'].includes(actorRole)) {
+      throw new AppError('Only HR and Admin can override entries.', 403);
+    }
+
+    const previousEntry = await this.entryRepo.findByUserAndDate(targetUserId, date);
+    const previousStatus = previousEntry ? previousEntry.status : 'none';
+
+    // Upsert the entry (actorId is passed to set session variable if supported, but here acts as identity)
+    const result = await this.entryRepo.upsert(targetUserId, date, status, 'web', actorId);
+
+    // Log to Audit
+    await this.auditRepo.log(
+      'OVERRIDE',
+      actorId,
+      targetUserId,
+      reason,
+      'entry',
+      result.id || 'unknown',
+      undefined, undefined, undefined, // Actor details (optional if joined later)
+      undefined, undefined, undefined, // Target details (optional if joined later)
+      {
+        date,
+        previous_status: previousStatus,
+        new_status: status
+      }
+    );
+
+    return result;
   }
 
   async getEntriesForMonth(userId: string, year: string, month: string): Promise<any[]> {

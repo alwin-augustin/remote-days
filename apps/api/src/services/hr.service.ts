@@ -23,4 +23,8 @@ export class HRService {
   async getDailyEntries(date: string) {
     return this.hrRepo.getDailyEntries(date);
   }
+
+  async getRiskStats(date: string) {
+    return this.hrRepo.getRiskStats(date);
+  }
 }

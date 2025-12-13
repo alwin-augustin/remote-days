@@ -7,6 +7,7 @@ async function entriesRoutes(server: FastifyInstance, options: { controller: Ent
   const { controller } = options;
 
   server.post('/entries', controller.createEntryHandler);
+  server.post('/entries/override', controller.overrideEntryHandler);
   server.get('/entries', controller.getEntriesHandler);
   server.get('/entries/stats', controller.getStatsHandler);
 }

@@ -90,7 +90,11 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     const { EntriesController } = await import('./entries/entries.controller');
 
     const entryRepo = new EntryRepository(pool);
-    const entryService = new EntryService(entryRepo);
+    // Audit Module - Instantiated early for dependency injection
+    const { AuditRepository } = await import('./repositories/audit.repository');
+    const auditRepo = new AuditRepository(pool);
+
+    const entryService = new EntryService(entryRepo, auditRepo);
     const entriesController = new EntriesController(entryService);
 
     apiScope.register(entriesRoutes, { prefix: '/api', controller: entriesController });
@@ -164,11 +168,10 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     const notificationController = new NotificationController(notificationService);
 
     // Audit Module
-    const { AuditRepository } = await import('./repositories/audit.repository');
     const { AuditService } = await import('./services/audit.service');
     const { AuditController } = await import('./admin/audit.controller');
 
-    const auditRepo = new AuditRepository(pool);
+    // auditRepo already instantiated above
     const auditService = new AuditService(auditRepo);
     const auditController = new AuditController(auditService);
 

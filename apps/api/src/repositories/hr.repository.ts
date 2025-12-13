@@ -52,6 +52,7 @@ export interface IHRRepository {
   updateEntry(id: string, status: work_status, reason: string, actorId: string): Promise<any>;
   getDailyStats(date: string): Promise<DailyStats>;
   getDailyEntries(date: string): Promise<DailyEntry[]>;
+  getRiskStats(date: string): Promise<{ danger_count: number; warning_count: number; missing_count: number }>;
 }
 
 export class HRRepository implements IHRRepository {
@@ -170,5 +171,55 @@ export class HRRepository implements IHRRepository {
       [date]
     );
     return rows;
+  }
+
+  async getRiskStats(date: string): Promise<{ danger_count: number; warning_count: number; missing_count: number }> {
+    // 1. Calculate Annual Risk (Danger/Warning)
+    // Reusing logic from getEmployeeSummaries but aggregating
+    const riskQuery = `
+      WITH user_days_used AS (
+        SELECT
+          u.user_id,
+          u.work_country,
+          COALESCE(COUNT(e.id) FILTER (WHERE e.status = 'home' AND date_part('year', e.date) = date_part('year', CURRENT_DATE)), 0) AS days_used_current_year
+        FROM users u
+        LEFT JOIN entries e ON u.user_id = e.user_id
+        WHERE u.is_active = true
+        GROUP BY u.user_id
+      ),
+      risk_levels AS (
+        SELECT
+          CASE
+            WHEN (udu.days_used_current_year * 100.0 / ct.max_remote_days) >= 100 THEN 'red'
+            WHEN (udu.days_used_current_year * 100.0 / ct.max_remote_days) >= 75 THEN 'orange'
+            ELSE 'green'
+          END AS traffic_light
+        FROM user_days_used udu
+        JOIN country_thresholds ct ON udu.work_country = ct.country_code
+      )
+      SELECT
+        COUNT(*) FILTER (WHERE traffic_light = 'red') as danger_count,
+        COUNT(*) FILTER (WHERE traffic_light = 'orange') as warning_count
+      FROM risk_levels;
+    `;
+
+    // 2. Calculate Missing Declarations (Today/Date)
+    const missingQuery = `
+      SELECT COUNT(*) as missing_count
+      FROM users u
+      LEFT JOIN entries e ON u.user_id = e.user_id AND e.date = $1
+      WHERE u.is_active = true AND e.id IS NULL
+    `;
+
+    const [riskRes, missingRes] = await Promise.all([
+      this.pool.query(riskQuery),
+      this.pool.query(missingQuery, [date])
+    ]);
+
+    return {
+      danger_count: parseInt(riskRes.rows[0]?.danger_count || '0'),
+      warning_count: parseInt(riskRes.rows[0]?.warning_count || '0'),
+      missing_count: parseInt(missingRes.rows[0]?.missing_count || '0')
+    };
   }
 }

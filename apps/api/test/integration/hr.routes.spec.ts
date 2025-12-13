@@ -145,4 +145,19 @@ describe('HR Integration', () => {
     expect(updatedEntry.status).toBe('office');
     expect(updatedEntry.source).toBe('hr_correction');
   });
+
+  it('should get risk stats', async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/hr/stats/risk?date=${today}`,
+      headers: { cookie: hrToken },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const stats = JSON.parse(res.payload);
+    expect(stats.danger_count).toBeDefined();
+    expect(stats.warning_count).toBeDefined();
+    expect(stats.missing_count).toBeDefined();
+  });
 });

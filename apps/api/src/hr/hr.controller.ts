@@ -76,4 +76,13 @@ export class HRController {
         const entries = await this.hrService.getDailyEntries(targetDate);
         reply.code(200).send(entries);
     }
+
+    getRiskStatsHandler = async (
+        request: FastifyRequest<{ Querystring: { date?: string } }>,
+        reply: FastifyReply
+    ) => {
+        const targetDate = request.query.date || new Date().toISOString().split('T')[0];
+        const stats = await this.hrService.getRiskStats(targetDate);
+        reply.code(200).send(stats);
+    }
 }
