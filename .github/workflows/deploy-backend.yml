@@ -1,4 +1,4 @@
-name: Deploy Backend
+name: Deploy Backend (Standalone)
 
 on:
   push:
@@ -6,14 +6,14 @@ on:
     paths:
       - "apps/api/**"
       - "packages/**"
+      - "scripts/prepare-ec2.sh"
       - "package.json"
-      - "package-lock.json"
       - ".github/workflows/deploy-backend.yml"
 
 jobs:
-  deploy:
+  build:
+    name: Build & Package
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,33 +27,37 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build API
-        run: npm run build --workspace=apps/api
-
-      - name: Prepare Deployment Artifact
+      - name: Create Build Artifacts
         run: |
-          mkdir -p deploy/apps/api
-          mkdir -p deploy/packages
+          # Use our standard preparation script to build apps/api
+          bash scripts/prepare-ec2.sh
           
-          # Copy Root Configs
-          cp package.json deploy/
-          cp package-lock.json deploy/
+          # Add root ecosystem config to the staging area
           cp ecosystem.config.js deploy/
           
-          # Create .env file from Secret
+          # Create .env file from Secret (to populate ~/tracker/.env on server)
           echo "${{ secrets.ENV_FILE }}" > deploy/.env
-          echo "NODE_ENV=production" >> deploy/.env
           
-          # Copy Shared Packages (needed for workspace install)
-          cp -r packages/types deploy/packages/
-          
-          # Copy API files
-          cp apps/api/package.json deploy/apps/api/
-          # Move dist to root of deploy (as requested)
-          cp -r apps/api/dist deploy/
-          
-          # Compress for transfer
+          # Compress deploy/ folder contents
+          # Result: artifact.tar.gz containing 'tracker-api/' folder, 'ecosystem.config.js', and '.env'
           tar -czf artifact.tar.gz -C deploy .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-artifact
+          path: artifact.tar.gz
+          retention-days: 1
+
+  deploy:
+    name: Deploy to EC2
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-artifact
 
       - name: Copy Files to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -71,24 +75,51 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Create app directory if it doesn't exist
-            mkdir -p /home/${{ secrets.EC2_USER }}/tracker
-            cd /home/${{ secrets.EC2_USER }}/tracker
+            set -e
+            APP_ROOT="/home/${{ secrets.EC2_USER }}/tracker"
+            STANDALONE_DIR="$APP_ROOT/api-standalone"
             
-            # Extract artifact
-            tar -xzf artifact.tar.gz
-            rm artifact.tar.gz
+            echo "📂 Setting up deployment directories..."
+            mkdir -p $APP_ROOT
+            mkdir -p $STANDALONE_DIR
             
-            # Install all dependencies (safer for partial monorepo)
-            npm install --foreground-scripts
+            cd $APP_ROOT
             
-            # Start/Reload App with PM2
-            # Check if PM2 is managing the app, if not start it, else reload
-            if pm2 list | grep -q "tracker-api"; then
-              pm2 reload tracker-api
+            # Extract Artifacts
+            echo "📦 Extracting new version..."
+            if [ -f "artifact.tar.gz" ]; then
+              tar -xzf artifact.tar.gz
+              rm artifact.tar.gz
             else
-              pm2 start ecosystem.config.js
+              echo "❌ Error: artifact.tar.gz not found!"
+              exit 1
             fi
             
-            # Save PM2 list so it restarts on reboot
+            # At this point we have 'tracker-api/' folder, 'ecosystem.config.js', and '.env' in root
+            
+            # Update .env (vital for robust config loading)
+            if [ -f ".env" ]; then
+                echo "🔑 Updating .env..."
+                # No-op if it's already there, but ensures it exists
+            fi
+            
+            # Update Standalone App Directory
+            echo "🚀 Updating application files..."
+            # Remove old version contents but keep directory
+            rm -rf $STANDALONE_DIR/*
+            # Copy new contents
+            cp -r tracker-api/* $STANDALONE_DIR/
+            rm -rf tracker-api
+            
+            # Install Production Dependencies
+            echo "📥 Installing dependencies..."
+            cd $STANDALONE_DIR
+            npm install --production --no-progress --quiet --no-audit
+            
+            # Restart Application
+            echo "🔄 Restarting PM2..."
+            cd $APP_ROOT
+            pm2 startOrRestart ecosystem.config.js
             pm2 save
+            
+            echo "✅ Remote Deployment Complete!"
