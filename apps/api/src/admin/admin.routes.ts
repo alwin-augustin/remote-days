@@ -15,7 +15,7 @@ async function adminRoutes(
   server.post(
     '/admin/users/import',
     {
-      preHandler: [server.authenticate, server.authorize('admin')],
+      preHandler: [server.authenticate, server.authorize('hr')],
     },
     adminController.importUsersHandler as any
   );
