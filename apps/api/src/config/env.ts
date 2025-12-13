@@ -1,6 +1,15 @@
 import * as dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// Load .env from multiple potential locations
+// 1. Current working directory (usually root in dev/prod)
+// 2. Parent of __dirname (for bundled dist/server.js in ~/tracker/dist)
+// 3. Grandparent of __dirname (for local dev in apps/api/src)
+[
+  '.env',
+  path.join(__dirname, '../.env'),
+  path.join(__dirname, '../../.env')
+].forEach(p => dotenv.config({ path: p }));
 
 interface Config {
   PORT: number;
