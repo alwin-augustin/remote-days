@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "tracker-api",
-      script: "./api-standalone/server.js",
+      script: "server.js",
       cwd: "./api-standalone",
       instances: 1, // Or "max" to use all CPUs
       autorestart: true,
