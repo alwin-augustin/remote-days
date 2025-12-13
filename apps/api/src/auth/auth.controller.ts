@@ -20,7 +20,7 @@ export class AuthController {
         path: '/',
         httpOnly: true,
         secure: config.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax', // Must be 'none' for cross-site (Vercel -> EC2)
       })
       .code(200)
       .send({ message: 'Login successful', user });
