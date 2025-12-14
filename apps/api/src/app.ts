@@ -117,7 +117,7 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     // Services
     // Note: EmailService might need deps or just be class. It is simple class in di.ts.
     const emailService = new EmailService();
-    const userService = new UserService(userRepo);
+    const userService = new UserService(userRepo, tokenRepo, emailService);
     const authService = new AuthService(userRepo, tokenRepo, emailService);
 
     // Admin / Country
