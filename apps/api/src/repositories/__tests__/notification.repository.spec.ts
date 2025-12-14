@@ -30,47 +30,48 @@ describe('NotificationRepository Integration', () => {
 
     // Run migrations/init.sql
     client = new Client({ connectionString });
-            await client.connect();
-            
-            const projectRoot = path.resolve(__dirname, '../../../../../'); // Go up to project root
-            const initSqlPath = path.join(projectRoot, 'docker/postgres/init.sql');
-            const initSql = fs.readFileSync(initSqlPath, 'utf-8');        await client.query(initSql);
+    await client.connect();
+
+    const projectRoot = path.resolve(__dirname, '../../../../../'); // Go up to project root
+    const initSqlPath = path.join(projectRoot, 'docker/postgres/init.sql');
+    const initSql = fs.readFileSync(initSqlPath, 'utf-8');
+    await client.query(initSql);
     // Setup dummy users and data for tests
     const today = format(new Date(), 'yyyy-MM-dd');
     const tomorrow = format(new Date(new Date().setDate(new Date().getDate() + 1)), 'yyyy-MM-dd');
 
     // Create users
     const user1Res = await client.query(
-        "INSERT INTO users (email, first_name, last_name, country_of_residence, work_country, password_hash, role) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING user_id;",
-        ['repo1@test.com', 'Repo', 'User1', 'FR', 'FR', 'hashedpass', 'employee']
+      'INSERT INTO users (email, first_name, last_name, country_of_residence, work_country, password_hash, role) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING user_id;',
+      ['repo1@test.com', 'Repo', 'User1', 'FR', 'FR', 'hashedpass', 'employee']
     );
     userId1 = user1Res.rows[0].user_id;
 
     const user2Res = await client.query(
-        "INSERT INTO users (email, first_name, last_name, country_of_residence, work_country, password_hash, role) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING user_id;",
-        ['repo2@test.com', 'Repo', 'User2', 'FR', 'FR', 'hashedpass', 'employee']
+      'INSERT INTO users (email, first_name, last_name, country_of_residence, work_country, password_hash, role) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING user_id;',
+      ['repo2@test.com', 'Repo', 'User2', 'FR', 'FR', 'hashedpass', 'employee']
     );
     userId2 = user2Res.rows[0].user_id;
 
     // Create notifications and CTA tokens
     // User1: Sent prompt, responded
     await client.query(
-        "INSERT INTO notifications (user_id, channel, notification_type, payload, sent_at) VALUES ($1, 'email', 'daily_prompt', '{}', $2::timestamp);",
-        [userId1, new Date()]
+      "INSERT INTO notifications (user_id, channel, notification_type, payload, sent_at) VALUES ($1, 'email', 'daily_prompt', '{}', $2::timestamp);",
+      [userId1, new Date()]
     );
     await client.query(
-        "INSERT INTO email_cta_tokens (user_id, action, target_date, expires_at, used) VALUES ($1, 'home', $2::date, $3::timestamp, TRUE);",
-        [userId1, today, new Date(new Date().setHours(new Date().getHours() + 1))]
+      "INSERT INTO email_cta_tokens (user_id, action, target_date, expires_at, used) VALUES ($1, 'home', $2::date, $3::timestamp, TRUE);",
+      [userId1, today, new Date(new Date().setHours(new Date().getHours() + 1))]
     );
     await client.query(
-        "INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2::date, 'home', 'email_link');",
-        [userId1, today]
+      "INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2::date, 'home', 'email_link');",
+      [userId1, today]
     );
 
     // User2: Sent prompt, NOT responded
     await client.query(
-        "INSERT INTO notifications (user_id, channel, notification_type, payload, sent_at) VALUES ($1, 'email', 'daily_prompt', '{}', $2::timestamp);",
-        [userId2, new Date()]
+      "INSERT INTO notifications (user_id, channel, notification_type, payload, sent_at) VALUES ($1, 'email', 'daily_prompt', '{}', $2::timestamp);",
+      [userId2, new Date()]
     );
     // No CTA token or entry for User2 for today
   });

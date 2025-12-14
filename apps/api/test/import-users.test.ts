@@ -20,7 +20,7 @@ describe('User Import Feature', () => {
         pool = new Pool({ connectionString });
 
         // Init DB
-        const initSql = fs.readFileSync(path.join(__dirname, '../../docker/postgres/init.sql'), 'utf-8');
+        const initSql = fs.readFileSync(path.join(__dirname, '../../../docker/postgres/init.sql'), 'utf-8');
         await pool.query(initSql);
 
         // Create Admin User
@@ -41,7 +41,16 @@ describe('User Import Feature', () => {
             url: '/api/auth/login',
             payload: { email: 'admin@example.com', password: 'password123' },
         });
-        token = loginRes.json().token;
+        // Extract token from Cookie
+        const cookies = loginRes.headers['set-cookie'] as string[] | string;
+        if (Array.isArray(cookies)) {
+            const tokenCookie = cookies.find(c => c.startsWith('token='));
+            if (tokenCookie) {
+                token = tokenCookie.split(';')[0].split('=')[1];
+            }
+        } else if (typeof cookies === 'string' && cookies.startsWith('token=')) {
+            token = cookies.split(';')[0].split('=')[1];
+        }
     }, 60000);
 
     afterAll(async () => {

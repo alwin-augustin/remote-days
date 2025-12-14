@@ -6,10 +6,14 @@ import ctaRoutes from './cta/cta.routes';
 import hrRoutes from './hr/hr.routes';
 import entriesRoutes from './entries/entries.routes';
 import notificationRoutes from './admin/notifications/notification.routes';
+import holidayRoutes from './admin/holidays/holiday.routes';
+import requestRoutes from './requests/request.routes';
 import auditRoutes from './admin/audit.routes';
 import cookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
+import helmet from '@fastify/helmet';
 import authPlugin from './plugins/auth';
 
 import { globalErrorHandler } from './errors/global-error-handler';
@@ -17,32 +21,33 @@ import { globalErrorHandler } from './errors/global-error-handler';
 export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionString?: string } = {}): FastifyInstance {
   const server = fastify(opts);
 
+  server.register(helmet, { global: true }); // Security Headers
+
   server.register(cors, {
     origin: [
       'http://localhost:5173',
       'http://127.0.0.1:5173',
       'https://teletravail-tracker-web.onrender.com',
       'https://teletravail-tracker-web.vercel.app',
-      process.env.APP_URL || ''
+      process.env.APP_URL || '',
     ].filter(Boolean),
     credentials: true,
   });
   server.register(cookie);
-  server.register(require('@fastify/multipart'), {
+  server.register(multipart, {
     addToBody: true, // simplified handling for small files
     limits: {
       fieldNameSize: 100, // Max field name size in bytes
-      fieldSize: 100,     // Max field value size in bytes
-      fields: 10,         // Max number of non-file fields
-      fileSize: 5000000,  // For multipart forms, the max file size in bytes
-      files: 1,           // Max number of file fields
-      headerPairs: 2000   // Max number of header key=>value pairs
-    }
-  });
+      fieldSize: 100, // Max field value size in bytes
+      fields: 10, // Max number of non-file fields
+      fileSize: 5000000, // For multipart forms, the max file size in bytes
+      files: 1, // Max number of file fields
+      headerPairs: 2000, // Max number of header key=>value pairs
+    },
+  } as any);
 
   // Register DB with potential override
   server.register(db, dbOptions);
-
 
   server.register(authPlugin);
 
@@ -50,14 +55,12 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
   server.setErrorHandler(globalErrorHandler);
 
   server.register(rateLimit, {
-    max: 100,
+    max: process.env.NODE_ENV === 'test' ? 1000 : 100,
     timeWindow: '1 minute',
   });
 
   // Routes
   // Routes
-
-
 
   // Wiring Entries Module
   server.register(async (instance) => {
@@ -67,18 +70,16 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     // The "diPlugin" already creates instances. We can either reuse them or create new ones.
     // To respect the "Pilot" mode and not duplicate logic excessively, let's instantiate them here
     // or better, inside the register block to ensure `instance.pg` is available.
-
     // BUT, server.pg might not be available at the top level definition time of `build`.
     // We should do this inside the register callback or a separate plugin.
     // Since we are inside `build`, `server.register` is correct.
-
     // Let's create a small inline plugin or just register it.
     // Note: fastify-postgres attaches `pg` to the instance.
     // We need to ensure `diPlugin` or connection is ready.
   });
 
   // Re-approach: We need the pool. `server.pg` is available after `server.register(db)`?
-  // No, `server.pg` is available inside plugins. 
+  // No, `server.pg` is available inside plugins.
 
   // Let's wrap the wiring in a plugin function to be safe.
   server.register(async (apiScope) => {
@@ -117,7 +118,8 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     // Services
     // Note: EmailService might need deps or just be class. It is simple class in di.ts.
     const emailService = new EmailService();
-    const userService = new UserService(userRepo, tokenRepo, emailService);
+    // Inject EntryRepo into UserService for GDPR export
+    const userService = new UserService(userRepo, tokenRepo, emailService, entryRepo);
     const authService = new AuthService(userRepo, tokenRepo, emailService);
 
     // Admin / Country
@@ -164,8 +166,25 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     const { NotificationController } = await import('./admin/notifications/notification.controller');
 
     const notificationRepo = new NotificationRepository(pool);
-    const notificationService = new NotificationService(notificationRepo, emailService);
+    // Holiday Module (needed for NotificationService)
+    const { HolidayRepository } = await import('./repositories/holiday.repository');
+    const { HolidayService } = await import('./services/holiday.service');
+    const { HolidayController } = await import('./admin/holidays/holiday.controller');
+
+    const holidayRepo = new HolidayRepository(pool);
+    const holidayService = new HolidayService(holidayRepo);
+    const holidayController = new HolidayController(holidayService);
+
+    const notificationService = new NotificationService(notificationRepo, emailService, holidayService);
     const notificationController = new NotificationController(notificationService);
+
+    // Request Module
+    const { RequestRepository } = await import('./repositories/request.repository');
+    const { RequestService } = await import('./services/request.service');
+    const { RequestController } = await import('./requests/request.controller');
+    const requestRepo = new RequestRepository(pool);
+    const requestService = new RequestService(requestRepo, entryService, auditRepo, userRepo, emailService);
+    const requestController = new RequestController(requestService);
 
     // Audit Module
     const { AuditService } = await import('./services/audit.service');
@@ -176,23 +195,23 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     const auditController = new AuditController(auditService);
 
     // Controllers
-    const authController = new AuthController(authService);
+    // Inject UserService into AuthController for GDPR handlers
+    const authController = new AuthController(authService, userService);
 
     apiScope.register(authRoutes, { prefix: '/api', controller: authController });
     apiScope.register(adminRoutes, {
       prefix: '/api',
       adminController,
-      countryController
+      countryController,
     });
     apiScope.register(hrRoutes, { prefix: '/api', hrController });
     apiScope.register(ctaRoutes, { prefix: '/api', ctaController });
 
     apiScope.register(notificationRoutes, { prefix: '/api', notificationController });
+    apiScope.register(holidayRoutes, { prefix: '/api', controller: holidayController });
+    apiScope.register(requestRoutes, { prefix: '/api', controller: requestController });
     apiScope.register(auditRoutes, { prefix: '/api', auditController });
-
-
   });
-
 
   server.get('/', async () => {
     return { hello: 'world' };

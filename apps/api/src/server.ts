@@ -5,9 +5,12 @@ import { startWorker } from './worker/worker';
 const server = build({
   logger: {
     level: 'info',
-    transport: config.NODE_ENV === 'development' ? {
-      target: 'pino-pretty',
-    } : undefined,
+    transport:
+      config.NODE_ENV === 'development'
+        ? {
+            target: 'pino-pretty',
+          }
+        : undefined,
   },
 });
 

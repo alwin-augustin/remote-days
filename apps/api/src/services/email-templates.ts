@@ -1,4 +1,3 @@
-
 interface EmailAction {
   label: string;
   url: string;
@@ -14,11 +13,15 @@ export const generateEmailHtml = (title: string, userName: string, content: stri
     danger: '#EF4444', // Red 500
   };
 
-  const actionButtons = actions.map(action => `
+  const actionButtons = actions
+    .map(
+      (action) => `
     <a href="${action.url}" style="display: inline-block; padding: 14px 32px; margin: 0 10px 10px 0; background-color: ${colorMap[action.color || 'primary']}; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); transition: background-color 0.2s;">
       ${action.label}
     </a>
-  `).join('');
+  `
+    )
+    .join('');
 
   return `
 <!DOCTYPE html>
@@ -69,11 +72,15 @@ export const generateEmailHtml = (title: string, userName: string, content: stri
         ${content}
       </div>
       
-      ${actions.length > 0 ? `
+      ${
+        actions.length > 0
+          ? `
       <div style="margin-top: 32px; margin-bottom: 32px; text-align: left;">
         ${actionButtons}
       </div>
-      ` : ''}
+      `
+          : ''
+      }
 
        <p style="color: #64748B; font-size: 14px; line-height: 1.5; margin-top: 32px; border-top: 1px solid #F1F5F9; padding-top: 24px;">
         If you have any questions, feel free to contact our support team.

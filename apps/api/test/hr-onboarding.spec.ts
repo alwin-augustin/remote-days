@@ -124,7 +124,7 @@ describe('HR Onboarding & User Import Integration', () => {
         expect(parseInt(countRes.rows[0].count)).toBe(50);
     }, 60000); // Increased timeout just in case
 
-    it('Step 4: Verify Default Password Behavior (Risk Check)', async () => {
+    it('Step 4: Verify Default Password is NOT Usable (Risk Mitigated)', async () => {
         // Try logging in as one of the imported users with default password
         const res = await app.inject({
             method: 'POST',
@@ -132,8 +132,9 @@ describe('HR Onboarding & User Import Integration', () => {
             payload: { email: 'employee1@test.com', password: 'changeMe123!' }
         });
 
-        // This SHOULD pass currently (proving the risk identified in plan)
-        expect(res.statusCode).toBe(200);
-        // Token is in cookie, so checking 200 is sufficient to prove login success
+        // Since we implemented secure onboarding (random passwords + activation email),
+        // logging in with a default "changeMe123!" password should FAIL.
+        // This confirms the security fix is working.
+        expect(res.statusCode).toBe(401);
     });
 });

@@ -7,69 +7,44 @@ export interface IUserRepository {
   create(user: Partial<User> & { password_hash: string }): Promise<User>;
   createOrSkip(user: Partial<User> & { password_hash: string }): Promise<string | null>;
   updatePassword(userId: string, newHash: string): Promise<void>;
-  findAll(limit: number, offset: number, search?: string, filters?: { role?: string; country?: string }): Promise<{ users: User[]; total: number }>;
+  findAll(
+    limit: number,
+    offset: number,
+    search?: string,
+    filters?: { role?: string; country?: string }
+  ): Promise<{ users: User[]; total: number }>;
   update(id: string, updates: Partial<User>): Promise<User | null>;
   softDelete(id: string): Promise<void>;
 }
 
 export class UserRepository implements IUserRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
   async findByEmail(email: string): Promise<User | null> {
-    const { rows } = await this.pool.query<User>(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
-    );
+    const { rows } = await this.pool.query<User>('SELECT * FROM users WHERE email = $1 AND is_active = true', [email]);
     return rows[0] || null;
   }
 
   async findById(id: string): Promise<User | null> {
-    const { rows } = await this.pool.query<User>(
-      'SELECT * FROM users WHERE user_id = $1',
-      [id]
-    );
+    const { rows } = await this.pool.query<User>('SELECT * FROM users WHERE user_id = $1 AND is_active = true', [id]);
     return rows[0] || null;
   }
 
   async create(user: Partial<User> & { password_hash: string }): Promise<User> {
-    const {
-      email,
-      first_name,
-      last_name,
-      country_of_residence,
-      work_country,
-      password_hash,
-      role,
-    } = user;
+    const { email, first_name, last_name, country_of_residence, work_country, password_hash, role } = user;
 
     const { rows } = await this.pool.query<User>(
       `INSERT INTO users (
         email, first_name, last_name, country_of_residence, work_country, password_hash, role
       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *`,
-      [
-        email,
-        first_name,
-        last_name,
-        country_of_residence,
-        work_country,
-        password_hash,
-        role || 'employee',
-      ]
+      [email, first_name, last_name, country_of_residence, work_country, password_hash, role || 'employee']
     );
     return rows[0];
   }
 
   async createOrSkip(user: Partial<User> & { password_hash: string }): Promise<string | null> {
-    const {
-      email,
-      first_name,
-      last_name,
-      country_of_residence,
-      work_country,
-      password_hash,
-      role,
-    } = user;
+    const { email, first_name, last_name, country_of_residence, work_country, password_hash, role } = user;
 
     const { rows } = await this.pool.query(
       `INSERT INTO users (
@@ -77,28 +52,22 @@ export class UserRepository implements IUserRepository {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)
       ON CONFLICT (email) DO NOTHING
       RETURNING user_id`,
-      [
-        email,
-        first_name,
-        last_name,
-        country_of_residence,
-        work_country,
-        password_hash,
-        role || 'employee',
-      ]
+      [email, first_name, last_name, country_of_residence, work_country, password_hash, role || 'employee']
     );
 
     return rows.length > 0 ? rows[0].user_id : null;
   }
 
   async updatePassword(userId: string, newHash: string): Promise<void> {
-    await this.pool.query(
-      'UPDATE users SET password_hash = $1 WHERE user_id = $2',
-      [newHash, userId]
-    );
+    await this.pool.query('UPDATE users SET password_hash = $1 WHERE user_id = $2', [newHash, userId]);
   }
 
-  async findAll(limit: number, offset: number, search?: string, filters?: { role?: string; country?: string }): Promise<{ users: User[]; total: number }> {
+  async findAll(
+    limit: number,
+    offset: number,
+    search?: string,
+    filters?: { role?: string; country?: string }
+  ): Promise<{ users: User[]; total: number }> {
     let query = 'SELECT * FROM users WHERE is_active = true';
     const params: any[] = [];
 
@@ -130,18 +99,28 @@ export class UserRepository implements IUserRepository {
   }
 
   async update(id: string, updates: Partial<User>): Promise<User | null> {
-    const allowedFields = ['email', 'first_name', 'last_name', 'country_of_residence', 'work_country', 'role', 'is_active', 'slack_user_id', 'notification_method'];
-    const fields = Object.keys(updates).filter(key => allowedFields.includes(key));
+    const allowedFields = [
+      'email',
+      'first_name',
+      'last_name',
+      'country_of_residence',
+      'work_country',
+      'role',
+      'is_active',
+      'slack_user_id',
+      'notification_method',
+    ];
+    const fields = Object.keys(updates).filter((key) => allowedFields.includes(key));
 
     if (fields.length === 0) return null;
 
     const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ');
-    const values = fields.map(field => (updates as any)[field]);
+    const values = fields.map((field) => (updates as any)[field]);
 
-    const { rows } = await this.pool.query<User>(
-      `UPDATE users SET ${setClause} WHERE user_id = $1 RETURNING *`,
-      [id, ...values]
-    );
+    const { rows } = await this.pool.query<User>(`UPDATE users SET ${setClause} WHERE user_id = $1 RETURNING *`, [
+      id,
+      ...values,
+    ]);
     return rows[0] || null;
   }
 

@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { api } from '@/lib/api';
 import StatusCard from '@/components/StatusCard';
+import { RequestChangeDialog } from "@/components/RequestChangeDialog";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
@@ -13,11 +14,13 @@ export default function Dashboard() {
     const currentYear = format(today, 'yyyy');
     const todayStr = format(today, 'yyyy-MM-dd');
 
+    const queryClient = useQueryClient();
+
     // Fetch entries for the current month to find today's status
     const { data: entries, isLoading: isLoadingEntries } = useQuery({
         queryKey: ['entries', currentYear, currentMonth],
         queryFn: async () => {
-            const res = await api.get<{ date: string; status: work_status }[]>(`/entries?year=${currentYear}&month=${currentMonth}`);
+            const res = await api.get<{ date: string; status: work_status }[]>(`/ entries ? year = ${currentYear}& month=${currentMonth} `);
             return res.data;
         },
     });
@@ -44,7 +47,13 @@ export default function Dashboard() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+                    <p className="text-muted-foreground">Manage your work location.</p>
+                </div>
+                <RequestChangeDialog onSuccess={() => queryClient.invalidateQueries({ queryKey: ['entries', currentYear, currentMonth] })} />
+            </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {/* Status Card - Needs to handle loading internally or we wrap it */}

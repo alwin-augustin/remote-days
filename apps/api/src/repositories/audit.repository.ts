@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { AuditDetails } from '@tracker/types';
 
 export interface AuditLog {
   id: string;
@@ -6,7 +7,7 @@ export interface AuditLog {
   action: string;
   entity_id: string;
   entity_type: string;
-  details: any;
+  details: AuditDetails;
   created_at: Date;
   actor_email: string;
   actor_first_name: string;
@@ -22,13 +23,41 @@ export interface AuditLog {
 
 export interface IAuditRepository {
   getAuditLogs(startDate?: string, endDate?: string, action?: string): Promise<AuditLog[]>;
-  log(action: string, actorId: string, targetId: string, reason: string, entityType: string, entityId: string, actorEmail?: string, actorFirstName?: string, actorLastName?: string, targetEmail?: string, targetFirstName?: string, targetLastName?: string, details?: any): Promise<void>;
+  log(
+    action: string,
+    actorId: string,
+    targetId: string,
+    reason: string,
+    entityType: string,
+    entityId: string,
+    actorEmail?: string,
+    actorFirstName?: string,
+    actorLastName?: string,
+    targetEmail?: string,
+    targetFirstName?: string,
+    targetLastName?: string,
+    details?: AuditDetails
+  ): Promise<void>;
 }
 
 export class AuditRepository implements IAuditRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
-  async log(action: string, actorId: string, targetId: string, reason: string, entityType: string, entityId: string, actorEmail?: string, actorFirstName?: string, actorLastName?: string, targetEmail?: string, targetFirstName?: string, targetLastName?: string, details?: any): Promise<void> {
+  async log(
+    action: string,
+    actorId: string,
+    targetId: string,
+    reason: string,
+    entityType: string,
+    entityId: string,
+    actorEmail?: string,
+    actorFirstName?: string,
+    actorLastName?: string,
+    targetEmail?: string,
+    targetFirstName?: string,
+    targetLastName?: string,
+    details?: AuditDetails
+  ): Promise<void> {
     const query = `
       INSERT INTO audit_logs (
         actor_user_id, action, entry_id, details, reason
@@ -48,9 +77,7 @@ export class AuditRepository implements IAuditRepository {
       entryIdVal = entityId;
     }
 
-    await this.pool.query(query, [
-      actorId, action, entryIdVal, safeDetails, reason
-    ]);
+    await this.pool.query(query, [actorId, action, entryIdVal, safeDetails, reason]);
   }
 
   async getAuditLogs(startDate?: string, endDate?: string, action?: string): Promise<AuditLog[]> {
@@ -75,7 +102,7 @@ export class AuditRepository implements IAuditRepository {
       LEFT JOIN users target ON (al.details->>'user_id')::uuid = target.user_id
       WHERE 1=1
     `;
-    const params: any[] = [];
+    const params: (string | Date)[] = [];
     let paramIndex = 1;
 
     if (startDate) {

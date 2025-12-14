@@ -12,6 +12,7 @@ import {
     ChevronRight,
     Menu,
     FileText,
+    Calendar,
     type LucideIcon,
     Bell
 } from 'lucide-react';
@@ -79,18 +80,26 @@ export default function DashboardLayout() {
                             <SidebarLink to="/" icon={LayoutDashboard} label="Dashboard" collapsed={collapsed} />
 
                             {!isAdmin && !isHR && (
-                                <SidebarLink to="/calendar" icon={CalendarDays} label="Calendar" collapsed={collapsed} />
+                                <>
+                                    <SidebarLink to="/requests" icon={FileText} label="My Requests" collapsed={collapsed} />
+                                    <SidebarLink to="/calendar" icon={CalendarDays} label="Calendar" collapsed={collapsed} />
+                                </>
                             )}
 
-                            {isAdmin && (
+                            {(isAdmin || isHR) && (
                                 <>
                                     <div className={cn("my-2 h-[1px] bg-border/50", collapsed ? "mx-2" : "mx-4")} />
                                     <div className={cn("mb-2 px-2 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider", collapsed && "hidden")}>
                                         Admin
                                     </div>
+
                                     <SidebarLink to="/admin/users" icon={Settings} label="User Management" collapsed={collapsed} />
                                     <SidebarLink to="/admin/countries" icon={Building} label="Countries" collapsed={collapsed} />
                                     <SidebarLink to="/admin/notifications/stats" icon={Bell} label="Notifications" collapsed={collapsed} />
+
+                                    <SidebarLink to="/admin/holidays" icon={Calendar} label="Holidays" collapsed={collapsed} />
+                                    <SidebarLink to="/admin/requests" icon={FileText} label="Requests" collapsed={collapsed} />
+
                                     <SidebarLink to="/admin/audit" icon={FileText} label="Audit Logs" collapsed={collapsed} />
                                 </>
                             )}

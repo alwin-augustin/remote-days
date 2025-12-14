@@ -19,15 +19,9 @@ export interface IEntryRepository {
 }
 
 export class EntryRepository implements IEntryRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
-  async upsert(
-    userId: string,
-    date: string,
-    status: work_status,
-    source: string,
-    actorId?: string
-  ): Promise<Entry> {
+  async upsert(userId: string, date: string, status: work_status, source: string, actorId?: string): Promise<Entry> {
     const client = await this.pool.connect();
     try {
       if (actorId) {
@@ -58,18 +52,14 @@ export class EntryRepository implements IEntryRepository {
   }
 
   async findByUserAndDate(userId: string, date: string): Promise<Entry | undefined> {
-    const { rows } = await this.pool.query<Entry>(
-      'SELECT * FROM entries WHERE user_id = $1 AND date = $2',
-      [userId, date]
-    );
+    const { rows } = await this.pool.query<Entry>('SELECT * FROM entries WHERE user_id = $1 AND date = $2', [
+      userId,
+      date,
+    ]);
     return rows[0];
   }
 
-  async findByUserAndMonth(
-    userId: string,
-    year: number | string,
-    month: number | string
-  ): Promise<Entry[]> {
+  async findByUserAndMonth(userId: string, year: number | string, month: number | string): Promise<Entry[]> {
     const { rows } = await this.pool.query<Entry>(
       `SELECT * FROM entries
        WHERE user_id = $1

@@ -56,7 +56,7 @@ export interface IHRRepository {
 }
 
 export class HRRepository implements IHRRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
   async getEmployeeSummaries(): Promise<EmployeeSummary[]> {
     const { rows } = await this.pool.query<EmployeeSummary>(
@@ -149,7 +149,7 @@ export class HRRepository implements IHRRepository {
 
     return {
       ...stats,
-      unknown: unknown < 0 ? 0 : unknown // Safety net
+      unknown: unknown < 0 ? 0 : unknown, // Safety net
     };
   }
 
@@ -213,13 +213,13 @@ export class HRRepository implements IHRRepository {
 
     const [riskRes, missingRes] = await Promise.all([
       this.pool.query(riskQuery),
-      this.pool.query(missingQuery, [date])
+      this.pool.query(missingQuery, [date]),
     ]);
 
     return {
       danger_count: parseInt(riskRes.rows[0]?.danger_count || '0'),
       warning_count: parseInt(riskRes.rows[0]?.warning_count || '0'),
-      missing_count: parseInt(missingRes.rows[0]?.missing_count || '0')
+      missing_count: parseInt(missingRes.rows[0]?.missing_count || '0'),
     };
   }
 }

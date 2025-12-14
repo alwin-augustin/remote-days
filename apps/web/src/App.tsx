@@ -10,6 +10,9 @@ import CountryThresholds from '@/pages/admin/CountryThresholds';
 import NotificationHistory from '@/pages/admin/NotificationHistory';
 import AuditLogs from '@/pages/admin/AuditLogs';
 import UserImport from '@/pages/admin/UserImport';
+import Holidays from '@/pages/admin/Holidays';
+import Requests from '@/pages/admin/Requests';
+import MyRequests from '@/pages/MyRequests';
 
 // Placeholder pages
 import Home from '@/pages/Home';
@@ -34,6 +37,7 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/requests" element={<MyRequests />} />
           </Route>
         </Route>
 
@@ -41,11 +45,13 @@ function App() {
         <Route element={<ProtectedRoute roles={['hr', 'admin']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/hr" element={<EmployeeSummary />} />
+            <Route path="/admin/requests" element={<Requests />} />
+            <Route path="/admin/holidays" element={<Holidays />} />
           </Route>
         </Route>
 
         {/* Admin Routes */}
-        <Route element={<ProtectedRoute roles={['admin']} />}>
+        <Route element={<ProtectedRoute roles={['admin', 'hr']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/users/import" element={<UserImport />} />

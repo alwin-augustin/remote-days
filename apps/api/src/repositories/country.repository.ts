@@ -13,7 +13,7 @@ export interface ICountryRepository {
 }
 
 export class CountryRepository implements ICountryRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
   async findAll(): Promise<CountryThreshold[]> {
     const { rows } = await this.pool.query<CountryThreshold>(

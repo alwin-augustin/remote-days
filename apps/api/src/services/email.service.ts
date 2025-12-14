@@ -21,7 +21,7 @@ export class EmailService {
 
   async sendEmail(to: string, subject: string, text: string, html?: string) {
     try {
-      const info = await this.transporter.sendMail({
+      await this.transporter.sendMail({
         from: config.SMTP_FROM || '"Teletravail Tracker" <no-reply@example.com>',
         to,
         subject,

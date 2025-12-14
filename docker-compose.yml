@@ -78,7 +78,7 @@ services:
       dockerfile: apps/api/Dockerfile.dev
     container_name: tracker-seed
     # Override the default command to run the seed script
-    command: [ "npm", "run", "db:seed:fake", "--workspace=apps/api" ]
+    command: [ "npm", "run", "db:seed", "--workspace=apps/api" ]
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages

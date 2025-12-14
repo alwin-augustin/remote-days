@@ -28,10 +28,12 @@ describe('UserService', () => {
     const result = await userService.createUser({ email: 'test@test.com', temp_password: 'pass' });
 
     expect(bcrypt.hash).toHaveBeenCalledWith('pass', 12);
-    expect(mockUserRepo.create).toHaveBeenCalledWith(expect.objectContaining({
-      email: 'test@test.com',
-      password_hash: 'hashed_password'
-    }));
+    expect(mockUserRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'test@test.com',
+        password_hash: 'hashed_password',
+      })
+    );
     expect(result).toEqual({ id: '1', email: 'test@test.com' });
   });
 

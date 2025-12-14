@@ -35,11 +35,10 @@ function getTodayDateInfo(): DateInfo {
  * Fetches holidays for the current date from the database.
  */
 async function getHolidayData(fastify: FastifyInstance, dateString: string): Promise<HolidayData> {
-  const { rows: holidaysToday } = await fastify.pg.query(
-    'SELECT country_code FROM holidays WHERE date = $1',
-    [dateString]
-  );
-  const holidayCountries = new Set(holidaysToday.map(h => h.country_code));
+  const { rows: holidaysToday } = await fastify.pg.query('SELECT country_code FROM holidays WHERE date = $1', [
+    dateString,
+  ]);
+  const holidayCountries = new Set(holidaysToday.map((h) => h.country_code));
   const isGlobalHoliday = holidayCountries.has(null);
   return { isGlobalHoliday, holidayCountries };
 }
@@ -97,7 +96,7 @@ async function generateAuthTokens(
     expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiration
 
     await fastify.pg.query(
-      "INSERT INTO email_cta_tokens (token, user_id, action, target_date, expires_at) VALUES ($1, $2, $3, $4, $5)",
+      'INSERT INTO email_cta_tokens (token, user_id, action, target_date, expires_at) VALUES ($1, $2, $3, $4, $5)',
       [token, user.user_id, action, todayDateString, expiresAt]
     );
     links[action] = `${appUrl}/cta?token=${token}`;
@@ -129,7 +128,7 @@ async function sendDailyPromptEmail(
     `Please let us know your work location for today (${todayDateString}).`,
     [
       { label: 'Working from Home', url: links['home'], color: 'success' },
-      { label: 'Working from Office', url: links['office'], color: 'info' }
+      { label: 'Working from Office', url: links['office'], color: 'info' },
     ]
   );
 

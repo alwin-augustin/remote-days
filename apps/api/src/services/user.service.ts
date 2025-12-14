@@ -3,17 +3,25 @@ import { parse } from 'csv-parse/sync';
 import { IUserRepository } from '../repositories/user.repository';
 import { ITokenRepository } from '../repositories/token.repository';
 import { EmailService } from './email.service';
-import { User } from '@tracker/types'; // Added back
+import { User, UserInfo } from '@tracker/types';
 import { AppError } from '../errors/app-error';
 import { randomUUID } from 'crypto';
 import { config } from '../config/env';
 import { generateEmailHtml } from './email-templates';
+import { IEntryRepository } from '../repositories/entry.repository';
+
+interface ImportError {
+  row: number;
+  email?: string;
+  error: string;
+}
 
 export class UserService {
   constructor(
     private readonly userRepo: IUserRepository,
     private readonly tokenRepo: ITokenRepository,
-    private readonly emailService: EmailService
+    private readonly emailService: EmailService,
+    private readonly entryRepo: IEntryRepository
   ) { }
 
   async createUser(data: Partial<User> & { temp_password?: string }): Promise<User> {
@@ -24,11 +32,15 @@ export class UserService {
     const saltRounds = 12;
     const password_hash = await bcrypt.hash(data.temp_password, saltRounds);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { temp_password, ...userData } = data;
+
     return this.userRepo.create({
-      ...data,
+      ...userData,
       password_hash,
-      role: data.role || 'employee'
-    } as any); // Cast to any if needed to match CreateUserDTO vs User entity
+      role: data.role || 'employee',
+      // Ensure mandatory fields are present or let repo validation handle it
+    } as unknown as Omit<User, 'user_id' | 'created_at' | 'is_active'>);
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -47,16 +59,16 @@ export class UserService {
     return this.userRepo.softDelete(id);
   }
 
-  async importUsers(buffer: Buffer): Promise<{ inserted: number; errors: any[] }> { // Changed parameter name and return type
+  async importUsers(buffer: Buffer): Promise<{ total: number; inserted: number; errors: ImportError[] }> {
+    // Changed parameter name and return type
     const records = parse(buffer, {
       columns: true,
       skip_empty_lines: true,
-      trim: true
-    }) as any[]; // Cast to any[]
-
+      trim: true,
+    }) as Record<string, string>[]; // Cast to strict record array
 
     let insertedCount = 0;
-    const errors: any[] = [];
+    const errors: ImportError[] = [];
 
     // Process sequentially to handle errors per row
     for (let i = 0; i < records.length; i++) {
@@ -65,6 +77,12 @@ export class UserService {
 
       if (!row.email || !row.first_name || !row.last_name || !row.country_of_residence || !row.work_country) {
         errors.push({ row: rowNum, error: 'Missing mandatory fields' });
+        continue;
+      }
+
+      // Basic email validation
+      if (!/^\S+@\S+\.\S+$/.test(row.email)) {
+        errors.push({ row: rowNum, email: row.email, error: 'Invalid email format' });
         continue;
       }
 
@@ -80,7 +98,7 @@ export class UserService {
           country_of_residence: row.country_of_residence.toUpperCase(),
           work_country: row.work_country.toUpperCase(),
           password_hash: hash,
-          role: 'employee'
+          role: 'employee',
         });
 
         if (userId) {
@@ -91,12 +109,14 @@ export class UserService {
         } else {
           errors.push({ row: rowNum, email: row.email, error: 'User already exists (skipped)' });
         }
-      } catch (err: any) {
-        errors.push({ row: rowNum, email: row.email, error: err.message });
+      } catch (err: unknown) {
+        // Safe error handling
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        errors.push({ row: rowNum, email: row.email, error: errorMessage });
       }
     }
 
-    return { inserted: insertedCount, errors };
+    return { total: records.length, inserted: insertedCount, errors };
   }
 
   private async sendActivationEmail(userId: string, email: string, firstName: string) {
@@ -112,13 +132,24 @@ export class UserService {
       'Welcome to Teletravail Tracker',
       firstName,
       '<p>Your account has been created. To get started, please click the link below to verify your account and set your password.</p>',
-      [
-        { label: 'Activate Account', url: activationLink, color: 'primary' }
-      ]
+      [{ label: 'Activate Account', url: activationLink, color: 'primary' }]
     );
 
     const emailText = `Hello ${firstName},\n\nWelcome to Teletravail Tracker! Please click the link below to activate your account and set your password:\n${activationLink}`;
 
     await this.emailService.sendEmail(email, 'Activate Your Account', emailText, emailHtml);
+  }
+
+  async exportUserData(userId: string): Promise<{ profile: UserInfo; exported_at: string }> {
+    const user = await this.userRepo.findById(userId);
+    if (!user) throw new AppError('User not found', 404);
+
+    // we currently only export profile, but planning to add entries later
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password_hash: _, ...safeUser } = user;
+    return {
+      profile: safeUser,
+      exported_at: new Date().toISOString(),
+    };
   }
 }

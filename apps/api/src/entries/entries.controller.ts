@@ -4,7 +4,7 @@ import { EntryService } from '../services/entry.service';
 import { AppError } from '../errors/app-error';
 
 export class EntriesController {
-  constructor(private readonly entryService: EntryService) { }
+  constructor(private readonly entryService: EntryService) {}
 
   createEntryHandler = async (
     request: FastifyRequest<{ Body: { status: work_status; date: string } }>,
@@ -17,15 +17,9 @@ export class EntriesController {
       throw new AppError('Status and date are required', 400);
     }
 
-    const entry = await this.entryService.createOrUpdateEntry(
-      user.user_id,
-      date,
-      status,
-      user.role,
-      user.user_id
-    );
+    const entry = await this.entryService.createOrUpdateEntry(user.user_id, date, status, user.role, user.user_id);
     reply.code(201).send(entry);
-  }
+  };
 
   overrideEntryHandler = async (
     request: FastifyRequest<{ Body: { targetUserId: string; date: string; status: work_status; reason: string } }>,
@@ -38,16 +32,9 @@ export class EntriesController {
       throw new AppError('Target user, date, status, and reason are required', 400);
     }
 
-    const entry = await this.entryService.overrideEntry(
-      targetUserId,
-      date,
-      status,
-      reason,
-      user.user_id,
-      user.role
-    );
+    const entry = await this.entryService.overrideEntry(targetUserId, date, status, reason, user.user_id, user.role);
     reply.code(200).send(entry);
-  }
+  };
 
   getEntriesHandler = async (
     request: FastifyRequest<{ Querystring: { year: string; month: string } }>,
@@ -62,14 +49,11 @@ export class EntriesController {
 
     const entries = await this.entryService.getEntriesForMonth(user.user_id, year, month);
     reply.code(200).send(entries);
-  }
+  };
 
-  getStatsHandler = async (
-    request: FastifyRequest,
-    reply: FastifyReply
-  ) => {
+  getStatsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user;
     const stats = await this.entryService.getUserStats(user.user_id);
     reply.code(200).send(stats);
-  }
+  };
 }
