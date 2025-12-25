@@ -9,6 +9,9 @@ vi.mock('bcrypt');
 describe('UserService', () => {
   let userService: UserService;
   let mockUserRepo: IUserRepository;
+  let mockTokenRepo: any;
+  let mockEmailService: any;
+  let mockEntryRepo: any;
 
   beforeEach(() => {
     mockUserRepo = {
@@ -18,7 +21,11 @@ describe('UserService', () => {
       update: vi.fn(),
       softDelete: vi.fn(),
     } as any;
-    userService = new UserService(mockUserRepo);
+    mockTokenRepo = { createResetToken: vi.fn() };
+    mockEmailService = { sendEmail: vi.fn() };
+    mockEntryRepo = { deleteForUser: vi.fn() };
+
+    userService = new UserService(mockUserRepo, mockTokenRepo, mockEmailService, mockEntryRepo);
   });
 
   it('should create user with hashed password', async () => {

@@ -129,13 +129,13 @@ export class UserService {
     const activationLink = `${config.APP_URL}/reset-password?token=${token}`;
 
     const emailHtml = generateEmailHtml(
-      'Welcome to Teletravail Tracker',
+      'Welcome to Remote Days',
       firstName,
       '<p>Your account has been created. To get started, please click the link below to verify your account and set your password.</p>',
       [{ label: 'Activate Account', url: activationLink, color: 'primary' }]
     );
 
-    const emailText = `Hello ${firstName},\n\nWelcome to Teletravail Tracker! Please click the link below to activate your account and set your password:\n${activationLink}`;
+    const emailText = `Hello ${firstName},\n\nWelcome to Remote Days! Please click the link below to activate your account and set your password:\n${activationLink}`;
 
     await this.emailService.sendEmail(email, 'Activate Your Account', emailText, emailHtml);
   }

@@ -12,17 +12,21 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "db:seed": "ts-node -r dotenv/config src/scripts/seed.ts dotenv_config_path=../../.env"
+    "db:seed": "ts-node -r dotenv/config src/scripts/seed.ts dotenv_config_path=../../.env",
+    "db:seed:zones": "ts-node -r dotenv/config src/scripts/seed-compliance-zones.ts dotenv_config_path=../../.env"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
     "@fastify/busboy": "^3.2.0",
     "@fastify/cookie": "^8.3.0",
     "@fastify/cors": "^8.3.0",
+    "@fastify/csrf-protection": "^7.1.0",
     "@fastify/helmet": "11.1.1",
     "@fastify/multipart": "^8.3.0",
     "@fastify/postgres": "^5.2.0",
     "@fastify/rate-limit": "9.1.0",
+    "@fastify/swagger": "^8.15.0",
+    "@fastify/swagger-ui": "^2.1.0",
     "@types/csv-parse": "^1.1.12",
     "bcrypt": "^5.1.0",
     "csv-parse": "^6.1.0",

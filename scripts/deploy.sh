@@ -6,7 +6,7 @@ EC2_HOST="56.228.9.58"
 EC2_USER="ec2-user"
 REMOTE_ROOT="/home/ec2-user/tracker"
 REMOTE_APP_DIR="$REMOTE_ROOT/api-standalone"
-LOCAL_DEPLOY_DIR="deploy/tracker-api"
+LOCAL_DEPLOY_DIR="deploy/remotedays-api"
 
 echo "🚀 Starting Deployment to $EC2_HOST..."
 

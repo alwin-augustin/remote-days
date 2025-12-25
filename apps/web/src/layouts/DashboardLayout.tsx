@@ -69,8 +69,13 @@ export default function DashboardLayout() {
             <div className="hidden border-r bg-card/50 md:block sticky top-0 h-screen overflow-hidden">
                 <div className="flex h-full flex-col gap-2">
                     <div className={cn("flex h-16 items-center border-b px-4 lg:h-[64px]", collapsed ? "justify-center px-2" : "justify-between")}>
-                        {!collapsed && <span className="flex items-center gap-2 font-bold text-lg tracking-tight text-primary">Teletravail Tracker</span>}
-                        {collapsed && <span className="font-bold text-xl text-primary">TT</span>}
+                        {!collapsed && (
+                            <div className="flex items-center gap-2">
+                                <img src="/logo.png" alt="Logo" className="h-8 w-8" />
+                                <span className="font-bold text-lg tracking-tight text-primary">Remote Days</span>
+                            </div>
+                        )}
+                        {collapsed && <img src="/logo.png" alt="Logo" className="h-8 w-8" />}
                         <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto text-muted-foreground hover:text-foreground" onClick={() => setCollapsed(!collapsed)}>
                             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                         </Button>

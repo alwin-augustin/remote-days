@@ -1,5 +1,5 @@
 {
-  "name": "teletravail-tracker-root",
+  "name": "remote-days-root",
   "version": "1.0.0",
   "private": true,
   "workspaces": [

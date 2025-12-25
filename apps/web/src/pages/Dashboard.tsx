@@ -20,7 +20,7 @@ export default function Dashboard() {
     const { data: entries, isLoading: isLoadingEntries } = useQuery({
         queryKey: ['entries', currentYear, currentMonth],
         queryFn: async () => {
-            const res = await api.get<{ date: string; status: work_status }[]>(`/ entries ? year = ${currentYear}& month=${currentMonth} `);
+            const res = await api.get<{ date: string; status: work_status }[]>(`/entries?year=${currentYear}&month=${currentMonth}`);
             return res.data;
         },
     });

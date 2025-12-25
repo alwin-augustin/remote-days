@@ -30,7 +30,6 @@ signals.forEach((signal) => {
   process.on(signal, async () => {
     server.log.info(`Received ${signal}, shutting down gracefully...`);
     await server.close();
-    await server.close();
     server.log.info('Server shut down.');
     process.exit(0);
   });

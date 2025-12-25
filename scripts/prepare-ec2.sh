@@ -2,7 +2,7 @@
 set -e
 
 # Define directories
-DEPLOY_DIR="deploy/tracker-api"
+DEPLOY_DIR="deploy/remotedays-api"
 DIST_DIR="apps/api/dist"
 
 echo "Cleanup previous build..."
@@ -35,5 +35,5 @@ echo "Contents:"
 ls -F $DEPLOY_DIR
 
 echo "To simulate EC2, run:"
-echo "docker build -f apps/api/Dockerfile.simulation -t tracker-sim ."
-echo "docker run --rm -it -p 3000:3000 tracker-sim"
+echo "docker build -f apps/api/Dockerfile.simulation -t remotedays-sim ."
+echo "docker run --rm -it -p 3000:3000 remotedays-sim"

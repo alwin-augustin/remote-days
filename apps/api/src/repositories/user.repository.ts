@@ -69,7 +69,7 @@ export class UserRepository implements IUserRepository {
     filters?: { role?: string; country?: string }
   ): Promise<{ users: User[]; total: number }> {
     let query = 'SELECT * FROM users WHERE is_active = true';
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (search) {
       params.push(`%${search}%`);
@@ -87,19 +87,18 @@ export class UserRepository implements IUserRepository {
     }
 
     const countQuery = query.replace('SELECT *', 'SELECT COUNT(*)');
-    // We need to execute count query with current params before adding limit/offset
-    const { rows: countRows } = await this.pool.query(countQuery, params);
+    const { rows: countRows } = await this.pool.query<{ count: string }>(countQuery, params);
 
     query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-    params.push(limit, offset);
+    const paginatedParams = [...params, limit, offset];
 
-    const { rows } = await this.pool.query<User>(query, params);
+    const { rows } = await this.pool.query<User>(query, paginatedParams);
 
     return { users: rows, total: parseInt(countRows[0].count, 10) };
   }
 
   async update(id: string, updates: Partial<User>): Promise<User | null> {
-    const allowedFields = [
+    const allowedFields: (keyof User)[] = [
       'email',
       'first_name',
       'last_name',
@@ -110,12 +109,13 @@ export class UserRepository implements IUserRepository {
       'slack_user_id',
       'notification_method',
     ];
-    const fields = Object.keys(updates).filter((key) => allowedFields.includes(key));
+    
+    const fields = (Object.keys(updates) as (keyof User)[]).filter((key) => allowedFields.includes(key));
 
     if (fields.length === 0) return null;
 
     const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ');
-    const values = fields.map((field) => (updates as any)[field]);
+    const values = fields.map((field) => updates[field]);
 
     const { rows } = await this.pool.query<User>(`UPDATE users SET ${setClause} WHERE user_id = $1 RETURNING *`, [
       id,

@@ -6,6 +6,7 @@ import { AppError } from '../../errors/app-error';
 describe('EntryService', () => {
   let entryService: EntryService;
   let mockEntryRepo: IEntryRepository;
+  let mockAuditRepo: any;
 
   beforeEach(() => {
     mockEntryRepo = {
@@ -14,7 +15,10 @@ describe('EntryService', () => {
       findByUserAndMonth: vi.fn(),
       getStatsForYear: vi.fn(),
     };
-    entryService = new EntryService(mockEntryRepo);
+    mockAuditRepo = {
+      create: vi.fn(),
+    };
+    entryService = new EntryService(mockEntryRepo, mockAuditRepo);
   });
 
   it('should create an entry if none exists', async () => {

@@ -39,7 +39,7 @@ jobs:
           echo "${{ secrets.ENV_FILE }}" > deploy/.env
           
           # Compress deploy/ folder contents
-          # Result: artifact.tar.gz containing 'tracker-api/' folder, 'ecosystem.config.js', and '.env'
+          # Result: artifact.tar.gz containing 'remotedays-api/' folder, 'ecosystem.config.js', and '.env'
           tar -czf artifact.tar.gz -C deploy .
 
       - name: Upload Artifact
@@ -95,21 +95,21 @@ jobs:
               exit 1
             fi
             
-            # At this point we have 'tracker-api/' folder, 'ecosystem.config.js', and '.env' in root
-            
+            # At this point we have 'remotedays-api/' folder, 'ecosystem.config.js', and '.env' in root
+
             # Update .env (vital for robust config loading)
             if [ -f ".env" ]; then
                 echo "🔑 Updating .env..."
                 # No-op if it's already there, but ensures it exists
             fi
-            
+
             # Update Standalone App Directory
             echo "🚀 Updating application files..."
             # Remove old version contents but keep directory
             rm -rf $STANDALONE_DIR/*
             # Copy new contents
-            cp -r tracker-api/* $STANDALONE_DIR/
-            rm -rf tracker-api
+            cp -r remotedays-api/* $STANDALONE_DIR/
+            rm -rf remotedays-api
             
             # Install Production Dependencies
             echo "📥 Installing dependencies..."

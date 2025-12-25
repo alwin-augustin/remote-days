@@ -5,9 +5,6 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // Use environment variables for configuration
-    // If not present, it will likely fail or use a default if configured so.
-    // For dev, we can print credentials if using Ethereal, but let's stick to env vars.
     this.transporter = nodemailer.createTransport({
       host: config.SMTP_HOST || 'smtp.ethereal.email',
       port: config.SMTP_PORT || 587,
@@ -21,19 +18,18 @@ export class EmailService {
 
   async sendEmail(to: string, subject: string, text: string, html?: string) {
     try {
-      await this.transporter.sendMail({
-        from: config.SMTP_FROM || '"Teletravail Tracker" <no-reply@example.com>',
+      const result = await this.transporter.sendMail({
+        from: config.SMTP_FROM || '"Remote Days" <no-reply@remotedays.app>',
         to,
         subject,
         text,
         html: html || text,
       });
-      // console.log(`Message sent: ${info.messageId}`);
+      return result;
     } catch (error) {
-      console.error('Error sending email:', error);
-      // Don't throw, just log for now so the worker doesn't crash entirely
+      // Log the error with context for monitoring
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to send email to ${to}: ${errorMessage}`);
     }
   }
 }
-
-export const emailService = new EmailService();
