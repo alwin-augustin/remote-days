@@ -36,6 +36,14 @@ async function hrRoutes(server: FastifyInstance, options: { hrController: HRCont
     hrController.getDailyEntriesHandler as any
   );
 
+  server.get(
+    '/hr/stats/risk',
+    {
+      preHandler: [server.authenticate, server.authorize('hr')],
+    },
+    hrController.getRiskStatsHandler as any
+  );
+
   server.put(
     '/hr/entries/:id',
     {

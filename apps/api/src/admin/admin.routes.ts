@@ -15,7 +15,7 @@ async function adminRoutes(
   server.post(
     '/admin/users/import',
     {
-      preHandler: [server.authenticate, server.authorize('admin')],
+      preHandler: [server.authenticate, server.authorize('hr')],
     },
     adminController.importUsersHandler as any
   );
@@ -24,7 +24,7 @@ async function adminRoutes(
   server.post(
     '/admin/users',
     {
-      preHandler: [server.authenticate, server.authorize('admin')],
+      preHandler: [server.authenticate, server.authorize('hr')],
     },
     adminController.createUserHandler as any
   );
@@ -32,7 +32,7 @@ async function adminRoutes(
   server.get(
     '/admin/users',
     {
-      preHandler: [server.authenticate, server.authorize('admin')],
+      preHandler: [server.authenticate, server.authorize('hr')],
     },
     adminController.getUsersHandler as any
   );
@@ -40,7 +40,7 @@ async function adminRoutes(
   server.put(
     '/admin/users/:id',
     {
-      preHandler: [server.authenticate, server.authorize('admin')],
+      preHandler: [server.authenticate, server.authorize('hr')],
     },
     adminController.updateUserHandler as any
   );
@@ -48,7 +48,7 @@ async function adminRoutes(
   server.delete(
     '/admin/users/:id',
     {
-      preHandler: [server.authenticate, server.authorize('admin')],
+      preHandler: [server.authenticate, server.authorize('hr')],
     },
     adminController.deleteUserHandler as any
   );
@@ -57,7 +57,7 @@ async function adminRoutes(
   server.get(
     '/admin/countries',
     {
-      preHandler: [server.authenticate, server.authorize('admin')],
+      preHandler: [server.authenticate, server.authorize('hr')],
     },
     countryController.getCountriesHandler as any
   );
@@ -65,7 +65,7 @@ async function adminRoutes(
   server.post(
     '/admin/countries',
     {
-      preHandler: [server.authenticate, server.authorize('admin')],
+      preHandler: [server.authenticate, server.authorize('hr')],
     },
     countryController.createCountryHandler as any
   );
@@ -73,7 +73,7 @@ async function adminRoutes(
   server.put(
     '/admin/countries/:code',
     {
-      preHandler: [server.authenticate, server.authorize('admin')],
+      preHandler: [server.authenticate, server.authorize('hr')],
     },
     countryController.updateCountryHandler as any
   );

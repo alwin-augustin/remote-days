@@ -2,7 +2,7 @@ import { ICountryRepository, CountryThreshold } from '../repositories/country.re
 import { AppError } from '../errors/app-error';
 
 export class CountryService {
-  constructor(private countryRepo: ICountryRepository) { }
+  constructor(private countryRepo: ICountryRepository) {}
 
   async getAllCountries(): Promise<CountryThreshold[]> {
     return this.countryRepo.findAll();

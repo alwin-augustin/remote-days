@@ -109,7 +109,8 @@ export default function NotificationHistory() {
                                     resendMutation.mutate();
                                 }
                             }}
-                            disabled={resendMutation.isPending || !date}
+                            disabled={resendMutation.isPending || !date || formattedDate !== new Date().toISOString().split('T')[0]}
+                            title={formattedDate !== new Date().toISOString().split('T')[0] ? "Can only resend for current date" : "Resend daily prompt"}
                         >
                             {resendMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                             Resend Prompts
@@ -117,6 +118,57 @@ export default function NotificationHistory() {
                     </CardContent>
                 </Card>
             </div>
+
+            <Card className="mt-6">
+                <CardHeader>
+                    <CardTitle>Sent Notifications Log</CardTitle>
+                    <CardDescription>Log of notifications sent on {formattedDate}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <NotificationLogsTable date={formattedDate} />
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function NotificationLogsTable({ date }: { date: string }) {
+    const { data: logs, isLoading } = useQuery({
+        queryKey: ['admin', 'notifications', 'logs', date],
+        queryFn: async () => {
+            const res = await api.get<{ id: string, sent_at: string, user_first_name: string, user_last_name: string, user_email: string, notification_type: string }[]>(`/admin/notifications/logs?date=${date}`);
+            return res.data;
+        },
+    });
+
+    if (isLoading) return <div className="p-4 flex justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+
+    if (!logs || logs.length === 0) {
+        return <div className="text-center py-4 text-muted-foreground">No notifications sent on this date.</div>;
+    }
+
+    return (
+        <div className="rounded-md border">
+            <table className="w-full caption-bottom text-sm text-left">
+                <thead className="[&_tr]:border-b">
+                    <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                        <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Time</th>
+                        <th className="h-12 px-4 align-middle font-medium text-muted-foreground">User</th>
+                        <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Email</th>
+                        <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Type</th>
+                    </tr>
+                </thead>
+                <tbody className="[&_tr:last-child]:border-0">
+                    {logs.map((log) => (
+                        <tr key={log.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                            <td className="p-4 align-middle">{format(new Date(log.sent_at), 'HH:mm:ss')}</td>
+                            <td className="p-4 align-middle">{log.user_first_name} {log.user_last_name}</td>
+                            <td className="p-4 align-middle">{log.user_email}</td>
+                            <td className="p-4 align-middle capitalize">{log.notification_type.replace('_', ' ')}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 }

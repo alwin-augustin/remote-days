@@ -1,11 +1,15 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { User } from '@tracker/types';
 import { AuthService } from '../services/auth.service';
+import { UserService } from '../services/user.service';
 import { config } from '../config/env';
 import { AppError } from '../errors/app-error';
 
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService
+  ) {}
 
   loginHandler = async (
     request: FastifyRequest<{ Body: Pick<User, 'email'> & { password: string } }>,
@@ -24,20 +28,17 @@ export class AuthController {
       })
       .code(200)
       .send({ message: 'Login successful', user });
-  }
+  };
 
   logoutHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     reply.clearCookie('token').code(204).send();
-  }
+  };
 
   getMeHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     reply.send(request.user);
-  }
+  };
 
-  passwordResetRequestHandler = async (
-    request: FastifyRequest<{ Body: Pick<User, 'email'> }>,
-    reply: FastifyReply
-  ) => {
+  passwordResetRequestHandler = async (request: FastifyRequest<{ Body: Pick<User, 'email'> }>, reply: FastifyReply) => {
     const { email } = request.body;
 
     if (!email) {
@@ -48,7 +49,7 @@ export class AuthController {
 
     // Always return a success message to prevent email enumeration
     reply.code(200).send({ message: 'If a user with that email exists, a password reset link has been sent.' });
-  }
+  };
 
   passwordResetHandler = async (
     request: FastifyRequest<{ Body: { token: string; password?: string } }>,
@@ -59,6 +60,21 @@ export class AuthController {
     await this.authService.resetPassword(token, password);
 
     reply.code(200).send({ message: 'Password has been reset' });
-  }
-}
+  };
 
+  // GDPR: Right to Data Portability
+  exportDataHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user;
+    const data = await this.userService.exportUserData(user.user_id);
+    reply.header('Content-Disposition', `attachment; filename="user-${user.user_id}.json"`);
+    reply.send(data);
+  };
+
+  // GDPR: Right to Erasure
+  deleteAccountHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user;
+    await this.userService.deleteUser(user.user_id);
+    // Logout after delete
+    reply.clearCookie('token').code(204).send();
+  };
+}

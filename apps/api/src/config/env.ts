@@ -5,11 +5,9 @@ import path from 'path';
 // 1. Current working directory (usually root in dev/prod)
 // 2. Parent of __dirname (for bundled dist/server.js in ~/tracker/dist)
 // 3. Grandparent of __dirname (for local dev in apps/api/src)
-[
-  '.env',
-  path.join(__dirname, '../.env'),
-  path.join(__dirname, '../../.env')
-].forEach(p => dotenv.config({ path: p }));
+['.env', path.join(__dirname, '../.env'), path.join(__dirname, '../../.env')].forEach((p) =>
+  dotenv.config({ path: p })
+);
 
 interface Config {
   PORT: number;
@@ -51,7 +49,7 @@ export const config: Config = {
   SMTP_FROM: process.env.SMTP_FROM,
   SMTP_SECURE: process.env.SMTP_SECURE === 'true',
   APP_URL: process.env.APP_URL || 'http://localhost:5173',
-  EMAIL_FROM: process.env.EMAIL_FROM || 'noreply@teletravail-tracker.com',
+  EMAIL_FROM: process.env.EMAIL_FROM || 'noreply@remotedays.app',
   MAX_HOME_DAYS: parseInt(process.env.MAX_HOME_DAYS || '104', 10),
   JWT_EXPIRATION: process.env.JWT_EXPIRATION || '1d',
 };

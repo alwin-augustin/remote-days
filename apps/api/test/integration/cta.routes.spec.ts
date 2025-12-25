@@ -45,12 +45,16 @@ describe('CTA Integration', () => {
 
   it('should record status via one-click token', async () => {
     const res = await app.inject({
-      method: 'GET',
-      url: `/api/cta?token=${token}`,
+      method: 'POST',
+      url: '/api/cta/process',
+      payload: { token }
     });
 
     expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.payload)).toEqual({ message: 'Status recorded' });
+    expect(JSON.parse(res.payload)).toEqual(expect.objectContaining({
+      message: 'Status recorded',
+      status: 'home'
+    })); // date might be present, ignoring exact match for now
 
     // Verify entry
     const { rows } = await app.pg.query('SELECT * FROM entries WHERE user_id = $1', [userId]);
@@ -61,8 +65,9 @@ describe('CTA Integration', () => {
 
   it('should fail with invalid token', async () => {
     const res = await app.inject({
-      method: 'GET',
-      url: `/api/cta?token=${randomUUID()}`,
+      method: 'POST',
+      url: '/api/cta/process',
+      payload: { token: randomUUID() }
     });
 
     expect(res.statusCode).toBe(400);

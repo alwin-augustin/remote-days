@@ -1,10 +1,15 @@
 import { IEntryRepository } from '../repositories/entry.repository';
-import { work_status } from '@tracker/types';
+import { work_status, Entry, UserStats } from '@tracker/types';
 import { AppError } from '../errors/app-error';
 import { config } from '../config/env';
 
+import { IAuditRepository } from '../repositories/audit.repository';
+
 export class EntryService {
-  constructor(private entryRepo: IEntryRepository) { }
+  constructor(
+    private entryRepo: IEntryRepository,
+    private auditRepo: IAuditRepository
+  ) {}
 
   async createOrUpdateEntry(
     userId: string,
@@ -12,7 +17,7 @@ export class EntryService {
     status: work_status,
     actorRole: string = 'employee',
     actorId: string
-  ): Promise<any> {
+  ): Promise<Entry> {
     // 1. Check if an entry already exists for this user/date
     const existingEntry = await this.entryRepo.findByUserAndDate(userId, date);
 
@@ -28,11 +33,57 @@ export class EntryService {
     return this.entryRepo.upsert(userId, date, status, 'web');
   }
 
-  async getEntriesForMonth(userId: string, year: string, month: string): Promise<any[]> {
+  async overrideEntry(
+    targetUserId: string,
+    date: string,
+    status: work_status,
+    reason: string,
+    actorId: string,
+    actorRole: string
+  ): Promise<Entry> {
+    if (!reason || reason.trim().length === 0) {
+      throw new AppError('Reason is required for overriding an entry.', 400);
+    }
+
+    if (!['hr', 'admin'].includes(actorRole)) {
+      throw new AppError('Only HR and Admin can override entries.', 403);
+    }
+
+    const previousEntry = await this.entryRepo.findByUserAndDate(targetUserId, date);
+    const previousStatus = previousEntry ? previousEntry.status : 'none';
+
+    // Upsert the entry (actorId is passed to set session variable if supported, but here acts as identity)
+    const result = await this.entryRepo.upsert(targetUserId, date, status, 'web', actorId);
+
+    // Log to Audit
+    await this.auditRepo.log(
+      'OVERRIDE',
+      actorId,
+      targetUserId,
+      reason,
+      'entry',
+      result.id || 'unknown',
+      undefined,
+      undefined,
+      undefined, // Actor details (optional if joined later)
+      undefined,
+      undefined,
+      undefined, // Target details (optional if joined later)
+      {
+        date,
+        previous_status: previousStatus,
+        new_status: status,
+      }
+    );
+
+    return result;
+  }
+
+  async getEntriesForMonth(userId: string, year: string, month: string): Promise<Entry[]> {
     return this.entryRepo.findByUserAndMonth(userId, year, month);
   }
 
-  async getUserStats(userId: string): Promise<any> {
+  async getUserStats(userId: string): Promise<UserStats> {
     const currentYear = new Date().getFullYear();
     const stats = await this.entryRepo.getStatsForYear(userId, currentYear);
 

@@ -1,4 +1,3 @@
-
 interface EmailAction {
   label: string;
   url: string;
@@ -14,11 +13,15 @@ export const generateEmailHtml = (title: string, userName: string, content: stri
     danger: '#EF4444', // Red 500
   };
 
-  const actionButtons = actions.map(action => `
+  const actionButtons = actions
+    .map(
+      (action) => `
     <a href="${action.url}" style="display: inline-block; padding: 14px 32px; margin: 0 10px 10px 0; background-color: ${colorMap[action.color || 'primary']}; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); transition: background-color 0.2s;">
       ${action.label}
     </a>
-  `).join('');
+  `
+    )
+    .join('');
 
   return `
 <!DOCTYPE html>
@@ -54,7 +57,7 @@ export const generateEmailHtml = (title: string, userName: string, content: stri
       <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background-color: #EEF2FF; border-radius: 10px; margin-bottom: 12px;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#175CD3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
       </div>
-      <h1 style="color: #0F172A; margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em;">Teletravail Tracker</h1>
+      <h1 style="color: #0F172A; margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em;">Remote Days</h1>
     </div>
 
     <!-- Main Content -->
@@ -69,11 +72,15 @@ export const generateEmailHtml = (title: string, userName: string, content: stri
         ${content}
       </div>
       
-      ${actions.length > 0 ? `
+      ${
+        actions.length > 0
+          ? `
       <div style="margin-top: 32px; margin-bottom: 32px; text-align: left;">
         ${actionButtons}
       </div>
-      ` : ''}
+      `
+          : ''
+      }
 
        <p style="color: #64748B; font-size: 14px; line-height: 1.5; margin-top: 32px; border-top: 1px solid #F1F5F9; padding-top: 24px;">
         If you have any questions, feel free to contact our support team.
@@ -83,7 +90,7 @@ export const generateEmailHtml = (title: string, userName: string, content: stri
     <!-- Footer -->
     <div style="background-color: #F8FAFC; padding: 32px 40px; text-align: center; border-top: 1px solid #E2E8F0;">
       <p style="color: #94A3B8; font-size: 12px; margin: 0; margin-bottom: 8px;">
-        &copy; ${new Date().getFullYear()} Teletravail Tracker. All rights reserved.
+        &copy; ${new Date().getFullYear()} Remote Days. All rights reserved.
       </p>
       <div style="margin-top: 12px;">
         <a href="#" style="color: #64748B; font-size: 12px; text-decoration: none; margin: 0 8px;">Privacy Policy</a>

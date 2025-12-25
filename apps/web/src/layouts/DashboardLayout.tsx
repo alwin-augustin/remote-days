@@ -12,8 +12,10 @@ import {
     ChevronRight,
     Menu,
     FileText,
+    Calendar,
     type LucideIcon,
-    Bell
+    Bell,
+    Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -68,8 +70,13 @@ export default function DashboardLayout() {
             <div className="hidden border-r bg-card/50 md:block sticky top-0 h-screen overflow-hidden">
                 <div className="flex h-full flex-col gap-2">
                     <div className={cn("flex h-16 items-center border-b px-4 lg:h-[64px]", collapsed ? "justify-center px-2" : "justify-between")}>
-                        {!collapsed && <span className="flex items-center gap-2 font-bold text-lg tracking-tight text-primary">Teletravail Tracker</span>}
-                        {collapsed && <span className="font-bold text-xl text-primary">TT</span>}
+                        {!collapsed && (
+                            <div className="flex items-center gap-2">
+                                <img src="/logo.png" alt="Logo" className="h-8 w-8" />
+                                <span className="font-bold text-lg tracking-tight text-primary">Remote Days</span>
+                            </div>
+                        )}
+                        {collapsed && <img src="/logo.png" alt="Logo" className="h-8 w-8" />}
                         <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto text-muted-foreground hover:text-foreground" onClick={() => setCollapsed(!collapsed)}>
                             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                         </Button>
@@ -79,18 +86,33 @@ export default function DashboardLayout() {
                             <SidebarLink to="/" icon={LayoutDashboard} label="Dashboard" collapsed={collapsed} />
 
                             {!isAdmin && !isHR && (
-                                <SidebarLink to="/calendar" icon={CalendarDays} label="Calendar" collapsed={collapsed} />
+                                <>
+                                    <SidebarLink to="/requests" icon={FileText} label="My Requests" collapsed={collapsed} />
+                                    <SidebarLink to="/calendar" icon={CalendarDays} label="Calendar" collapsed={collapsed} />
+                                </>
                             )}
 
-                            {isAdmin && (
+                            {(isAdmin || isHR) && (
                                 <>
+                                    <div className={cn("my-2 h-[1px] bg-border/50", collapsed ? "mx-2" : "mx-4")} />
+                                    <div className={cn("mb-2 px-2 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider", collapsed && "hidden")}>
+                                        HR
+                                    </div>
+
+                                    <SidebarLink to="/hr/employees" icon={Users} label="Employees" collapsed={collapsed} />
+
                                     <div className={cn("my-2 h-[1px] bg-border/50", collapsed ? "mx-2" : "mx-4")} />
                                     <div className={cn("mb-2 px-2 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider", collapsed && "hidden")}>
                                         Admin
                                     </div>
+
                                     <SidebarLink to="/admin/users" icon={Settings} label="User Management" collapsed={collapsed} />
                                     <SidebarLink to="/admin/countries" icon={Building} label="Countries" collapsed={collapsed} />
                                     <SidebarLink to="/admin/notifications/stats" icon={Bell} label="Notifications" collapsed={collapsed} />
+
+                                    <SidebarLink to="/admin/holidays" icon={Calendar} label="Holidays" collapsed={collapsed} />
+                                    <SidebarLink to="/admin/requests" icon={FileText} label="Requests" collapsed={collapsed} />
+
                                     <SidebarLink to="/admin/audit" icon={FileText} label="Audit Logs" collapsed={collapsed} />
                                 </>
                             )}

@@ -7,7 +7,7 @@ async function auditRoutes(server: FastifyInstance, options: { auditController: 
   server.get(
     '/admin/audit',
     {
-      preHandler: [server.authenticate, server.authorize('admin')],
+      preHandler: [server.authenticate, server.authorize('hr')],
     },
     auditController.getAuditReportHandler as any
   );

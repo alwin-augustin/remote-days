@@ -2,7 +2,7 @@ import { IHRRepository } from '../repositories/hr.repository';
 import { work_status } from '@tracker/types';
 
 export class HRService {
-  constructor(private hrRepo: IHRRepository) { }
+  constructor(private hrRepo: IHRRepository) {}
 
   async getEmployeeSummaries() {
     return this.hrRepo.getEmployeeSummaries();
@@ -22,5 +22,9 @@ export class HRService {
 
   async getDailyEntries(date: string) {
     return this.hrRepo.getDailyEntries(date);
+  }
+
+  async getRiskStats(date: string) {
+    return this.hrRepo.getRiskStats(date);
   }
 }

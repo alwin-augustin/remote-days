@@ -43,7 +43,7 @@ export default function Login() {
         try {
             await login(values);
         } catch (err: unknown) {
-            console.error(err);
+            // TODO: Send to error reporting service (Sentry, etc.)
             setError("Invalid credentials or server error");
         } finally {
             setIsLoading(false);
@@ -51,7 +51,11 @@ export default function Login() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4">
+            <div className="mb-8 flex flex-col items-center">
+                <img src="/logo.png" alt="Logo" className="mb-4 h-16 w-16 shadow-sm rounded-lg" />
+                <h1 className="text-3xl font-bold text-primary">Remote Days</h1>
+            </div>
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold">Login</CardTitle>

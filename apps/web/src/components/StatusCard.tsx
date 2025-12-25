@@ -48,11 +48,17 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
         mutation.mutate(status);
     };
 
+    const isSelectionLocked = !!currentStatus && currentStatus !== 'unknown' && isToday;
+
     return (
         <Card className="w-full">
             <CardHeader>
                 <CardTitle>Work Status for {isToday ? "Today" : format(selectedDate, 'EEEE, MMM d')}</CardTitle>
-                <CardDescription>Where are you working from?</CardDescription>
+                <CardDescription>
+                    {isSelectionLocked
+                        ? "Status is locked for today. Submit a request to change it."
+                        : "Where are you working from?"}
+                </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 {(['home', 'office', 'travel', 'sick'] as work_status[]).map((status) => {
@@ -66,12 +72,13 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
                             className={cn(
                                 "h-24 flex-col gap-2 border-2 transition-all duration-200 active:scale-95",
                                 isActive
-                                    ? cn(config.color, "border-current ring-2 ring-offset-2 ring-primary/20 shadow-sm")
+                                    ? cn(config.color, "border-current ring-2 ring-offset-2 ring-primary/20 shadow-sm opacity-100")
                                     : "hover:border-primary/50 hover:bg-muted/50",
-                                mutation.isPending && "opacity-50 cursor-not-allowed"
+                                mutation.isPending && "opacity-50 cursor-not-allowed",
+                                isSelectionLocked && !isActive && "opacity-50 cursor-not-allowed" // Dim non-selected items when locked
                             )}
                             onClick={() => handleStatusChange(status)}
-                            disabled={mutation.isPending}
+                            disabled={mutation.isPending || isSelectionLocked}
                         >
                             {mutation.isPending && isActive ? <Loader2 className="h-6 w-6 animate-spin" /> : <Icon className="h-6 w-6" />}
                             <span className="font-medium">{config.label}</span>

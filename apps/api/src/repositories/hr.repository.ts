@@ -52,10 +52,11 @@ export interface IHRRepository {
   updateEntry(id: string, status: work_status, reason: string, actorId: string): Promise<any>;
   getDailyStats(date: string): Promise<DailyStats>;
   getDailyEntries(date: string): Promise<DailyEntry[]>;
+  getRiskStats(date: string): Promise<{ danger_count: number; warning_count: number; missing_count: number }>;
 }
 
 export class HRRepository implements IHRRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
   async getEmployeeSummaries(): Promise<EmployeeSummary[]> {
     const { rows } = await this.pool.query<EmployeeSummary>(
@@ -148,7 +149,7 @@ export class HRRepository implements IHRRepository {
 
     return {
       ...stats,
-      unknown: unknown < 0 ? 0 : unknown // Safety net
+      unknown: unknown < 0 ? 0 : unknown, // Safety net
     };
   }
 
@@ -170,5 +171,54 @@ export class HRRepository implements IHRRepository {
       [date]
     );
     return rows;
+  }
+
+  async getRiskStats(date: string): Promise<{ exceeded_count: number; critical_count: number; high_count: number; moderate_count: number; missing_count: number }> {
+    // 1. Calculate Annual Risk with 4 tiers
+    const riskQuery = `
+      WITH user_days_used AS (
+        SELECT
+          u.user_id,
+          u.work_country,
+          COALESCE(COUNT(e.id) FILTER (WHERE e.status = 'home' AND date_part('year', e.date) = date_part('year', CURRENT_DATE)), 0) AS days_used_current_year
+        FROM users u
+        LEFT JOIN entries e ON u.user_id = e.user_id
+        WHERE u.is_active = true
+        GROUP BY u.user_id
+      ),
+      risk_levels AS (
+        SELECT
+          (udu.days_used_current_year * 100.0 / ct.max_remote_days) as percent_used
+        FROM user_days_used udu
+        JOIN country_thresholds ct ON udu.work_country = ct.country_code
+      )
+      SELECT
+        COUNT(*) FILTER (WHERE percent_used >= 100) as exceeded_count,
+        COUNT(*) FILTER (WHERE percent_used >= 90 AND percent_used < 100) as critical_count,
+        COUNT(*) FILTER (WHERE percent_used >= 75 AND percent_used < 90) as high_count,
+        COUNT(*) FILTER (WHERE percent_used >= 50 AND percent_used < 75) as moderate_count
+      FROM risk_levels;
+    `;
+
+    // 2. Calculate Missing Declarations (Today/Date)
+    const missingQuery = `
+      SELECT COUNT(*) as missing_count
+      FROM users u
+      LEFT JOIN entries e ON u.user_id = e.user_id AND e.date = $1
+      WHERE u.is_active = true AND e.id IS NULL
+    `;
+
+    const [riskRes, missingRes] = await Promise.all([
+      this.pool.query(riskQuery),
+      this.pool.query(missingQuery, [date]),
+    ]);
+
+    return {
+      exceeded_count: parseInt(riskRes.rows[0]?.exceeded_count || '0'),
+      critical_count: parseInt(riskRes.rows[0]?.critical_count || '0'),
+      high_count: parseInt(riskRes.rows[0]?.high_count || '0'),
+      moderate_count: parseInt(riskRes.rows[0]?.moderate_count || '0'),
+      missing_count: parseInt(missingRes.rows[0]?.missing_count || '0'),
+    };
   }
 }

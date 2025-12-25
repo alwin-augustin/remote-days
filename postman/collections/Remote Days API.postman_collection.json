@@ -1,0 +1,997 @@
+{
+  "info": {
+    "_postman_id": "dac7cad7-253a-4890-9341-e72e6d5e62b6",
+    "name": "Remote Days API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "id": "ed4161d9-2fe9-4c24-8ebb-0ab98aa52b8b",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "id": "5fee8721-ba7e-4ccd-9e38-fbcb1f4345af",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Me",
+          "id": "dc07872d-1559-42dd-af4e-b0069a185c5d",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Data",
+          "id": "50d011ed-5339-44f5-b1f6-823d7a541b88",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me",
+                "export"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Account",
+          "id": "7f4e8a9a-58ba-4653-b908-5aeca4bd411b",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Password Reset Request",
+          "id": "03f62998-49f0-450e-b053-738b33a6847d",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/password-reset-request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password-reset-request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Password Reset",
+          "id": "4963adf0-9744-4ac8-8afb-9ae5e7d89943",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"TOKEN\",\n    \"password\": \"newpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/password-reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password-reset"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "4c2c1707-1de4-4426-9e3f-36ea53054926"
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Users",
+          "item": [
+            {
+              "name": "Get Users",
+              "id": "17328fd8-0fdc-442c-ad4c-924ad3192c62",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create User",
+              "id": "6ed0a285-eb59-4d49-b650-5fc429c6aed3",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update User",
+              "id": "54608b95-97a3-41d6-ad3a-26be29e214a6",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete User",
+              "id": "e9e53856-a82f-4934-a735-226eca10afc1",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Import Users",
+              "id": "a0fb1653-6d77-4c89-a16d-1411b029b962",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "multipart/form-data"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users/import",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users",
+                    "import"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "505b0573-d2b3-4f7d-833c-dafcdbc22920"
+        },
+        {
+          "name": "Countries",
+          "item": [
+            {
+              "name": "Get Countries",
+              "id": "efe79dca-a087-4e91-8cf2-71acbf67cb79",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/countries",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "countries"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Country",
+              "id": "153708b8-7219-4021-89ae-cdbc79f9273c",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/countries",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "countries"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Country",
+              "id": "d3e7cc8a-b63d-48f4-bf9d-ed89eacfd749",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/countries/:code",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "countries",
+                    ":code"
+                  ],
+                  "variable": [
+                    {
+                      "key": "code",
+                      "value": ""
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "497e6775-025e-4e3e-ba24-381afab8d4bf"
+        },
+        {
+          "name": "Holidays",
+          "item": [
+            {
+              "name": "Get Holidays",
+              "id": "557e3517-938a-4893-8ff6-66afa24b9d9c",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/holidays",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "holidays"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Add Holiday",
+              "id": "f0ab3c26-5fca-49a1-88bf-53a2cdb61790",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/holidays",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "holidays"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Holiday",
+              "id": "c917eb2b-dccb-4586-9c4c-c5c85ce2e07d",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/holidays/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "holidays",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "ed99c2d4-70cf-4c00-b40d-c6ccdb0b7d07"
+        },
+        {
+          "name": "Audit",
+          "item": [
+            {
+              "name": "Get Audit Report",
+              "id": "5e1244b7-9fdf-4ca8-908e-642dc8d35dda",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/audit",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "audit"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "d18ceb2f-f3ae-48e5-9970-689c1d0cadee"
+        },
+        {
+          "name": "Notifications",
+          "item": [
+            {
+              "name": "Get Stats",
+              "id": "c9c567f8-a9dd-4c9d-96a4-cfa56ef4a13f",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/notifications/stats",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "notifications",
+                    "stats"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Resend Prompts",
+              "id": "45a98d09-898e-42c6-ba2e-cf3a62197493",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/notifications/resend",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "notifications",
+                    "resend"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Logs",
+              "id": "73fc539a-4c58-4215-a422-6696962bbf33",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/notifications/logs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "notifications",
+                    "logs"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "c53f1858-8c24-422a-bfb0-148a7439123d"
+        }
+      ],
+      "id": "11fea5f5-aca1-49e1-b218-5958dabcd884"
+    },
+    {
+      "name": "HR",
+      "item": [
+        {
+          "name": "Get Summary",
+          "id": "8789c658-d9b9-44d9-b924-61c4cb25fa48",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hr/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hr",
+                "summary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Entries",
+          "id": "66f180d9-e623-4474-a495-a5508a99d62b",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hr/entries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hr",
+                "entries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Daily Stats",
+          "id": "1ad78294-e2e0-4c89-9cfa-77d7887ca4fe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hr/stats/daily",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hr",
+                "stats",
+                "daily"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Daily Entries",
+          "id": "ca359103-92d0-402f-971b-e047bc9160c5",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hr/entries/daily",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hr",
+                "entries",
+                "daily"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Risk Stats",
+          "id": "885afd55-545f-4a1a-bfb8-ad4b0fc0a973",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hr/stats/risk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hr",
+                "stats",
+                "risk"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Entry",
+          "id": "17b37835-5fb5-424b-9e86-63f258768a8d",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hr/entries/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hr",
+                "entries",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "f3349750-651b-4761-863c-1a9f79542626"
+    },
+    {
+      "name": "Entries",
+      "item": [
+        {
+          "name": "Create Entry",
+          "id": "b6050472-e691-4528-85cb-fcc0ba195860",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"date\": \"2025-12-25\",\n    \"status\": \"home\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/entries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "entries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Override Entry",
+          "id": "d91079dc-59c5-46f7-aaf3-19ea68bcec08",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/entries/override",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "entries",
+                "override"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Entries",
+          "id": "17a23b9c-5ab8-45fa-854c-a9338fdb74ad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/entries?year=2025&month=12",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "entries"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025"
+                },
+                {
+                  "key": "month",
+                  "value": "12"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stats",
+          "id": "d47a2c00-ae50-4fae-a23e-b8b929460916",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/entries/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "entries",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "fbb24213-29d4-4eb5-ba31-55762b2902dc"
+    },
+    {
+      "name": "Requests",
+      "item": [
+        {
+          "name": "Create Request",
+          "id": "f3c2edb2-1cd5-407c-b5ac-64f777748f3e",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Requests",
+          "id": "3c53a5b8-135f-4520-81bf-05980b7c5253",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/requests/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "requests",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin - Get All Requests",
+          "id": "467c7d57-1a29-44c3-b8a0-a30125e43696",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin - Process Request",
+          "id": "9a4540b8-d484-453e-86c6-dc566a12f595",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/requests/:id/process",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "requests",
+                ":id",
+                "process"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "e21e698a-e974-4bbd-abc5-9024b51a3f23"
+    },
+    {
+      "name": "CTA",
+      "item": [
+        {
+          "name": "Process CTA",
+          "id": "e5c1f293-2200-49b3-afc6-e851567e1fc7",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cta/process",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cta",
+                "process"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "f20cdc26-2440-4391-a865-63c030737432"
+    }
+  ],
+  "variable": [
+    {
+      "id": "6445e943-97f3-4d83-80aa-e83bf7e2097b",
+      "key": "baseUrl",
+      "value": "https://api.remotedays.app/api",
+      "type": "string"
+    },
+    {
+      "id": "b55dcaab-4591-41b6-aec0-f4ebecc227f3",
+      "key": "rootUrl",
+      "value": "https://api.remotedays.app",
+      "type": "string"
+    },
+    {
+      "id": "309c1df1-a347-47b8-b221-9dd123c4ea04",
+      "key": "email",
+      "value": "admin@example.com",
+      "type": "string"
+    },
+    {
+      "id": "ba828a73-bf4f-4845-9a41-87331e7cc13b",
+      "key": "password",
+      "value": "password123",
+      "type": "string"
+    }
+  ]
+}

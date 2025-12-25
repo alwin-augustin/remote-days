@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "tracker-api",
+      name: "remotedays-api",
       script: "server.js",
       cwd: "./api-standalone",
       instances: 1, // Or "max" to use all CPUs

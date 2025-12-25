@@ -2,7 +2,7 @@ services:
   # 1. The Database (Postgres 15)
   db:
     image: postgres:15-alpine
-    container_name: tracker-db
+    container_name: remotedays-db
     ports:
       - "5432:5432"
     environment:
@@ -14,14 +14,14 @@ services:
       # Optional: Auto-run SQL scripts on first boot
       - ./docker/postgres:/docker-entrypoint-initdb.d
     networks:
-      - tracker-network
+      - remotedays-network
 
   # 2. The Backend (Node API)
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile.dev
-    container_name: tracker-api
+    container_name: remotedays-api
     ports:
       - "3000:3000"
     volumes:
@@ -35,19 +35,19 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       SMTP_SECURE: "false"
-      SMTP_FROM: "no-reply@tracker.local"
+      SMTP_FROM: "no-reply@remotedays.local"
     depends_on:
       - db
       - mailpit
     networks:
-      - tracker-network
+      - remotedays-network
 
   # 3. The Frontend (React)
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile.dev
-    container_name: tracker-web
+    container_name: remotedays-web
     ports:
       - "5173:5173"
     volumes:
@@ -59,26 +59,26 @@ services:
       VITE_API_URL: http://localhost:3000
       VITE_PROXY_TARGET: "http://api:3000"
     networks:
-      - tracker-network
+      - remotedays-network
 
   # 4. Email Catching (Mailpit)
   mailpit:
     image: axllent/mailpit
-    container_name: tracker-mailpit
+    container_name: remotedays-mailpit
     ports:
       - "8025:8025"
       - "1025:1025"
     networks:
-      - tracker-network
+      - remotedays-network
 
   # 5. Seeding (Run once on startup)
   seed:
     build:
       context: .
       dockerfile: apps/api/Dockerfile.dev
-    container_name: tracker-seed
+    container_name: remotedays-seed
     # Override the default command to run the seed script
-    command: [ "npm", "run", "db:seed:fake", "--workspace=apps/api" ]
+    command: [ "npm", "run", "db:seed", "--workspace=apps/api" ]
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages
@@ -92,7 +92,7 @@ services:
       api:
         condition: service_started
     networks:
-      - tracker-network
+      - remotedays-network
     # Only run this profile if specifically requested or if we want it to run every time 'up' is called without arguments?
     # User said "so that it will work in the launch".
     # Defaulting to standard execution, but it will exit after completion.
@@ -102,5 +102,5 @@ volumes:
 
 
 networks:
-  tracker-network:
+  remotedays-network:
     driver: bridge

@@ -17,12 +17,9 @@ export class NotificationController {
       request.log.error(err, 'Error fetching notification stats');
       reply.code(500).send({ message: 'Error fetching notification stats' });
     }
-  }
+  };
 
-  resendDailyPromptsHandler = async (
-    request: FastifyRequest<{ Body: { date?: string } }>,
-    reply: FastifyReply
-  ) => {
+  resendDailyPromptsHandler = async (request: FastifyRequest<{ Body: { date?: string } }>, reply: FastifyReply) => {
     const targetDate = request.body.date || new Date().toISOString().split('T')[0]; // Default to today
 
     try {
@@ -32,5 +29,20 @@ export class NotificationController {
       request.log.error(err, 'Error resending daily prompts');
       reply.code(500).send({ message: 'Error resending daily prompts' });
     }
-  }
+  };
+
+  getNotificationLogsHandler = async (
+    request: FastifyRequest<{ Querystring: { date?: string } }>,
+    reply: FastifyReply
+  ) => {
+    const targetDate = request.query.date || new Date().toISOString().split('T')[0]; // Default to today
+
+    try {
+      const logs = await this.notificationService.getNotificationLogs(targetDate);
+      reply.code(200).send(logs);
+    } catch (err) {
+      request.log.error(err, 'Error fetching notification logs');
+      reply.code(500).send({ message: 'Error fetching notification logs' });
+    }
+  };
 }

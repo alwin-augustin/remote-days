@@ -2,10 +2,12 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuditService } from '../services/audit.service';
 
 export class AuditController {
-  constructor(private readonly auditService: AuditService) { }
+  constructor(private readonly auditService: AuditService) {}
 
   getAuditReportHandler = async (
-    request: FastifyRequest<{ Querystring: { startDate?: string; endDate?: string; action?: string; format?: string } }>,
+    request: FastifyRequest<{
+      Querystring: { startDate?: string; endDate?: string; action?: string; format?: string };
+    }>,
     reply: FastifyReply
   ) => {
     const { startDate, endDate, action, format } = request.query;
@@ -18,7 +20,10 @@ export class AuditController {
 
         reply
           .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-          .header('Content-Disposition', `attachment; filename="audit_report_${new Date().toISOString().slice(0, 10)}.xlsx"`)
+          .header(
+            'Content-Disposition',
+            `attachment; filename="audit_report_${new Date().toISOString().slice(0, 10)}.xlsx"`
+          )
           .send(buffer);
       } catch (err) {
         request.log.error(err, 'Error generating audit Excel');
@@ -33,5 +38,5 @@ export class AuditController {
         reply.code(500).send({ message: 'Error fetching logs' });
       }
     }
-  }
+  };
 }

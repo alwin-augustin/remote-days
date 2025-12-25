@@ -1,5 +1,5 @@
 {
-  "name": "teletravail-tracker-root",
+  "name": "remote-days-root",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
@@ -14,7 +14,10 @@
   },
   "devDependencies": {
     "concurrently": "^8.0.0",
-    "typescript": "^5.0.0",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-tooltip": "^1.2.8"
   }
 }
