@@ -14,7 +14,8 @@ import {
     FileText,
     Calendar,
     type LucideIcon,
-    Bell
+    Bell,
+    Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -93,6 +94,13 @@ export default function DashboardLayout() {
 
                             {(isAdmin || isHR) && (
                                 <>
+                                    <div className={cn("my-2 h-[1px] bg-border/50", collapsed ? "mx-2" : "mx-4")} />
+                                    <div className={cn("mb-2 px-2 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider", collapsed && "hidden")}>
+                                        HR
+                                    </div>
+
+                                    <SidebarLink to="/hr/employees" icon={Users} label="Employees" collapsed={collapsed} />
+
                                     <div className={cn("my-2 h-[1px] bg-border/50", collapsed ? "mx-2" : "mx-4")} />
                                     <div className={cn("mb-2 px-2 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider", collapsed && "hidden")}>
                                         Admin

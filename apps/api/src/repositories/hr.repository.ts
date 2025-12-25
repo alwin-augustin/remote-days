@@ -173,9 +173,8 @@ export class HRRepository implements IHRRepository {
     return rows;
   }
 
-  async getRiskStats(date: string): Promise<{ danger_count: number; warning_count: number; missing_count: number }> {
-    // 1. Calculate Annual Risk (Danger/Warning)
-    // Reusing logic from getEmployeeSummaries but aggregating
+  async getRiskStats(date: string): Promise<{ exceeded_count: number; critical_count: number; high_count: number; moderate_count: number; missing_count: number }> {
+    // 1. Calculate Annual Risk with 4 tiers
     const riskQuery = `
       WITH user_days_used AS (
         SELECT
@@ -189,17 +188,15 @@ export class HRRepository implements IHRRepository {
       ),
       risk_levels AS (
         SELECT
-          CASE
-            WHEN (udu.days_used_current_year * 100.0 / ct.max_remote_days) >= 100 THEN 'red'
-            WHEN (udu.days_used_current_year * 100.0 / ct.max_remote_days) >= 75 THEN 'orange'
-            ELSE 'green'
-          END AS traffic_light
+          (udu.days_used_current_year * 100.0 / ct.max_remote_days) as percent_used
         FROM user_days_used udu
         JOIN country_thresholds ct ON udu.work_country = ct.country_code
       )
       SELECT
-        COUNT(*) FILTER (WHERE traffic_light = 'red') as danger_count,
-        COUNT(*) FILTER (WHERE traffic_light = 'orange') as warning_count
+        COUNT(*) FILTER (WHERE percent_used >= 100) as exceeded_count,
+        COUNT(*) FILTER (WHERE percent_used >= 90 AND percent_used < 100) as critical_count,
+        COUNT(*) FILTER (WHERE percent_used >= 75 AND percent_used < 90) as high_count,
+        COUNT(*) FILTER (WHERE percent_used >= 50 AND percent_used < 75) as moderate_count
       FROM risk_levels;
     `;
 
@@ -217,8 +214,10 @@ export class HRRepository implements IHRRepository {
     ]);
 
     return {
-      danger_count: parseInt(riskRes.rows[0]?.danger_count || '0'),
-      warning_count: parseInt(riskRes.rows[0]?.warning_count || '0'),
+      exceeded_count: parseInt(riskRes.rows[0]?.exceeded_count || '0'),
+      critical_count: parseInt(riskRes.rows[0]?.critical_count || '0'),
+      high_count: parseInt(riskRes.rows[0]?.high_count || '0'),
+      moderate_count: parseInt(riskRes.rows[0]?.moderate_count || '0'),
       missing_count: parseInt(missingRes.rows[0]?.missing_count || '0'),
     };
   }

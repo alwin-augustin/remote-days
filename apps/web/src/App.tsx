@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import { Toaster } from '@/components/ui/sonner';
 
 import EmployeeSummary from '@/pages/hr/EmployeeSummary';
+import EmployeeList from '@/pages/hr/EmployeeList';
+import EmployeeDetails from '@/pages/hr/EmployeeDetails';
 import UserManagement from '@/pages/admin/UserManagement';
 import CountryThresholds from '@/pages/admin/CountryThresholds';
 import NotificationHistory from '@/pages/admin/NotificationHistory';
@@ -17,6 +19,7 @@ import MyRequests from '@/pages/MyRequests';
 // Placeholder pages
 import Home from '@/pages/Home';
 import CalendarPage from '@/pages/CalendarPage';
+import ComplianceDetails from '@/pages/ComplianceDetails';
 
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
@@ -37,6 +40,7 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/compliance" element={<ComplianceDetails />} />
             <Route path="/requests" element={<MyRequests />} />
           </Route>
         </Route>
@@ -45,6 +49,8 @@ function App() {
         <Route element={<ProtectedRoute roles={['hr', 'admin']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/hr" element={<EmployeeSummary />} />
+            <Route path="/hr/employees" element={<EmployeeList />} />
+            <Route path="/hr/employees/:id" element={<EmployeeDetails />} />
             <Route path="/admin/requests" element={<Requests />} />
             <Route path="/admin/holidays" element={<Holidays />} />
           </Route>
