@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { User } from '@tracker/types';
+import { User } from '@remotedays/types';
 import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
 import { config } from '../config/env';
@@ -27,7 +27,7 @@ export class AuthController {
         sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax', // Must be 'none' for cross-site (Vercel -> EC2)
       })
       .code(200)
-      .send({ message: 'Login successful', user });
+      .send({ message: 'Login successful', token, user });
   };
 
   logoutHandler = async (request: FastifyRequest, reply: FastifyReply) => {

@@ -1,73 +1,96 @@
-export type work_status = 'home' | 'office' | 'travel' | 'sick' | 'unknown';
-
+// User types
 export interface User {
-  user_id: string;
+  id: number;
   email: string;
-  first_name: string;
-  last_name: string;
-  country_of_residence: string;
-  work_country: string;
-  role: 'employee' | 'hr' | 'admin';
-  is_active: boolean;
-  password_hash: string;
-  created_at: Date;
+  name: string;
+  role: 'admin' | 'hr' | 'employee';
+  country?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type UserInfo = Omit<User, 'password_hash'>;
-
-export interface AuditDetails {
-  date?: string;
-  previous_status?: string;
-  new_status?: string;
-  user_id?: string;
-  entity_type?: string;
-  entity_id?: string;
-  [key: string]: unknown;
-}
+// Location/Entry types
+export type LocationType = 'home' | 'office';
 
 export interface Entry {
-  id: string;
-  user_id: string;
-  date: string;
-  status: work_status;
-  source: string;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface UserStats {
-  days_used_current_year: number;
-  days_remaining: number;
-  percent_used: number;
-  year: number;
-}
-
-export interface CountryThreshold {
-  country_code: string;
-  max_remote_days: number;
-}
-
-export interface Holiday {
   id: number;
+  userId: number;
   date: string;
-  country_code: string | null; // null for global
-  description: string;
+  location: LocationType;
+  overridden: boolean;
+  overriddenBy?: number;
+  overriddenAt?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export type RequestStatus = 'pending' | 'approved' | 'rejected';
+// Legacy alias for backwards compatibility
+export type Location = Entry;
 
-export interface EntryRequest {
-  id: string;
-  user_id: string;
+// Compliance status type
+export type ComplianceStatus = 'safe' | 'warning' | 'critical' | 'exceeded';
+
+// Employee stats for mobile
+export interface EmployeeStats {
+  remoteDaysCount: number;
+  remoteDaysLimit: number;
+  complianceStatus: ComplianceStatus;
+  daysRemaining: number;
+  percentageUsed: number;
+}
+
+// Declaration request
+export interface DeclarationRequest {
   date: string;
-  requested_status: work_status;
-  reason: string;
-  status: RequestStatus;
-  admin_id?: string;
-  admin_note?: string;
-  created_at: Date;
-  updated_at: Date;
-  user_email?: string;
-  user_first_name?: string;
-  user_last_name?: string;
+  location: LocationType;
+}
+
+// API response types
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+}
+
+export interface ApiError {
+  error: string;
+  message: string;
+  statusCode: number;
+}
+
+// Auth types for mobile
+export interface AuthUser {
+  id: number;
+  email: string;
+  name: string;
+  role: 'admin' | 'hr' | 'employee';
+  country?: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: AuthUser;
+}
+
+// Offline queue types for mobile
+export interface QueuedEntry {
+  id: string;
+  date: string;
+  location: LocationType;
+  createdAt: string;
+  synced: boolean;
+}
+
+// Analytics event types
+export type AnalyticsEventType =
+  | 'app_open'
+  | 'login'
+  | 'logout'
+  | 'declare_location'
+  | 'screen_view'
+  | 'error';
+
+export interface AnalyticsEvent {
+  type: AnalyticsEventType;
+  properties?: Record<string, unknown>;
+  timestamp: string;
 }

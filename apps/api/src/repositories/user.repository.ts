@@ -1,5 +1,5 @@
 import { Pool, QueryResult } from 'pg';
-import { User } from '@tracker/types';
+import { User } from '@remotedays/types';
 
 export interface IUserRepository {
   findByEmail(email: string): Promise<User | null>;

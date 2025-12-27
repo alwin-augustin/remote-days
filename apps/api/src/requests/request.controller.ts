@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { RequestService } from '../services/request.service';
-import { work_status } from '@tracker/types';
+import { work_status } from '@remotedays/types';
 
 export class RequestController {
     constructor(private requestService: RequestService) { }

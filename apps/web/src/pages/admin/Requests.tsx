@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { EntryRequest } from '@tracker/types';
+import type { EntryRequest } from '@remotedays/types';
 import { format } from 'date-fns';
 import { Check, X, Clock } from 'lucide-react';
 

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import type { work_status } from '@tracker/types';
+import type { work_status } from '@remotedays/types';
 
 interface DailyDeclarationSummaryProps {
   date: string;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { Holiday, CountryThreshold } from '@tracker/types';
+import type { Holiday, CountryThreshold } from '@remotedays/types';
 import { format } from 'date-fns';
 import { Trash2, Plus, Calendar, Filter } from 'lucide-react';
 

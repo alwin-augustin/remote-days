@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-// import { work_status } from '@tracker/types'; // Not used in component logic directly, handled by string literal in schema
+// import { work_status } from '@remotedays/types'; // Not used in component logic directly, handled by string literal in schema
 
 import { Button } from '@/components/ui/button';
 import {

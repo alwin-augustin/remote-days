@@ -6,7 +6,7 @@ import { RequestChangeDialog } from "@/components/RequestChangeDialog";
 import { ComplianceStatusCard } from '@/components/ComplianceStatusCard';
 import { WeekCalendar } from '@/components/WeekCalendar';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { work_status } from '@tracker/types';
+import type { work_status } from '@remotedays/types';
 
 export default function Dashboard() {
     const today = new Date();

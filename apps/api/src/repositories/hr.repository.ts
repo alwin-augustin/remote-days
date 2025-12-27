@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { work_status } from '@tracker/types';
+import { work_status } from '@remotedays/types';
 
 export interface EmployeeSummary {
   user_id: string;

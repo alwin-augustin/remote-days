@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { api } from '@/lib/api';
-import type { User } from '@tracker/types';
+import type { User } from '@remotedays/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {

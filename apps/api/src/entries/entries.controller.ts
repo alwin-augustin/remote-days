@@ -1,10 +1,10 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { work_status } from '@tracker/types';
+import { work_status } from '@remotedays/types';
 import { EntryService } from '../services/entry.service';
 import { AppError } from '../errors/app-error';
 
 export class EntriesController {
-  constructor(private readonly entryService: EntryService) {}
+  constructor(private readonly entryService: EntryService) { }
 
   createEntryHandler = async (
     request: FastifyRequest<{ Body: { status: work_status; date: string } }>,
@@ -37,17 +37,19 @@ export class EntriesController {
   };
 
   getEntriesHandler = async (
-    request: FastifyRequest<{ Querystring: { year: string; month: string } }>,
+    request: FastifyRequest<{ Querystring: { year?: string; month?: string; limit?: string; offset?: string } }>,
     reply: FastifyReply
   ) => {
-    const { year, month } = request.query;
+    const { year, month, limit, offset } = request.query;
     const user = request.user;
 
-    if (!year || !month) {
-      throw new AppError('Year and month are required', 400);
-    }
+    const entries = await this.entryService.getEntries(user.user_id, {
+      year,
+      month,
+      limit: limit ? parseInt(limit, 10) : 10,
+      offset: offset ? parseInt(offset, 10) : 0,
+    });
 
-    const entries = await this.entryService.getEntriesForMonth(user.user_id, year, month);
     reply.code(200).send(entries);
   };
 

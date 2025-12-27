@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import type { work_status } from '@tracker/types';
+import type { work_status } from '@remotedays/types';
 
 // Fallback if Textarea component doesn't exist (I didn't find it in search)
 // I will assume I can use a simple textarea with tailwind classes

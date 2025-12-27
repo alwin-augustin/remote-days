@@ -1,5 +1,5 @@
 import { IEntryRepository } from '../repositories/entry.repository';
-import { work_status, Entry, UserStats } from '@tracker/types';
+import { work_status, Entry, EmployeeStats } from '@remotedays/types';
 import { AppError } from '../errors/app-error';
 import { config } from '../config/env';
 
@@ -9,7 +9,7 @@ export class EntryService {
   constructor(
     private entryRepo: IEntryRepository,
     private auditRepo: IAuditRepository
-  ) {}
+  ) { }
 
   async createOrUpdateEntry(
     userId: string,
@@ -79,21 +79,28 @@ export class EntryService {
     return result;
   }
 
-  async getEntriesForMonth(userId: string, year: string, month: string): Promise<Entry[]> {
-    return this.entryRepo.findByUserAndMonth(userId, year, month);
+  async getEntries(
+    userId: string,
+    params: { year?: string; month?: string; limit?: number; offset?: number }
+  ): Promise<Entry[]> {
+    if (params.year && params.month) {
+      return this.entryRepo.findByUserAndMonth(userId, params.year, params.month);
+    }
+    return this.entryRepo.findAllByUser(userId, params.limit || 10, params.offset || 0);
   }
 
-  async getUserStats(userId: string): Promise<UserStats> {
+  async getUserStats(userId: string): Promise<EmployeeStats> {
     const currentYear = new Date().getFullYear();
     const stats = await this.entryRepo.getStatsForYear(userId, currentYear);
 
     const homeCount = parseInt(stats.home_days, 10) || 0;
 
     return {
-      days_used_current_year: homeCount,
-      days_remaining: Math.max(0, config.MAX_HOME_DAYS - homeCount),
-      percent_used: Math.min(100, Math.round((homeCount / config.MAX_HOME_DAYS) * 100)),
-      year: currentYear,
+      remoteDaysCount: homeCount,
+      remoteDaysLimit: config.MAX_HOME_DAYS,
+      complianceStatus: 'safe', // Logic to determine this can be added if shared utils are available, otherwise default safely
+      daysRemaining: Math.max(0, config.MAX_HOME_DAYS - homeCount),
+      percentageUsed: Math.min(100, Math.round((homeCount / config.MAX_HOME_DAYS) * 100)),
     };
   }
 }

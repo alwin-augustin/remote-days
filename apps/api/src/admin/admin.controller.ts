@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { User } from '@tracker/types';
+import { User } from '@remotedays/types';
 import { UserService } from '../services/user.service';
 import { AppError } from '../errors/app-error';
 

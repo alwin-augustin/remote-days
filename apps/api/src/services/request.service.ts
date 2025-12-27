@@ -3,7 +3,7 @@ import { EntryService } from './entry.service';
 import { IAuditRepository } from '../repositories/audit.repository';
 import { IUserRepository } from '../repositories/user.repository';
 import { EmailService } from './email.service';
-import { EntryRequest, RequestStatus, work_status } from '@tracker/types';
+import { EntryRequest, RequestStatus, work_status } from '@remotedays/types';
 import { AppError } from '../errors/app-error';
 
 export class RequestService {

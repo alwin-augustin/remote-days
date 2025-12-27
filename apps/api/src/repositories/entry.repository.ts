@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { work_status } from '@tracker/types';
+import { work_status } from '@remotedays/types';
 
 export interface Entry {
   id: string;
@@ -15,11 +15,20 @@ export interface IEntryRepository {
   upsert(userId: string, date: string, status: work_status, source: string, actorId?: string): Promise<Entry>;
   findByUserAndDate(userId: string, date: string): Promise<Entry | undefined>;
   findByUserAndMonth(userId: string, year: number | string, month: number | string): Promise<Entry[]>;
+  findAllByUser(userId: string, limit: number, offset: number): Promise<Entry[]>;
   getStatsForYear(userId: string, year: number | string): Promise<{ home_days: string; office_days: string }>;
 }
 
 export class EntryRepository implements IEntryRepository {
-  constructor(private pool: Pool) {}
+  constructor(private pool: Pool) { }
+
+  async findAllByUser(userId: string, limit: number, offset: number): Promise<Entry[]> {
+    const { rows } = await this.pool.query<Entry>(
+      'SELECT * FROM entries WHERE user_id = $1 ORDER BY date DESC LIMIT $2 OFFSET $3',
+      [userId, limit, offset]
+    );
+    return rows;
+  }
 
   async upsert(userId: string, date: string, status: work_status, source: string, actorId?: string): Promise<Entry> {
     const client = await this.pool.connect();

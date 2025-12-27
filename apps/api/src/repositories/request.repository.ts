@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { EntryRequest, RequestStatus } from '@tracker/types';
+import { EntryRequest, RequestStatus } from '@remotedays/types';
 
 export interface IRequestRepository {
     create(userId: string, date: string, status: string, reason: string): Promise<EntryRequest>;

@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { work_status } from '@tracker/types';
+import { work_status } from '@remotedays/types';
 import { HRService } from '../services/hr.service';
 import { AppError } from '../errors/app-error';
 

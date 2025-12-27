@@ -1,5 +1,5 @@
 {
-  "name": "@tracker/api",
+  "name": "@remotedays/api",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -16,18 +16,14 @@
     "db:seed:zones": "ts-node -r dotenv/config src/scripts/seed-compliance-zones.ts dotenv_config_path=../../.env"
   },
   "dependencies": {
-    "@faker-js/faker": "^10.1.0",
-    "@fastify/busboy": "^3.2.0",
     "@fastify/cookie": "^8.3.0",
     "@fastify/cors": "^8.3.0",
-    "@fastify/csrf-protection": "^7.1.0",
     "@fastify/helmet": "11.1.1",
     "@fastify/multipart": "^8.3.0",
     "@fastify/postgres": "^5.2.0",
     "@fastify/rate-limit": "9.1.0",
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^2.1.0",
-    "@types/csv-parse": "^1.1.12",
     "bcrypt": "^5.1.0",
     "csv-parse": "^6.1.0",
     "date-fns": "^2.30.0",
@@ -38,14 +34,14 @@
     "jsonwebtoken": "^9.0.1",
     "node-cron": "^3.0.2",
     "nodemailer": "^7.0.11",
-    "pg": "^8.11.1",
-    "stream-wormhole": "^1.1.0"
+    "pg": "^8.11.1"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
+    "@remotedays/types": "*",
     "@testcontainers/postgresql": "^11.9.0",
-    "@tracker/types": "*",
     "@types/bcrypt": "^5.0.0",
-    "@types/faker": "^6.6.8",
+    "@types/csv-parse": "^1.1.12",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^20.4.5",
     "@types/node-cron": "^3.0.8",

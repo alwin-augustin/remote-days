@@ -1,7 +1,7 @@
 import { format, addDays, startOfWeek, isSameDay, isWeekend } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { work_status } from '@tracker/types';
+import type { work_status } from '@remotedays/types';
 
 interface WeekCalendarProps {
   entries: { date: string; status: work_status }[];

@@ -1,5 +1,5 @@
 import { IHRRepository } from '../repositories/hr.repository';
-import { work_status } from '@tracker/types';
+import { work_status } from '@remotedays/types';
 
 export class HRService {
   constructor(private hrRepo: IHRRepository) {}
