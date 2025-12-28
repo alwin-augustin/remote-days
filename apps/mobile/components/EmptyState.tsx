@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
 
 interface EmptyStateProps {
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
   title: string;
   message?: string;
   style?: ViewStyle;
@@ -19,7 +19,7 @@ export function EmptyState({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.iconContainer}>
-        <Ionicons name={icon} size={64} color={theme.colors.text.tertiary} />
+        <Ionicons name={icon as string} size={64} color={theme.colors.text.tertiary} />
       </View>
       <Text style={styles.title}>{title}</Text>
       {message && <Text style={styles.message}>{message}</Text>}

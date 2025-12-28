@@ -17,7 +17,7 @@ interface StatusBadgeProps {
 interface StatusConfig {
   color: string;
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
 }
 
 const statusConfigs: Record<BadgeStatus, StatusConfig> = {
@@ -82,7 +82,7 @@ export function StatusBadge({ status, size = 'medium', style }: StatusBadgeProps
         style,
       ]}
     >
-      <Ionicons name={config.icon} size={sizeConfig.iconSize} color="#fff" />
+      <Ionicons name={config.icon as string} size={sizeConfig.iconSize} color="#fff" />
       <Text style={[styles.text, { fontSize: sizeConfig.fontSize }]}>
         {config.label}
       </Text>

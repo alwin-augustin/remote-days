@@ -272,11 +272,23 @@ export interface ComplianceZone {
 // ===========================================
 
 export interface Holiday {
-  id: string;
+  id: number;
   date: string;
   name: string;
+  description?: string; // Alias for name
   country_code: string | null; // null = global
   created_at: string;
+}
+
+// ===========================================
+// Country Threshold Types
+// ===========================================
+
+export interface CountryThreshold {
+  country_code: string;
+  max_remote_days: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // ===========================================

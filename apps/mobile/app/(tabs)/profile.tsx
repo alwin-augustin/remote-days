@@ -69,11 +69,11 @@ export default function ProfileScreen() {
             end={{ x: 1, y: 1 }}
           >
             <Text style={styles.avatarText}>
-              {userData?.name?.charAt(0).toUpperCase() || '?'}
+              {userData?.firstName?.charAt(0).toUpperCase() || '?'}
             </Text>
           </LinearGradient>
         </View>
-        <Text style={styles.name}>{userData?.name || 'User'}</Text>
+        <Text style={styles.name}>{userData ? `${userData.firstName} ${userData.lastName}` : 'User'}</Text>
         <Text style={styles.email}>{userData?.email || ''}</Text>
       </LinearGradient>
 
@@ -114,7 +114,7 @@ export default function ProfileScreen() {
 
 // Menu Item Component
 interface MenuItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   title: string;
   subtitle: string;
   gradient?: 'primary' | 'secondary' | 'success';
@@ -135,11 +135,11 @@ function MenuItem({ icon, title, subtitle, gradient, onPress }: MenuItemProps) {
       <View style={styles.menuIconContainer}>
         {gradientColors ? (
           <LinearGradient colors={gradientColors} style={styles.menuIconGradient}>
-            <Ionicons name={icon} size={20} color="#fff" />
+            <Ionicons name={icon as string} size={20} color="#fff" />
           </LinearGradient>
         ) : (
           <View style={[styles.menuIconGradient, styles.menuIconGray]}>
-            <Ionicons name={icon} size={20} color="#fff" />
+            <Ionicons name={icon as string} size={20} color="#fff" />
           </View>
         )}
       </View>

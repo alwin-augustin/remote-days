@@ -81,7 +81,7 @@ describe('AuthContext', () => {
     });
 
     const mockToken = 'new-token';
-    const mockUser: AuthUser = { id: 1, email: 'test@example.com', name: 'Test User', role: 'employee' };
+    const mockUser: AuthUser = { id: '1', email: 'test@example.com', firstName: 'Test', lastName: 'User', role: 'employee' };
 
     await act(async () => {
       await result.current.login(mockToken, mockUser);

@@ -31,9 +31,9 @@ function formatMessage(level: LogLevel, message: string, context?: LogContext): 
  * Send error to monitoring service (Sentry, etc.)
  * TODO: Implement integration with error tracking service
  */
-function reportError(error: Error, context?: LogContext): void {
+function reportError(_error: Error, _context?: LogContext): void {
   // In production, send to error tracking service
-  // Example: Sentry.captureException(error, { extra: context });
+  // Example: Sentry.captureException(_error, { extra: _context });
   if (!isDev) {
     // For now, just ensure errors are logged
     // This is where you'd integrate Sentry or similar

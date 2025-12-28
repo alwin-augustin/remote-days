@@ -19,7 +19,7 @@ interface GradientButtonProps {
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
   iconSize?: number;
   gradient?: GradientPreset;
   customColors?: readonly [string, string, ...string[]];
@@ -74,7 +74,7 @@ export function GradientButton({
           <ActivityIndicator size="small" color="#fff" />
         ) : (
           <>
-            {icon && <Ionicons name={icon} size={iconSize} color="#fff" />}
+            {icon && <Ionicons name={icon as string} size={iconSize} color="#fff" />}
             <Text style={[styles.text, textStyle]}>{title}</Text>
           </>
         )}

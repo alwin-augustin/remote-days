@@ -132,7 +132,7 @@ export const analyticsService = {
     await analyticsService.track('app_open');
   },
 
-  trackLogin: async (userId: number): Promise<void> => {
+  trackLogin: async (userId: string): Promise<void> => {
     await analyticsService.track('login', { userId });
   },
 

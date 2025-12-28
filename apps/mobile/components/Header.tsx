@@ -7,7 +7,7 @@ import { theme } from '../constants/theme';
 interface HeaderProps {
   title: string;
   subtitle?: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: string;
   showLogo?: boolean;
   rightContent?: ReactNode;
   style?: ViewStyle;
@@ -41,7 +41,7 @@ export function Header({
           </View>
         ) : (
           <View style={styles.iconContainer}>
-            {icon && <Ionicons name={icon} size={28} color="#fff" />}
+            {icon && <Ionicons name={icon as string} size={28} color="#fff" />}
             <View style={styles.headerText}>
               <Text style={styles.headerTitle}>{title}</Text>
               {subtitle && <Text style={styles.headerSubtitle}>{subtitle}</Text>}
