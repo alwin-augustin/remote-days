@@ -34,9 +34,11 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
+// Employees can only request home or office status
+// Travel and sick can only be set by HR/Admin via override
 const requestSchema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date'),
-    status: z.enum(['home', 'office', 'travel', 'sick']),
+    status: z.enum(['home', 'office']),
     reason: z.string().min(5, 'Reason must be at least 5 characters'),
 });
 
@@ -112,8 +114,6 @@ export function RequestChangeDialog({ defaultDate, onSuccess }: RequestChangeDia
                                         <SelectContent>
                                             <SelectItem value="home">Home</SelectItem>
                                             <SelectItem value="office">Office</SelectItem>
-                                            <SelectItem value="travel">Travel</SelectItem>
-                                            <SelectItem value="sick">Sick</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
