@@ -117,6 +117,13 @@ export default function Login() {
                     <div className="text-center text-sm text-gray-500">
                         Need an account? Contact your HR administrator.
                     </div>
+                    <div className="text-center text-xs text-gray-400 mt-2">
+                        <Link to="/legal/privacy" className="hover:underline">Privacy Policy</Link>
+                        {' | '}
+                        <Link to="/legal/terms" className="hover:underline">Terms of Service</Link>
+                        {' | '}
+                        <Link to="/legal/cookies" className="hover:underline">Cookies</Link>
+                    </div>
                 </CardFooter>
             </Card>
         </div>
