@@ -129,6 +129,36 @@ CREATE TABLE schema_migrations (
   applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 8b. login_attempts (for account lockout and security monitoring)
+CREATE TABLE login_attempts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) NOT NULL,
+  ip_address VARCHAR(45) NOT NULL, -- IPv6 can be up to 45 chars
+  user_agent TEXT,
+  success BOOLEAN NOT NULL DEFAULT false,
+  failure_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_login_attempts_email_time ON login_attempts (email, created_at DESC);
+CREATE INDEX idx_login_attempts_ip ON login_attempts (ip_address, created_at DESC);
+
+-- 8c. security_events (audit log for security-related events)
+CREATE TABLE security_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type VARCHAR(50) NOT NULL,
+  user_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+  email VARCHAR(255),
+  ip_address VARCHAR(45) NOT NULL,
+  user_agent TEXT,
+  details JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_security_events_type ON security_events (event_type, created_at DESC);
+CREATE INDEX idx_security_events_user ON security_events (user_id, created_at DESC);
+CREATE INDEX idx_security_events_ip ON security_events (ip_address, created_at DESC);
+
 -- 9. helpful indexes
 CREATE INDEX idx_entries_user_date ON entries (user_id, date);
 CREATE INDEX idx_entries_date ON entries (date);
