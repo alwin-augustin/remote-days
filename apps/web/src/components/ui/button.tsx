@@ -43,6 +43,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     return (
+      // @ts-ignore - React 19 ReactNode includes bigint, Radix UI SlotProps doesn't yet
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
