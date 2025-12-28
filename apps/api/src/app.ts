@@ -13,7 +13,25 @@ import { globalErrorHandler } from './errors/global-error-handler';
 export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionString?: string } = {}): FastifyInstance {
   const server = fastify(opts);
 
-  server.register(helmet, { global: true }); // Security Headers
+  // Security Headers with Content Security Policy
+  server.register(helmet, {
+    global: true,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline scripts for Swagger UI
+        styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for Swagger UI
+        imgSrc: ["'self'", 'data:', 'https:'],
+        fontSrc: ["'self'", 'https:', 'data:'],
+        connectSrc: ["'self'", 'https://api.remotedays.app'],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Required for Swagger UI
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin for API
+  });
 
   server.register(require('@fastify/swagger'), {
     openapi: {

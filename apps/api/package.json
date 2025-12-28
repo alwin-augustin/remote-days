@@ -14,7 +14,10 @@
     "test:coverage": "vitest run --coverage",
     "db:seed": "ts-node -r dotenv/config src/scripts/seed.ts dotenv_config_path=../../.env",
     "db:seed:zones": "ts-node -r dotenv/config src/scripts/seed-compliance-zones.ts dotenv_config_path=../../.env",
-    "db:seed:demo": "ts-node -r dotenv/config src/scripts/seed-demo.ts dotenv_config_path=../../.env"
+    "db:seed:demo": "ts-node -r dotenv/config src/scripts/seed-demo.ts dotenv_config_path=../../.env",
+    "db:migrate": "ts-node -r dotenv/config src/scripts/migrate.ts dotenv_config_path=../../.env",
+    "db:migrate:status": "ts-node -r dotenv/config src/scripts/migrate.ts dotenv_config_path=../../.env status",
+    "db:migrate:rollback": "ts-node -r dotenv/config src/scripts/migrate.ts dotenv_config_path=../../.env rollback"
   },
   "dependencies": {
     "@fastify/cookie": "^8.3.0",

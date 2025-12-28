@@ -3,10 +3,13 @@
   "short_name": "RemoteDays",
   "description": "Track and manage remote work compliance",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3B82F6",
   "orientation": "portrait",
+  "id": "remote-days-pwa",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/favicon-16x16.png",

@@ -1,16 +1,23 @@
 import { INotificationRepository, UserToNotify } from '../repositories/notification.repository';
 import { EmailService } from './email.service';
 import { HolidayService } from './holiday.service';
+import { PushService } from './push.service';
 import { randomUUID } from 'crypto';
 import { config } from '../config/env';
 import { generateEmailHtml } from './email-templates';
 
 export class NotificationService {
+  private pushService: PushService | null = null;
+
   constructor(
     private notificationRepo: INotificationRepository,
     private emailService: EmailService,
     private holidayService: HolidayService
   ) { }
+
+  setPushService(pushService: PushService) {
+    this.pushService = pushService;
+  }
 
   async getDailyStats(date: string) {
     return this.notificationRepo.getDailyNotificationStats(date);
@@ -52,6 +59,16 @@ export class NotificationService {
     );
 
     await this.emailService.sendEmail(user.email, subject, text, html);
+
+    // Also send push notification if available
+    if (this.pushService) {
+      try {
+        await this.pushService.sendDailyReminder(user.user_id, targetDate);
+      } catch (err) {
+        // Log but don't fail - push is supplementary
+        console.error('Failed to send push notification:', err);
+      }
+    }
 
     await this.notificationRepo.createNotification(user.user_id, 'email', 'daily_prompt', { targetDate, links });
   }

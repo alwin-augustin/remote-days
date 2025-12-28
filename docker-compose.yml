@@ -77,8 +77,8 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile.dev
     container_name: remotedays-seed
-    # Override the default command to run the seed script
-    command: [ "npm", "run", "db:seed", "--workspace=apps/api" ]
+    # Override the default command to run the demo seed script (100 users)
+    command: [ "npm", "run", "db:seed:demo", "--workspace=apps/api" ]
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages

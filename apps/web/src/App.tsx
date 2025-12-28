@@ -3,6 +3,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import Login from './pages/Login';
 import { Toaster } from '@/components/ui/sonner';
+import { CookieConsent } from '@/components/CookieConsent';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 
 import EmployeeSummary from '@/pages/hr/EmployeeSummary';
 import EmployeeList from '@/pages/hr/EmployeeList';
@@ -25,6 +27,11 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import CtaPage from "@/pages/CtaPage";
 
+// Legal pages
+import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
+import TermsOfService from '@/pages/legal/TermsOfService';
+import CookiePolicy from '@/pages/legal/CookiePolicy';
+
 function App() {
   return (
     <>
@@ -34,6 +41,11 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/cta" element={<CtaPage />} />
+
+        {/* Legal Pages (Public) */}
+        <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+        <Route path="/legal/terms" element={<TermsOfService />} />
+        <Route path="/legal/cookies" element={<CookiePolicy />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
@@ -70,6 +82,8 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />
+      <CookieConsent />
+      <PWAInstallPrompt />
     </>
   );
 }
