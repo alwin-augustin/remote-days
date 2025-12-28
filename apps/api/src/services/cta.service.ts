@@ -1,7 +1,7 @@
 import { ITokenRepository } from '../repositories/token.repository';
 import { IEntryRepository } from '../repositories/entry.repository';
 import { AppError } from '../errors/app-error';
-import { work_status } from '@tracker/types';
+import { work_status } from '@remotedays/types';
 
 export class CtaService {
   constructor(

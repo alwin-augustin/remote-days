@@ -20,10 +20,9 @@ export class NotificationService {
     const actions = ['home', 'office'];
     const links: Record<string, string> = {};
 
-    // Check availability
+    // Check availability - skip holidays
     const isHoliday = await this.holidayService.isHoliday(targetDate, user.work_country);
     if (isHoliday) {
-      // console.log(`Skipping notification to ${user.email} for ${targetDate} (Holiday)`);
       return;
     }
 

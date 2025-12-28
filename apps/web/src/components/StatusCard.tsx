@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import type { work_status } from '@tracker/types';
+import type { work_status } from '@remotedays/types';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,11 +31,13 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
             const res = await api.post('/entries', { status, date: formattedDate });
             return res.data;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['entries'] });
-            queryClient.invalidateQueries({ queryKey: ['stats'] });
+        onSuccess: async () => {
+            // Force immediate refetch to update compliance stats
+            await Promise.all([
+                queryClient.refetchQueries({ queryKey: ['entries'] }),
+                queryClient.refetchQueries({ queryKey: ['stats'] }),
+            ]);
             toast.success("Status updated!");
-            // Note: need to install sonner or use hook for toast
         },
         onError: (error: unknown) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

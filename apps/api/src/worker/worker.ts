@@ -1,7 +1,7 @@
 import * as cron from 'node-cron';
 import { FastifyInstance } from 'fastify';
 import { randomUUID } from 'crypto';
-import type { User } from '@tracker/types';
+import type { User } from '@remotedays/types';
 import { utcToZonedTime, format } from 'date-fns-tz';
 import { emailService } from '../services/email.service';
 import { config } from '../config/env';

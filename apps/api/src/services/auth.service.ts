@@ -6,7 +6,7 @@ import { ITokenRepository } from '../repositories/token.repository';
 import { EmailService } from './email.service';
 import { config } from '../config/env';
 import { AppError } from '../errors/app-error';
-import { UserInfo } from '@tracker/types';
+import { UserInfo } from '@remotedays/types';
 import { generateEmailHtml } from './email-templates';
 
 export class AuthService {

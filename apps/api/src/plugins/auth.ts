@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
-import { User } from '@tracker/types';
+import { User } from '@remotedays/types';
 import * as jwt from 'jsonwebtoken';
 
 // Extend the FastifyRequest interface to include the user property

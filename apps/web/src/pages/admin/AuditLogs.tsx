@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, subDays } from 'date-fns';
 import { api } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Table,
@@ -75,7 +76,7 @@ export default function AuditLogs() {
             link.click();
             link.remove();
         } catch (e) {
-            console.error("Failed to download excel", e);
+            logger.error("Failed to download audit excel", e);
         }
     };
 

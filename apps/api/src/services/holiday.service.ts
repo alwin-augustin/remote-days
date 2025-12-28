@@ -1,5 +1,5 @@
 import { IHolidayRepository } from '../repositories/holiday.repository';
-import { Holiday } from '@tracker/types';
+import { Holiday } from '@remotedays/types';
 import { AppError } from '../errors/app-error';
 
 export class HolidayService {

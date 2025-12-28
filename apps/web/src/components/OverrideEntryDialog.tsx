@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import type { work_status } from '@tracker/types';
+import type { work_status } from '@remotedays/types';
 
 // Fallback if Textarea component doesn't exist (I didn't find it in search)
 // I will assume I can use a simple textarea with tailwind classes
@@ -59,14 +59,16 @@ export function OverrideEntryDialog({ open, onOpenChange, entry, date, onSuccess
                 reason
             });
         },
-        onSuccess: () => {
+        onSuccess: async () => {
+            // Force immediate refetch to update data
+            await queryClient.refetchQueries({ queryKey: ['hr'] });
             toast.success('Entry updated successfully');
-            queryClient.invalidateQueries({ queryKey: ['hr'] }); // Invalidate all HR queries
             onSuccess();
             onOpenChange(false);
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to update entry');
+        onError: (error: unknown) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            toast.error((error as any).response?.data?.message || 'Failed to update entry');
         }
     });
 

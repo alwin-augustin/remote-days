@@ -1,0 +1,389 @@
+import * as bcrypt from 'bcrypt';
+import db from '../db';
+import * as dotenv from 'dotenv';
+import fastify from 'fastify';
+import { format, subDays, isWeekend, eachDayOfInterval, startOfYear } from 'date-fns';
+
+dotenv.config({ path: '../../.env' });
+
+const dbUrl = process.env.DATABASE_URL;
+console.log('Demo Seed Script using DATABASE_URL:', dbUrl);
+
+// Demo data configuration
+const DEMO_PASSWORD = 'password123';
+const SALT_ROUNDS = 10;
+
+// Compliance thresholds (34 days for FR/BE/DE)
+const THRESHOLD = 34;
+
+// Distribution of 100 employees by compliance status
+const COMPLIANCE_DISTRIBUTION = {
+  safe: 40,      // 0-25 remote days (< 75%)
+  warning: 30,   // 26-30 remote days (75-90%)
+  critical: 20,  // 31-34 remote days (90-100%)
+  exceeded: 10,  // 35+ remote days (> 100%)
+};
+
+// Remote day ranges for each status
+const REMOTE_DAY_RANGES = {
+  safe: { min: 5, max: 25 },
+  warning: { min: 26, max: 30 },
+  critical: { min: 31, max: 34 },
+  exceeded: { min: 35, max: 45 },
+};
+
+// Countries for employees
+const COUNTRIES = ['FR', 'BE', 'DE'];
+
+// First names and last names for generating employees
+const FIRST_NAMES = [
+  'Emma', 'Louis', 'Chloé', 'Lucas', 'Léa', 'Hugo', 'Manon', 'Gabriel', 'Inès', 'Raphaël',
+  'Camille', 'Arthur', 'Sarah', 'Jules', 'Jade', 'Adam', 'Louise', 'Léo', 'Alice', 'Nathan',
+  'Lina', 'Tom', 'Eva', 'Mathis', 'Anna', 'Enzo', 'Zoé', 'Noah', 'Clara', 'Théo',
+  'Charlotte', 'Maxime', 'Marie', 'Alexandre', 'Juliette', 'Paul', 'Lucie', 'Ethan', 'Rose', 'Victor',
+  'Sophie', 'Antoine', 'Margot', 'Clément', 'Ambre', 'Benjamin', 'Romane', 'Quentin', 'Océane', 'Simon'
+];
+
+const LAST_NAMES = [
+  'Martin', 'Bernard', 'Dubois', 'Thomas', 'Robert', 'Richard', 'Petit', 'Durand', 'Leroy', 'Moreau',
+  'Simon', 'Laurent', 'Lefebvre', 'Michel', 'Garcia', 'David', 'Bertrand', 'Roux', 'Vincent', 'Fournier',
+  'Morel', 'Girard', 'André', 'Lefevre', 'Mercier', 'Dupont', 'Lambert', 'Bonnet', 'François', 'Martinez',
+  'Müller', 'Schmidt', 'Schneider', 'Fischer', 'Weber', 'Meyer', 'Wagner', 'Becker', 'Schulz', 'Hoffmann',
+  'Peeters', 'Janssens', 'Maes', 'Jacobs', 'Willems', 'Claes', 'Goossens', 'Wouters', 'De Smedt', 'Hermans'
+];
+
+// Request reasons
+const REQUEST_REASONS = [
+  'I forgot to declare my status for this day',
+  'System was down when I tried to declare',
+  'Misclicked and selected wrong option',
+  'Had to work from home due to emergency',
+  'Doctor appointment required home office',
+  'Child was sick, had to stay home',
+  'Public transport strike',
+  'Internet issue prevented declaration',
+  'Was traveling for client meeting',
+  'Conference call required quiet environment'
+];
+
+function getRandomElement<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getRandomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateWorkDays(year: number): string[] {
+  const start = startOfYear(new Date(year, 0, 1));
+  const today = new Date();
+  const end = today < new Date(year, 11, 31) ? today : new Date(year, 11, 31);
+
+  const allDays = eachDayOfInterval({ start, end });
+  return allDays
+    .filter(day => !isWeekend(day))
+    .map(day => format(day, 'yyyy-MM-dd'));
+}
+
+async function seedDemoData() {
+  const server = fastify();
+  await server.register(db);
+  await server.ready();
+
+  const client = await server.pg.connect();
+
+  try {
+    console.log('=== Starting Demo Data Seed ===\n');
+    await client.query('BEGIN');
+
+    // 1. Clean all existing data
+    console.log('1. Cleaning existing data...');
+    await client.query('TRUNCATE TABLE requests CASCADE;');
+    await client.query('TRUNCATE TABLE notifications CASCADE;');
+    await client.query('TRUNCATE TABLE audit_logs CASCADE;');
+    await client.query('TRUNCATE TABLE email_cta_tokens CASCADE;');
+    await client.query('TRUNCATE TABLE entries CASCADE;');
+    await client.query('TRUNCATE TABLE users CASCADE;');
+    await client.query('TRUNCATE TABLE holidays CASCADE;');
+    console.log('   ✓ All tables cleaned\n');
+
+    // 2. Hash password
+    console.log('2. Preparing password hash...');
+    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, SALT_ROUNDS);
+    console.log(`   ✓ Password hash created for: ${DEMO_PASSWORD}\n`);
+
+    // 3. Create main accounts
+    console.log('3. Creating main accounts...');
+
+    const adminResult = await client.query(
+      `INSERT INTO users (email, first_name, last_name, country_of_residence, work_country, password_hash, role, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true) RETURNING user_id`,
+      ['admin@remotedays.app', 'Admin', 'User', 'LU', 'LU', passwordHash, 'admin']
+    );
+    const adminId = adminResult.rows[0].user_id;
+    console.log(`   ✓ Admin: admin@remotedays.app (${adminId})`);
+
+    const hrResult = await client.query(
+      `INSERT INTO users (email, first_name, last_name, country_of_residence, work_country, password_hash, role, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true) RETURNING user_id`,
+      ['hr@remotedays.app', 'HR', 'Manager', 'LU', 'LU', passwordHash, 'hr']
+    );
+    const hrId = hrResult.rows[0].user_id;
+    console.log(`   ✓ HR: hr@remotedays.app (${hrId})`);
+
+    const employeeResult = await client.query(
+      `INSERT INTO users (email, first_name, last_name, country_of_residence, work_country, password_hash, role, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true) RETURNING user_id`,
+      ['employee@remotedays.app', 'John', 'Doe', 'FR', 'LU', passwordHash, 'employee']
+    );
+    const mainEmployeeId = employeeResult.rows[0].user_id;
+    console.log(`   ✓ Employee: employee@remotedays.app (${mainEmployeeId})\n`);
+
+    // 4. Create 100 additional employees
+    console.log('4. Creating 100 additional employees...');
+    const employeeIds: { id: string; status: string; country: string }[] = [];
+    let employeeCount = 0;
+
+    for (const [status, count] of Object.entries(COMPLIANCE_DISTRIBUTION)) {
+      for (let i = 0; i < count; i++) {
+        employeeCount++;
+        const firstName = getRandomElement(FIRST_NAMES);
+        const lastName = getRandomElement(LAST_NAMES);
+        const country = getRandomElement(COUNTRIES);
+        const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${employeeCount}@remotedays.app`;
+
+        const result = await client.query(
+          `INSERT INTO users (email, first_name, last_name, country_of_residence, work_country, password_hash, role, is_active)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, true) RETURNING user_id`,
+          [email, firstName, lastName, country, 'LU', passwordHash, 'employee']
+        );
+
+        employeeIds.push({
+          id: result.rows[0].user_id,
+          status,
+          country
+        });
+      }
+    }
+    console.log(`   ✓ Created ${employeeCount} employees`);
+    console.log(`     - Safe (0-25 days): ${COMPLIANCE_DISTRIBUTION.safe}`);
+    console.log(`     - Warning (26-30 days): ${COMPLIANCE_DISTRIBUTION.warning}`);
+    console.log(`     - Critical (31-34 days): ${COMPLIANCE_DISTRIBUTION.critical}`);
+    console.log(`     - Exceeded (35+ days): ${COMPLIANCE_DISTRIBUTION.exceeded}\n`);
+
+    // 5. Generate work entries for 2025
+    console.log('5. Generating work entries for 2025...');
+    const workDays = generateWorkDays(2025);
+    console.log(`   Found ${workDays.length} work days in 2025`);
+
+    let totalEntries = 0;
+
+    // Entries for main employee (warning status - 28 remote days)
+    const mainEmployeeRemoteDays = 28;
+    const mainEmployeeHomeDays = workDays.slice(0, mainEmployeeRemoteDays);
+    const mainEmployeeOfficeDays = workDays.slice(mainEmployeeRemoteDays);
+
+    for (const day of mainEmployeeHomeDays) {
+      await client.query(
+        `INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'home', 'seed')`,
+        [mainEmployeeId, day]
+      );
+      totalEntries++;
+    }
+    for (const day of mainEmployeeOfficeDays) {
+      await client.query(
+        `INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'office', 'seed')`,
+        [mainEmployeeId, day]
+      );
+      totalEntries++;
+    }
+    console.log(`   ✓ Main employee: ${mainEmployeeRemoteDays} home + ${mainEmployeeOfficeDays.length} office days`);
+
+    // Entries for 100 additional employees
+    for (const emp of employeeIds) {
+      const range = REMOTE_DAY_RANGES[emp.status as keyof typeof REMOTE_DAY_RANGES];
+      const remoteDays = getRandomInt(range.min, range.max);
+
+      // Randomly select which days are remote
+      const shuffledDays = [...workDays].sort(() => Math.random() - 0.5);
+      const homeDays = shuffledDays.slice(0, Math.min(remoteDays, workDays.length));
+      const officeDays = shuffledDays.slice(Math.min(remoteDays, workDays.length));
+
+      for (const day of homeDays) {
+        await client.query(
+          `INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'home', 'seed')`,
+          [emp.id, day]
+        );
+        totalEntries++;
+      }
+      for (const day of officeDays) {
+        await client.query(
+          `INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'office', 'seed')`,
+          [emp.id, day]
+        );
+        totalEntries++;
+      }
+    }
+    console.log(`   ✓ Total entries created: ${totalEntries}\n`);
+
+    // 6. Create requests with various statuses
+    console.log('6. Creating modification requests...');
+
+    // Pending requests (5)
+    for (let i = 0; i < 5; i++) {
+      const emp = getRandomElement(employeeIds);
+      const randomDay = getRandomElement(workDays.slice(-30)); // Last 30 days
+      await client.query(
+        `INSERT INTO requests (user_id, date, requested_status, reason, status)
+         VALUES ($1, $2, 'home', $3, 'pending')`,
+        [emp.id, randomDay, getRandomElement(REQUEST_REASONS)]
+      );
+    }
+    console.log('   ✓ 5 pending requests');
+
+    // Approved requests (8)
+    for (let i = 0; i < 8; i++) {
+      const emp = getRandomElement(employeeIds);
+      const randomDay = getRandomElement(workDays.slice(-60, -30)); // 30-60 days ago
+      await client.query(
+        `INSERT INTO requests (user_id, date, requested_status, reason, status, admin_id, admin_note)
+         VALUES ($1, $2, $3, $4, 'approved', $5, $6)`,
+        [
+          emp.id,
+          randomDay,
+          getRandomElement(['home', 'office']),
+          getRandomElement(REQUEST_REASONS),
+          hrId,
+          'Approved - valid reason provided'
+        ]
+      );
+    }
+    console.log('   ✓ 8 approved requests');
+
+    // Rejected requests (3)
+    for (let i = 0; i < 3; i++) {
+      const emp = getRandomElement(employeeIds);
+      const randomDay = getRandomElement(workDays.slice(-60, -30));
+      await client.query(
+        `INSERT INTO requests (user_id, date, requested_status, reason, status, admin_id, admin_note)
+         VALUES ($1, $2, 'home', $3, 'rejected', $4, $5)`,
+        [
+          emp.id,
+          randomDay,
+          getRandomElement(REQUEST_REASONS),
+          hrId,
+          'Rejected - insufficient justification'
+        ]
+      );
+    }
+    console.log('   ✓ 3 rejected requests');
+
+    // Request from main employee (pending)
+    await client.query(
+      `INSERT INTO requests (user_id, date, requested_status, reason, status)
+       VALUES ($1, $2, 'home', $3, 'pending')`,
+      [mainEmployeeId, workDays[workDays.length - 5], 'I forgot to declare this day as home office']
+    );
+    console.log('   ✓ 1 pending request for main employee\n');
+
+    // 7. Add holidays for 2025
+    console.log('7. Adding 2025 holidays...');
+    const holidays = [
+      // Luxembourg (company HQ)
+      { date: '2025-01-01', country: 'LU', description: "New Year's Day" },
+      { date: '2025-04-21', country: 'LU', description: 'Easter Monday' },
+      { date: '2025-05-01', country: 'LU', description: 'Labour Day' },
+      { date: '2025-05-09', country: 'LU', description: 'Europe Day' },
+      { date: '2025-05-29', country: 'LU', description: 'Ascension Day' },
+      { date: '2025-06-09', country: 'LU', description: 'Whit Monday' },
+      { date: '2025-06-23', country: 'LU', description: 'National Day' },
+      { date: '2025-08-15', country: 'LU', description: 'Assumption Day' },
+      { date: '2025-11-01', country: 'LU', description: "All Saints' Day" },
+      { date: '2025-12-25', country: 'LU', description: 'Christmas Day' },
+      { date: '2025-12-26', country: 'LU', description: 'St. Stephen\'s Day' },
+
+      // France
+      { date: '2025-01-01', country: 'FR', description: "New Year's Day" },
+      { date: '2025-04-21', country: 'FR', description: 'Easter Monday' },
+      { date: '2025-05-01', country: 'FR', description: 'Labour Day' },
+      { date: '2025-05-08', country: 'FR', description: 'Victory in Europe Day' },
+      { date: '2025-05-29', country: 'FR', description: 'Ascension Day' },
+      { date: '2025-06-09', country: 'FR', description: 'Whit Monday' },
+      { date: '2025-07-14', country: 'FR', description: 'Bastille Day' },
+      { date: '2025-08-15', country: 'FR', description: 'Assumption Day' },
+      { date: '2025-11-01', country: 'FR', description: "All Saints' Day" },
+      { date: '2025-11-11', country: 'FR', description: 'Armistice Day' },
+      { date: '2025-12-25', country: 'FR', description: 'Christmas Day' },
+
+      // Belgium
+      { date: '2025-01-01', country: 'BE', description: "New Year's Day" },
+      { date: '2025-04-21', country: 'BE', description: 'Easter Monday' },
+      { date: '2025-05-01', country: 'BE', description: 'Labour Day' },
+      { date: '2025-05-29', country: 'BE', description: 'Ascension Day' },
+      { date: '2025-06-09', country: 'BE', description: 'Whit Monday' },
+      { date: '2025-07-21', country: 'BE', description: 'Belgian National Day' },
+      { date: '2025-08-15', country: 'BE', description: 'Assumption Day' },
+      { date: '2025-11-01', country: 'BE', description: "All Saints' Day" },
+      { date: '2025-11-11', country: 'BE', description: 'Armistice Day' },
+      { date: '2025-12-25', country: 'BE', description: 'Christmas Day' },
+
+      // Germany
+      { date: '2025-01-01', country: 'DE', description: "New Year's Day" },
+      { date: '2025-04-18', country: 'DE', description: 'Good Friday' },
+      { date: '2025-04-21', country: 'DE', description: 'Easter Monday' },
+      { date: '2025-05-01', country: 'DE', description: 'Labour Day' },
+      { date: '2025-05-29', country: 'DE', description: 'Ascension Day' },
+      { date: '2025-06-09', country: 'DE', description: 'Whit Monday' },
+      { date: '2025-10-03', country: 'DE', description: 'Day of German Unity' },
+      { date: '2025-12-25', country: 'DE', description: 'Christmas Day' },
+      { date: '2025-12-26', country: 'DE', description: 'Second Day of Christmas' },
+    ];
+
+    for (const holiday of holidays) {
+      await client.query(
+        `INSERT INTO holidays (date, country_code, description)
+         VALUES ($1, $2, $3) ON CONFLICT (date, country_code) DO NOTHING`,
+        [holiday.date, holiday.country, holiday.description]
+      );
+    }
+    console.log(`   ✓ Added ${holidays.length} holidays\n`);
+
+    // 8. Update country thresholds
+    console.log('8. Setting country thresholds...');
+    await client.query(
+      `INSERT INTO country_thresholds (country_code, max_remote_days)
+       VALUES ('FR', 34), ('BE', 34), ('DE', 34), ('LU', 999)
+       ON CONFLICT (country_code) DO UPDATE SET max_remote_days = EXCLUDED.max_remote_days`
+    );
+    console.log('   ✓ FR: 34 days, BE: 34 days, DE: 34 days, LU: unlimited\n');
+
+    await client.query('COMMIT');
+
+    // Summary
+    console.log('=== Demo Data Seed Complete ===\n');
+    console.log('Login Credentials:');
+    console.log('┌─────────────────────────────────┬──────────────┐');
+    console.log('│ Email                           │ Password     │');
+    console.log('├─────────────────────────────────┼──────────────┤');
+    console.log('│ admin@remotedays.app            │ password123  │');
+    console.log('│ hr@remotedays.app               │ password123  │');
+    console.log('│ employee@remotedays.app         │ password123  │');
+    console.log('└─────────────────────────────────┴──────────────┘');
+    console.log('\nEmployee Distribution:');
+    console.log(`  • Safe (< 75%): ${COMPLIANCE_DISTRIBUTION.safe} employees`);
+    console.log(`  • Warning (75-90%): ${COMPLIANCE_DISTRIBUTION.warning} employees`);
+    console.log(`  • Critical (90-100%): ${COMPLIANCE_DISTRIBUTION.critical} employees`);
+    console.log(`  • Exceeded (> 100%): ${COMPLIANCE_DISTRIBUTION.exceeded} employees`);
+    console.log('\nTotal: 103 users (1 admin + 1 HR + 101 employees)');
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Seed failed:', err);
+    throw err;
+  } finally {
+    client.release();
+    await server.pg.pool.end();
+  }
+}
+
+seedDemoData().catch(console.error);

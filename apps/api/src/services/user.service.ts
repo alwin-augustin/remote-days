@@ -3,7 +3,7 @@ import { parse } from 'csv-parse/sync';
 import { IUserRepository } from '../repositories/user.repository';
 import { ITokenRepository } from '../repositories/token.repository';
 import { EmailService } from './email.service';
-import { User, UserInfo } from '@tracker/types';
+import { User, UserInfo } from '@remotedays/types';
 import { AppError } from '../errors/app-error';
 import { randomUUID } from 'crypto';
 import { config } from '../config/env';

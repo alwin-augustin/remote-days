@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { Holiday } from '@tracker/types';
+import { Holiday } from '@remotedays/types';
 
 export interface IHolidayRepository {
     create(date: string, description: string, country_code?: string): Promise<Holiday>;

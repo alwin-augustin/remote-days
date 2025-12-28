@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { AuditDetails } from '@tracker/types';
+import { AuditDetails } from '@remotedays/types';
 
 export interface AuditLog {
   id: string;

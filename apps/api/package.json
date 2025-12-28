@@ -1,5 +1,5 @@
 {
-  "name": "@tracker/api",
+  "name": "@remotedays/api",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -13,24 +13,20 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "db:seed": "ts-node -r dotenv/config src/scripts/seed.ts dotenv_config_path=../../.env",
-    "db:seed:zones": "ts-node -r dotenv/config src/scripts/seed-compliance-zones.ts dotenv_config_path=../../.env"
+    "db:seed:zones": "ts-node -r dotenv/config src/scripts/seed-compliance-zones.ts dotenv_config_path=../../.env",
+    "db:seed:demo": "ts-node -r dotenv/config src/scripts/seed-demo.ts dotenv_config_path=../../.env"
   },
   "dependencies": {
-    "@faker-js/faker": "^10.1.0",
-    "@fastify/busboy": "^3.2.0",
     "@fastify/cookie": "^8.3.0",
     "@fastify/cors": "^8.3.0",
-    "@fastify/csrf-protection": "^7.1.0",
-    "@fastify/helmet": "11.1.1",
+    "@fastify/helmet": "^11.1.1",
     "@fastify/multipart": "^8.3.0",
     "@fastify/postgres": "^5.2.0",
-    "@fastify/rate-limit": "9.1.0",
+    "@fastify/rate-limit": "^9.1.0",
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^2.1.0",
-    "@types/csv-parse": "^1.1.12",
     "bcrypt": "^5.1.0",
     "csv-parse": "^6.1.0",
-    "date-fns": "^2.30.0",
     "date-fns-tz": "^2.0.0",
     "dotenv": "^16.3.1",
     "exceljs": "^4.4.0",
@@ -38,14 +34,13 @@
     "jsonwebtoken": "^9.0.1",
     "node-cron": "^3.0.2",
     "nodemailer": "^7.0.11",
-    "pg": "^8.11.1",
-    "stream-wormhole": "^1.1.0"
+    "pg": "^8.11.1"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
+    "@remotedays/types": "*",
     "@testcontainers/postgresql": "^11.9.0",
-    "@tracker/types": "*",
     "@types/bcrypt": "^5.0.0",
-    "@types/faker": "^6.6.8",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^20.4.5",
     "@types/node-cron": "^3.0.8",
@@ -57,14 +52,12 @@
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
-    "nodemon": "^3.0.1",
     "pino-pretty": "^13.1.2",
     "prettier": "^3.7.4",
     "testcontainers": "^11.9.0",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
     "tsup": "^8.5.1",
-    "typescript": "^5.1.6",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.14"
   }

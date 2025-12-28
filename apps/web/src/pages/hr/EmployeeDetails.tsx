@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Mail, MapPin } from 'lucide-react';
 import { ComplianceStatusCard } from '@/components/ComplianceStatusCard';
 import { WeekCalendar } from '@/components/WeekCalendar';
-import type { work_status } from '@tracker/types';
+import type { work_status } from '@remotedays/types';
 
 interface EmployeeData {
   user_id: string;

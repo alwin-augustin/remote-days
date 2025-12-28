@@ -8,7 +8,7 @@
     "outDir": "./dist",
     "resolveJsonModule": true,
     "paths": {
-      "@tracker/types": [
+      "@remotedays/types": [
         "../../packages/types"
       ]
     }
