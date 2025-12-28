@@ -4,6 +4,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import Login from './pages/Login';
 import { Toaster } from '@/components/ui/sonner';
 import { CookieConsent } from '@/components/CookieConsent';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 
 import EmployeeSummary from '@/pages/hr/EmployeeSummary';
 import EmployeeList from '@/pages/hr/EmployeeList';
@@ -82,6 +83,7 @@ function App() {
       </Routes>
       <Toaster />
       <CookieConsent />
+      <PWAInstallPrompt />
     </>
   );
 }
