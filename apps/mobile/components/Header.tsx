@@ -69,11 +69,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.md,
+    flex: 1,
   },
   iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.md,
+    flex: 1,
   },
   logoImage: {
     width: 48,

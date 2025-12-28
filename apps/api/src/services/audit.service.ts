@@ -11,7 +11,6 @@ export class AuditService {
 
   async generateAuditExcel(startDate?: string, endDate?: string, action?: string) {
     const logs = await this.auditRepository.getAuditLogs(startDate, endDate, action);
-    // console.log(`[AuditService] Generating Excel for ${logs.length} logs. Dates: ${startDate} - ${endDate}`);
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Audit Logs');
@@ -48,7 +47,6 @@ export class AuditService {
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
-    // console.log(`[AuditService] Generated Excel buffer size: ${buffer.byteLength} bytes`);
     return buffer;
   }
 }

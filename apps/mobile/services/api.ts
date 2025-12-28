@@ -1,23 +1,20 @@
 import axios, { AxiosError } from 'axios';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { AuthUser, Entry, EmployeeStats, LocationType } from '@remotedays/types';
 import { STORAGE_KEYS } from '../constants/storage';
+import { logger } from './logger';
+import { ApiError, NetworkError } from './errors';
+import { authEvents } from './authEvents';
 
-// Debug logging helper
-const debug = (message: string, data?: unknown) => {
-  if (__DEV__) {
-    console.log(`[API] ${message}`, data !== undefined ? data : '');
-  }
-};
-
-import { Platform } from 'react-native';
+const TAG = 'API';
 
 // Determine API URL with production safeguard
 const API_URL = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL;
 
 // Handle Android Emulator localhost mapping
-const getBaseUrl = () => {
+const getBaseUrl = (): string => {
   const url = API_URL || 'http://localhost:3000';
 
   if (Platform.OS === 'android' && url.includes('localhost')) {
@@ -29,10 +26,10 @@ const getBaseUrl = () => {
 
 const finalApiUrl = getBaseUrl();
 
-debug('API URL configured:', finalApiUrl);
+logger.info(TAG, 'API URL configured:', finalApiUrl);
 
 if (!API_URL && !__DEV__) {
-  console.error('API_URL must be configured for production builds');
+  logger.error(TAG, 'API_URL must be configured for production builds');
 }
 
 const api = axios.create({
@@ -43,7 +40,7 @@ const api = axios.create({
 // Request interceptor to attach auth token
 api.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN);
-  debug('Request:', { url: config.url, method: config.method, hasToken: !!token });
+  logger.debug(TAG, 'Request:', { url: config.url, method: config.method, hasToken: !!token });
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -53,32 +50,64 @@ api.interceptors.request.use(async (config) => {
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
-    debug('Response:', { url: response.config.url, status: response.status });
+    logger.debug(TAG, 'Response:', { url: response.config.url, status: response.status });
     return response;
   },
   async (error: AxiosError) => {
-    const status = error.response?.status;
-    const url = error.config?.url;
-    const responseData = error.response?.data;
-
-    debug('Error:', { url, status, data: responseData, message: error.message });
-
-    if (status === 401) {
-      debug('401 Unauthorized - clearing token');
-      await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN);
+    // Handle network errors
+    if (!error.response) {
+      logger.error(TAG, 'Network error:', error.message);
+      return Promise.reject(new NetworkError());
     }
 
-    // Enhance error message
-    const message = (responseData as { message?: string })?.message || error.message;
-    const enhancedError = new Error(message);
-    (enhancedError as unknown as { status: number }).status = status || 0;
-    return Promise.reject(enhancedError);
+    const status = error.response.status;
+    const url = error.config?.url;
+    const responseData = error.response.data as { message?: string; code?: string } | undefined;
+
+    logger.error(TAG, 'API Error:', { url, status, data: responseData });
+
+    // Handle 401 - invalidate auth state
+    if (status === 401) {
+      logger.warn(TAG, '401 Unauthorized - invalidating session');
+      await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN);
+      await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_USER);
+      // Notify AuthContext about token invalidation
+      authEvents.emit('tokenInvalidated');
+    }
+
+    // Create proper ApiError
+    const apiError = new ApiError(
+      responseData?.message || error.message || 'An error occurred',
+      status,
+      responseData?.code
+    );
+
+    return Promise.reject(apiError);
   }
 );
 
 interface LoginResponse {
   token: string;
   user: AuthUser;
+}
+
+interface RequestData {
+  date: string;
+  status: LocationType;
+  reason: string;
+}
+
+export interface Request {
+  id: number;
+  userId: number;
+  date: string;
+  currentStatus?: LocationType;
+  requestedStatus: LocationType;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  adminNote?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const authService = {
@@ -88,6 +117,7 @@ export const authService = {
   },
   logout: async (): Promise<void> => {
     await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN);
+    await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_USER);
   },
   getCurrentUser: async (): Promise<AuthUser> => {
     const response = await api.get<AuthUser>('/auth/me');
@@ -111,14 +141,39 @@ export const locationService = {
   },
 };
 
+// Transform snake_case API response to camelCase
+interface ApiRequest {
+  id: number;
+  user_id: number;
+  date: string;
+  requested_status: LocationType;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_note?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const transformRequest = (apiRequest: ApiRequest): Request => ({
+  id: apiRequest.id,
+  userId: apiRequest.user_id,
+  date: apiRequest.date,
+  requestedStatus: apiRequest.requested_status,
+  reason: apiRequest.reason,
+  status: apiRequest.status,
+  adminNote: apiRequest.admin_note,
+  createdAt: apiRequest.created_at,
+  updatedAt: apiRequest.updated_at,
+});
+
 export const requestService = {
-  create: async (data: { date: string; status: LocationType; reason: string }) => {
-    const response = await api.post('/requests', data);
-    return response.data;
+  create: async (data: RequestData): Promise<Request> => {
+    const response = await api.post<ApiRequest>('/requests', data);
+    return transformRequest(response.data);
   },
-  getMyRequests: async () => {
-    const response = await api.get('/requests/me');
-    return response.data;
+  getMyRequests: async (): Promise<Request[]> => {
+    const response = await api.get<ApiRequest[]>('/requests/me');
+    return response.data.map(transformRequest);
   },
 };
 

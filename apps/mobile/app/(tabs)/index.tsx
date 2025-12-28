@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   Alert,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LocationType, Entry } from '@remotedays/types';
@@ -30,20 +31,19 @@ import {
   ProgressCircle,
   ProgressBar,
   getStatusColor,
+  CreateRequestModal,
 } from '../../components';
 import { analyticsService } from '../../services/analytics';
+import { logger } from '../../services/logger';
+import { ApiError } from '../../services/errors';
 import { theme } from '../../constants/theme';
 
-// Debug logging helper
-const debug = (message: string, data?: unknown) => {
-  if (__DEV__) {
-    console.log(`[HomeScreen] ${message}`, data !== undefined ? data : '');
-  }
-};
+const TAG = 'HomeScreen';
 
 export default function HomeScreen() {
   const { isAuthenticated, isLoading: authLoading, token } = useAuth();
   const { isConnected } = useNetworkStatus();
+  const [showRequestModal, setShowRequestModal] = useState(false);
 
   // Queries
   const {
@@ -74,45 +74,45 @@ export default function HomeScreen() {
 
   // Debug logging
   useEffect(() => {
-    debug('Auth state:', { isAuthenticated, authLoading, hasToken: !!token });
-    debug('Stats:', stats);
-    debug('Entries:', entries?.length);
-    if (statsError) debug('Stats error:', statsError);
-    if (entriesError) debug('Entries error:', entriesError);
+    logger.debug(TAG, 'Auth state:', { isAuthenticated, authLoading, hasToken: !!token });
+    logger.debug(TAG, 'Stats:', stats);
+    logger.debug(TAG, 'Entries:', entries?.length);
+    if (statsError) logger.error(TAG, 'Stats error:', statsError);
+    if (entriesError) logger.error(TAG, 'Entries error:', entriesError);
     analyticsService.trackScreen('home');
   }, [isAuthenticated, authLoading, token, stats, entries, statsError, entriesError]);
 
   // Sync offline entries when back online
   useEffect(() => {
     if (isConnected && pendingCount > 0) {
-      debug('Syncing offline entries:', pendingCount);
+      logger.info(TAG, 'Syncing offline entries:', pendingCount);
       syncMutation.mutate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, pendingCount]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     await Promise.all([refetchStats(), refetchEntries()]);
-  };
+  }, [refetchStats, refetchEntries]);
 
-  const handleDeclare = (location: LocationType) => {
+  const handleDeclare = useCallback((location: LocationType) => {
     const date = new Date().toISOString().split('T')[0];
-    debug('Declaring location:', { location, date, isConnected, hasToken: !!token });
+    logger.debug(TAG, 'Declaring location:', { location, date, isConnected, hasToken: !!token });
 
     if (!isConnected) {
-      debug('Offline mode - queueing declaration');
+      logger.debug(TAG, 'Offline mode - queueing declaration');
       offlineMutation.mutate(
         { date, location },
         {
           onSuccess: () => {
-            debug('Offline declaration queued successfully');
+            logger.debug(TAG, 'Offline declaration queued successfully');
             Alert.alert(
               'Saved Offline',
               `Your ${location === 'home' ? 'Home' : 'Office'} declaration will be synced when you're back online.`
             );
           },
           onError: (error: Error) => {
-            debug('Offline declaration failed:', error);
+            logger.error(TAG, 'Offline declaration failed:', error);
           },
         }
       );
@@ -123,23 +123,24 @@ export default function HomeScreen() {
       { date, location },
       {
         onSuccess: (data) => {
-          debug('Declaration successful:', data);
+          logger.debug(TAG, 'Declaration successful:', data);
           Alert.alert(
             'Success',
             `Declared ${location === 'home' ? 'Home' : 'Office'} for today`
           );
         },
-        onError: (error: any) => {
-          debug('Declaration failed:', error);
-          if (error.status === 409 || error.response?.status === 409) {
+        onError: (error: unknown) => {
+          logger.error(TAG, 'Declaration failed:', error);
+          if (ApiError.isApiError(error) && error.status === 409) {
             Alert.alert('Status already declared', 'You have already declared your status for today.');
           } else {
-            Alert.alert('Error', error.message || 'Failed to declare location');
+            const message = error instanceof Error ? error.message : 'Failed to declare location';
+            Alert.alert('Error', message);
           }
         },
       }
     );
-  };
+  }, [isConnected, token, offlineMutation, declareMutation]);
 
   if (loading) {
     return <LoadingSpinner fullScreen />;
@@ -154,7 +155,7 @@ export default function HomeScreen() {
   const daysRemaining = getDaysRemaining(remoteDaysCount, remoteDaysLimit);
   const statusColor = getStatusColor(complianceStatus);
 
-  debug('Computed stats:', { remoteDaysCount, remoteDaysLimit, percentage, daysRemaining });
+  logger.debug(TAG, 'Computed stats:', { remoteDaysCount, remoteDaysLimit, percentage, daysRemaining });
 
   return (
     <ScrollView
@@ -189,7 +190,16 @@ export default function HomeScreen() {
 
         {/* Today's Status Card */}
         {todayEntry ? (
-          <TodayCard entry={todayEntry} />
+          <>
+            <TodayCard entry={todayEntry} />
+            <TouchableOpacity
+              style={styles.requestChangeButton}
+              onPress={() => setShowRequestModal(true)}
+            >
+              <Ionicons name="swap-horizontal" size={18} color={theme.colors.primary} />
+              <Text style={styles.requestChangeText}>Request a Change</Text>
+            </TouchableOpacity>
+          </>
         ) : (
           <>
             <Text style={styles.sectionTitle}>Where are you working today?</Text>
@@ -253,12 +263,18 @@ export default function HomeScreen() {
           />
         </Card>
       </View>
+
+      {/* Request Change Modal */}
+      <CreateRequestModal
+        visible={showRequestModal}
+        onClose={() => setShowRequestModal(false)}
+      />
     </ScrollView>
   );
 }
 
 // Sub-component for today's entry card
-function TodayCard({ entry }: { entry: Entry }) {
+const TodayCard = React.memo(function TodayCard({ entry }: { entry: Entry }) {
   const isHome = entry.location === 'home';
 
   return (
@@ -283,7 +299,7 @@ function TodayCard({ entry }: { entry: Entry }) {
       </Text>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -371,5 +387,18 @@ const styles = StyleSheet.create({
   todayTime: {
     ...theme.typography.caption,
     color: theme.colors.text.tertiary,
+  },
+  requestChangeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+  },
+  requestChangeText: {
+    ...theme.typography.body,
+    color: theme.colors.primary,
+    fontWeight: '500',
   },
 });

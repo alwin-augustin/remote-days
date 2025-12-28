@@ -63,10 +63,12 @@ Remote Days is a comprehensive full-stack application designed to help Luxembour
 ```
 remote-days/
 ├── apps/
-│   ├── api/         # Fastify backend API
-│   └── web/         # React frontend
+│   ├── api/         # Fastify backend API (@remotedays/api)
+│   ├── web/         # React frontend (@remotedays/web)
+│   └── mobile/      # React Native/Expo app (@remotedays/mobile)
 ├── packages/
-│   └── types/       # Shared TypeScript types
+│   ├── types/       # Shared TypeScript types (@remotedays/types)
+│   └── shared/      # Shared business logic (@remotedays/shared)
 └── landing/         # Marketing landing page
 ```
 
@@ -91,6 +93,14 @@ remote-days/
 - **UI Components:** Radix UI + Tailwind CSS
 - **Icons:** Lucide React
 - **Testing:** Playwright E2E
+
+### Mobile
+- **Framework:** React Native 0.76.5 + Expo 52
+- **Routing:** Expo Router 4 (file-based)
+- **State Management:** TanStack Query v5
+- **Storage:** Expo SecureStore (auth tokens)
+- **Offline Support:** AsyncStorage queue with sync
+- **UI Components:** Custom components with Expo Vector Icons
 
 ### Infrastructure
 - **Backend Hosting:** AWS EC2 (Amazon Linux 2023)
@@ -151,9 +161,11 @@ remote-days/
 
 After seeding, you can log in with:
 
-- **Admin:** admin@example.com / password123
-- **HR:** hr@example.com / password123
-- **Employee:** employee@example.com / password123
+- **Admin:** admin@remotedays.app / password123
+- **HR:** hr@remotedays.app / password123
+- **Employee:** employee1@remotedays.app / password123
+
+The demo seed creates 103 users total: 1 admin, 1 HR, and 101 employees with varied compliance statuses (safe, warning, critical, exceeded).
 
 ## 💻 Development
 
@@ -184,6 +196,17 @@ apps/web/
 │   ├── lib/            # Utilities & API client
 │   └── hooks/          # Custom React hooks
 └── e2e/                # Playwright E2E tests
+
+apps/mobile/
+├── app/                # Expo Router file-based routing
+│   ├── (auth)/         # Authentication screens
+│   ├── (tabs)/         # Tab navigation screens
+│   └── _layout.tsx     # Root layout
+├── components/         # Reusable UI components
+├── context/            # React context providers
+├── hooks/              # Custom React hooks
+├── services/           # API client & offline sync
+└── constants/          # Theme & configuration
 ```
 
 ### Available Scripts
@@ -209,6 +232,15 @@ npm run db:seed --workspace=apps/api     # Seed database
 npm run dev --workspace=apps/web         # Start dev server
 npm run build --workspace=apps/web       # Build for production
 npm run test:e2e --workspace=apps/web    # Run E2E tests
+```
+
+#### Mobile Workspace
+```bash
+npm run dev:mobile                       # Start Expo dev server
+npx expo start --ios                     # Start with iOS simulator
+npx expo start --android                 # Start with Android emulator
+npx eas build --platform ios             # Build for iOS (production)
+npx eas build --platform android         # Build for Android (production)
 ```
 
 ### Database Migrations
@@ -268,6 +300,30 @@ bash scripts/deploy.sh
    - Build output: `apps/web/dist`
    - Environment variable: `VITE_API_URL=https://api.remotedays.app`
 
+### Mobile (EAS Build)
+
+1. **Development:** Use Expo Go app for rapid development
+   ```bash
+   npx expo start
+   ```
+
+2. **Production builds:** Use EAS Build
+   ```bash
+   # Install EAS CLI
+   npm install -g eas-cli
+
+   # Configure project (first time)
+   eas build:configure
+
+   # Build for iOS
+   eas build --platform ios --profile production
+
+   # Build for Android
+   eas build --platform android --profile production
+   ```
+
+3. **Environment:** Set `EXPO_PUBLIC_API_URL` in `eas.json` or `apps/mobile/.env`
+
 ### Environment Variables
 
 **Backend (.env on EC2):**
@@ -287,6 +343,11 @@ MAX_HOME_DAYS=104
 **Frontend (Cloudflare Pages):**
 ```env
 VITE_API_URL=https://api.remotedays.app
+```
+
+**Mobile (apps/mobile/.env):**
+```env
+EXPO_PUBLIC_API_URL=https://api.remotedays.app
 ```
 
 ## 📚 API Documentation

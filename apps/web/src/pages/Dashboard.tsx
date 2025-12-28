@@ -29,9 +29,11 @@ export default function Dashboard() {
     const { data: stats, isLoading: isLoadingStats } = useQuery({
         queryKey: ['stats'],
         queryFn: async () => {
-            const res = await api.get<{ days_used_current_year: number; days_remaining: number; percent_used: number }>('/entries/stats');
+            const res = await api.get<{ remoteDaysCount: number; remoteDaysLimit: number; daysRemaining: number; percentageUsed: number }>('/entries/stats');
             return res.data;
         },
+        staleTime: 30 * 1000, // 30 seconds - short to catch admin approvals quickly
+        refetchOnWindowFocus: true,
     });
 
     const getTodayStatus = () => {
@@ -79,8 +81,8 @@ export default function Dashboard() {
                     <Skeleton className="h-64 w-full" />
                 ) : (
                     <ComplianceStatusCard
-                        daysUsed={stats?.days_used_current_year ?? 0}
-                        maxDays={34}
+                        daysUsed={stats?.remoteDaysCount ?? 0}
+                        maxDays={stats?.remoteDaysLimit ?? 34}
                         countryCode="FR"
                     />
                 )}

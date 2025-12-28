@@ -1,8 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { AuthUser } from '@remotedays/types';
 import { STORAGE_KEYS } from '../constants/storage';
 import { analyticsService } from '../services/analytics';
+import { authEvents } from '../services/authEvents';
+import { logger } from '../services/logger';
+
+const TAG = 'AuthContext';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -11,7 +15,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, user: AuthUser) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (user: AuthUser) => void;
+  updateUser: (user: AuthUser) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,8 +26,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+
   useEffect(() => {
+    isMountedRef.current = true;
     loadStoredAuth();
+
+    // Subscribe to auth events (e.g., 401 from API)
+    const unsubscribe = authEvents.on('tokenInvalidated', () => {
+      logger.info(TAG, 'Token invalidated event received - logging out');
+      if (isMountedRef.current) {
+        handleTokenInvalidation();
+      }
+    });
+
+    return () => {
+      isMountedRef.current = false;
+      unsubscribe();
+    };
+  }, []);
+
+  const handleTokenInvalidation = useCallback(() => {
+    setToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
   }, []);
 
   const loadStoredAuth = async () => {
@@ -33,29 +60,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         SecureStore.getItemAsync(STORAGE_KEYS.AUTH_USER),
       ]);
 
+      if (!isMountedRef.current) return;
+
       if (storedToken) {
         setToken(storedToken);
         setIsAuthenticated(true);
+        logger.debug(TAG, 'Restored auth token from storage');
 
         // Restore user data if available
         if (storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser) as AuthUser;
             setUser(parsedUser);
+            logger.debug(TAG, 'Restored user data from storage');
           } catch {
-            // Invalid stored user data, will be fetched fresh
+            logger.warn(TAG, 'Invalid stored user data - will be fetched fresh');
           }
         }
       } else {
         setIsAuthenticated(false);
+        logger.debug(TAG, 'No stored auth token found');
       }
     } catch (error) {
-      console.error('Error loading auth state:', error);
-      setIsAuthenticated(false);
-      setToken(null);
-      setUser(null);
+      logger.error(TAG, 'Error loading auth state:', error);
+      if (isMountedRef.current) {
+        setIsAuthenticated(false);
+        setToken(null);
+        setUser(null);
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -67,14 +103,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         SecureStore.setItemAsync(STORAGE_KEYS.AUTH_USER, JSON.stringify(userData)),
       ]);
 
+      if (!isMountedRef.current) return;
+
       setToken(newToken);
       setUser(userData);
       setIsAuthenticated(true);
 
       // Track login
       analyticsService.trackLogin(userData.id);
+      logger.info(TAG, 'User logged in:', { userId: userData.id, email: userData.email });
     } catch (error) {
-      console.error('Error during login:', error);
+      logger.error(TAG, 'Error during login:', error);
       throw error;
     }
   }, []);
@@ -87,25 +126,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_USER),
       ]);
 
+      if (!isMountedRef.current) return;
+
       setToken(null);
       setUser(null);
       setIsAuthenticated(false);
 
       // Track logout
       analyticsService.trackLogout();
+      logger.info(TAG, 'User logged out');
     } catch (error) {
-      console.error('Error during logout:', error);
+      logger.error(TAG, 'Error during logout:', error);
       throw error;
     }
   }, []);
 
-  const updateUser = useCallback(async (userData: AuthUser) => {
+  const updateUser = useCallback(async (userData: AuthUser): Promise<void> => {
+    if (!isMountedRef.current) return;
+
     setUser(userData);
-    // Persist updated user data
+
     try {
       await SecureStore.setItemAsync(STORAGE_KEYS.AUTH_USER, JSON.stringify(userData));
+      logger.debug(TAG, 'User data updated');
     } catch (error) {
-      console.error('Failed to persist user data:', error);
+      logger.error(TAG, 'Failed to persist user data:', error);
+      throw error;
     }
   }, []);
 

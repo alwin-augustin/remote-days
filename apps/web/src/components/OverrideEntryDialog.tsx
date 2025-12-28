@@ -59,14 +59,16 @@ export function OverrideEntryDialog({ open, onOpenChange, entry, date, onSuccess
                 reason
             });
         },
-        onSuccess: () => {
+        onSuccess: async () => {
+            // Force immediate refetch to update data
+            await queryClient.refetchQueries({ queryKey: ['hr'] });
             toast.success('Entry updated successfully');
-            queryClient.invalidateQueries({ queryKey: ['hr'] }); // Invalidate all HR queries
             onSuccess();
             onOpenChange(false);
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to update entry');
+        onError: (error: unknown) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            toast.error((error as any).response?.data?.message || 'Failed to update entry');
         }
     });
 

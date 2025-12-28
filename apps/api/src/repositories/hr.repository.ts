@@ -46,13 +46,21 @@ export interface DailyEntry {
   updated_at: string | null;
 }
 
+export interface RiskStats {
+  exceeded_count: number;
+  critical_count: number;
+  high_count: number;
+  moderate_count: number;
+  missing_count: number;
+}
+
 export interface IHRRepository {
   getEmployeeSummaries(): Promise<EmployeeSummary[]>;
   getEmployeeEntries(year: string, month: string): Promise<EmployeeEntry[]>;
-  updateEntry(id: string, status: work_status, reason: string, actorId: string): Promise<any>;
+  updateEntry(id: string, status: work_status, reason: string, actorId: string): Promise<unknown>;
   getDailyStats(date: string): Promise<DailyStats>;
   getDailyEntries(date: string): Promise<DailyEntry[]>;
-  getRiskStats(date: string): Promise<{ danger_count: number; warning_count: number; missing_count: number }>;
+  getRiskStats(date: string): Promise<RiskStats>;
 }
 
 export class HRRepository implements IHRRepository {

@@ -4,8 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { ComplianceStatus } from '@remotedays/types';
 import { theme } from '../constants/theme';
 
+// Support both compliance status and request status
+export type RequestStatus = 'pending' | 'approved' | 'rejected';
+export type BadgeStatus = ComplianceStatus | RequestStatus;
+
 interface StatusBadgeProps {
-  status: ComplianceStatus;
+  status: BadgeStatus;
   size?: 'small' | 'medium' | 'large';
   style?: ViewStyle;
 }
@@ -16,7 +20,8 @@ interface StatusConfig {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-const statusConfigs: Record<ComplianceStatus, StatusConfig> = {
+const statusConfigs: Record<BadgeStatus, StatusConfig> = {
+  // Compliance statuses
   safe: {
     color: theme.colors.success,
     label: 'SAFE',
@@ -35,6 +40,22 @@ const statusConfigs: Record<ComplianceStatus, StatusConfig> = {
   exceeded: {
     color: theme.colors.critical,
     label: 'EXCEEDED',
+    icon: 'close-circle',
+  },
+  // Request statuses
+  pending: {
+    color: theme.colors.warning,
+    label: 'PENDING',
+    icon: 'time',
+  },
+  approved: {
+    color: theme.colors.success,
+    label: 'APPROVED',
+    icon: 'checkmark-circle',
+  },
+  rejected: {
+    color: theme.colors.error,
+    label: 'REJECTED',
     icon: 'close-circle',
   },
 };

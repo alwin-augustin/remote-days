@@ -1,8 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueuedEntry, LocationType } from '@remotedays/types';
 import api from './api';
+import { logger } from './logger';
+import { ApiError } from './errors';
 
+const TAG = 'OfflineService';
 const OFFLINE_QUEUE_KEY = 'offline_entry_queue';
+
+// Mutex to prevent concurrent syncs
+let isSyncing = false;
 
 export const offlineService = {
   /**
@@ -13,7 +19,7 @@ export const offlineService = {
       const data = await AsyncStorage.getItem(OFFLINE_QUEUE_KEY);
       return data ? JSON.parse(data) : [];
     } catch (error) {
-      console.error('Error reading offline queue:', error);
+      logger.error(TAG, 'Error reading offline queue:', error);
       return [];
     }
   },
@@ -38,9 +44,11 @@ export const offlineService = {
     if (existingIndex >= 0) {
       // Update existing entry
       queue[existingIndex] = newEntry;
+      logger.debug(TAG, 'Updated existing queue entry:', { date, location });
     } else {
       // Add new entry
       queue.push(newEntry);
+      logger.debug(TAG, 'Added new queue entry:', { date, location });
     }
 
     await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
@@ -69,34 +77,66 @@ export const offlineService = {
 
   /**
    * Sync all pending entries with the server
+   * Uses mutex to prevent concurrent sync operations
    */
   syncQueue: async (): Promise<{ success: number; failed: number }> => {
-    const queue = await offlineService.getQueue();
-    const unsyncedEntries = queue.filter((entry) => !entry.synced);
+    // Prevent concurrent syncs
+    if (isSyncing) {
+      logger.warn(TAG, 'Sync already in progress, skipping');
+      return { success: 0, failed: 0 };
+    }
 
-    let success = 0;
-    let failed = 0;
+    isSyncing = true;
+    logger.info(TAG, 'Starting queue sync');
 
-    for (const entry of unsyncedEntries) {
-      try {
-        await api.post('/entries', {
-          date: entry.date,
-          location: entry.location,
-        });
-        await offlineService.markAsSynced(entry.id);
-        success++;
-      } catch (error) {
-        console.error(`Failed to sync entry ${entry.id}:`, error);
-        failed++;
+    try {
+      const queue = await offlineService.getQueue();
+      const unsyncedEntries = queue.filter((entry) => !entry.synced);
+
+      if (unsyncedEntries.length === 0) {
+        logger.debug(TAG, 'No entries to sync');
+        return { success: 0, failed: 0 };
       }
-    }
 
-    // Clear synced entries
-    if (success > 0) {
-      await offlineService.clearSyncedEntries();
-    }
+      logger.info(TAG, `Syncing ${unsyncedEntries.length} entries`);
 
-    return { success, failed };
+      let success = 0;
+      let failed = 0;
+
+      for (const entry of unsyncedEntries) {
+        try {
+          // Use correct field name 'status' instead of 'location'
+          await api.post('/entries', {
+            date: entry.date,
+            status: entry.location,
+          });
+          await offlineService.markAsSynced(entry.id);
+          success++;
+          logger.debug(TAG, `Synced entry ${entry.id}:`, { date: entry.date, status: entry.location });
+        } catch (error) {
+          // Check if it's a 409 conflict (entry already exists)
+          if (ApiError.isApiError(error) && error.status === 409) {
+            // Mark as synced since entry exists on server
+            await offlineService.markAsSynced(entry.id);
+            success++;
+            logger.debug(TAG, `Entry ${entry.id} already exists on server, marking as synced`);
+          } else {
+            logger.error(TAG, `Failed to sync entry ${entry.id}:`, error);
+            failed++;
+          }
+        }
+      }
+
+      // Clear synced entries
+      if (success > 0) {
+        await offlineService.clearSyncedEntries();
+      }
+
+      logger.info(TAG, `Sync complete: ${success} succeeded, ${failed} failed`);
+      return { success, failed };
+    } finally {
+      isSyncing = false;
+    }
   },
 
   /**
@@ -112,5 +152,13 @@ export const offlineService = {
    */
   clearAll: async (): Promise<void> => {
     await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
+    logger.info(TAG, 'Cleared all offline data');
+  },
+
+  /**
+   * Check if sync is currently in progress
+   */
+  isSyncInProgress: (): boolean => {
+    return isSyncing;
   },
 };

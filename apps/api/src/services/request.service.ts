@@ -5,6 +5,9 @@ import { IUserRepository } from '../repositories/user.repository';
 import { EmailService } from './email.service';
 import { EntryRequest, RequestStatus, work_status } from '@remotedays/types';
 import { AppError } from '../errors/app-error';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('RequestService');
 
 export class RequestService {
     constructor(
@@ -46,7 +49,7 @@ export class RequestService {
             // Parallel send
             await Promise.all(hrUsers.map(hr =>
                 this.emailService.sendEmail(hr.email, subject, text, `<p>${text.replace(/\n/g, '<br>')}</p>`)
-                    .catch(err => console.error(`Failed to email HR ${hr.email}`, err))
+                    .catch(err => log.error({ err, email: hr.email }, `Failed to email HR ${hr.email}`))
             ));
         }
 
@@ -114,7 +117,7 @@ export class RequestService {
                 subject,
                 text,
                 `<p>${text.replace(/\n/g, '<br>')}</p>`
-            ).catch(err => console.error(`Failed to email user ${user.email}`, err));
+            ).catch(err => log.error({ err, email: user.email }, `Failed to email user ${user.email}`));
         }
 
         return updatedRequest;

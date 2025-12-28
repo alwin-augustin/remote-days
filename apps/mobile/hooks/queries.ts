@@ -15,14 +15,17 @@ export const queryKeys = {
 
 /**
  * Hook to fetch employee stats
+ * Stats refresh frequently to catch admin-approved requests
  */
 export function useStats(enabled = true) {
   return useQuery<EmployeeStats>({
     queryKey: queryKeys.stats,
     queryFn: statsService.getMyStats,
     enabled,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes (formerly cacheTime)
+    staleTime: 30 * 1000, // 30 seconds - short to catch admin approvals quickly
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true, // Refetch when app comes to foreground
+    refetchOnReconnect: true, // Refetch when network reconnects
   });
 }
 
@@ -98,10 +101,12 @@ export function useDeclareLocation() {
     mutationFn: async ({ date, location }: { date: string; location: LocationType }) => {
       return locationService.declare({ date, location });
     },
-    onSuccess: (_data, { date, location }) => {
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: queryKeys.entries });
-      queryClient.invalidateQueries({ queryKey: queryKeys.stats });
+    onSuccess: async (_data, { date, location }) => {
+      // Force immediate refetch of stats and entries to update compliance section
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: queryKeys.stats }),
+        queryClient.refetchQueries({ queryKey: queryKeys.entries }),
+      ]);
 
       // Haptic feedback
       hapticService.success();
@@ -140,11 +145,14 @@ export function useSyncOfflineQueue() {
 
   return useMutation({
     mutationFn: offlineService.syncQueue,
-    onSuccess: ({ success }) => {
+    onSuccess: async ({ success }) => {
       if (success > 0) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.entries });
-        queryClient.invalidateQueries({ queryKey: queryKeys.stats });
-        queryClient.invalidateQueries({ queryKey: queryKeys.pendingCount });
+        // Force immediate refetch to update compliance section
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: queryKeys.stats }),
+          queryClient.refetchQueries({ queryKey: queryKeys.entries }),
+          queryClient.refetchQueries({ queryKey: queryKeys.pendingCount }),
+        ]);
         hapticService.success();
       }
     },

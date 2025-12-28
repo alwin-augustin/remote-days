@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,8 +16,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import { authService } from '../../services/api';
+import { ApiError } from '../../services/errors';
+import { logger } from '../../services/logger';
 import { theme } from '../../constants/theme';
+
+const TAG = 'LoginScreen';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -26,17 +30,17 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
+  const handleLogin = useCallback(async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
     setLoading(true);
+    logger.debug(TAG, 'Attempting login:', { email });
 
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const { token, user } = response.data;
+      const { token, user } = await authService.login(email, password);
 
       if (user.role !== 'employee') {
         Alert.alert('Error', 'This app is only for employees. Please use the web app.');
@@ -45,13 +49,23 @@ export default function LoginScreen() {
 
       // Use AuthContext login to store token and update state
       await login(token, user);
+      logger.info(TAG, 'Login successful');
       router.replace('/(tabs)');
-    } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.message || 'Invalid credentials');
+    } catch (error) {
+      logger.error(TAG, 'Login failed:', error);
+
+      let message = 'Invalid credentials';
+      if (ApiError.isApiError(error)) {
+        message = error.message;
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [email, password, login, router]);
 
   return (
     <LinearGradient

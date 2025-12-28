@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { formatDate } from '@remotedays/shared';
 import { useRequests } from '../../hooks';
 import { theme } from '../../constants/theme';
 import { Header, LoadingSpinner, Card, EmptyState, StatusBadge, CreateRequestModal } from '../../components';
-import { LocationType } from '@remotedays/types';
+import { Request } from '../../services/api';
 
 export default function RequestsScreen() {
     const { data: requests, isLoading, refetch, isRefetching } = useRequests();
@@ -27,9 +28,9 @@ export default function RequestsScreen() {
                 }
             />
 
-            <FlatList
+            <FlatList<Request>
                 data={requests}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => String(item.id)}
                 contentContainerStyle={styles.list}
                 refreshControl={
                     <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
@@ -38,20 +39,20 @@ export default function RequestsScreen() {
                     <Card style={styles.card}>
                         <View style={styles.cardHeader}>
                             <View>
-                                <Text style={styles.date}>{item.date}</Text>
+                                <Text style={styles.date}>{formatDate(item.date)}</Text>
                                 <Text style={styles.statusLabel}>
-                                    Requested: <Text style={styles.statusValue}>{item.requested_status === 'home' ? 'Home' : 'Office'}</Text>
+                                    Requested: <Text style={styles.statusValue}>{item.requestedStatus === 'home' ? 'Home' : 'Office'}</Text>
                                 </Text>
                             </View>
-                            <StatusBadge status={item.status as any} />
+                            <StatusBadge status={item.status} />
                         </View>
                         <View style={styles.divider} />
                         <Text style={styles.reasonLabel}>Reason:</Text>
                         <Text style={styles.reason}>{item.reason}</Text>
-                        {item.admin_note && (
+                        {item.adminNote && (
                             <View style={styles.adminNote}>
                                 <Text style={styles.adminNoteLabel}>Note:</Text>
-                                <Text style={styles.adminNoteText}>{item.admin_note}</Text>
+                                <Text style={styles.adminNoteText}>{item.adminNote}</Text>
                             </View>
                         )}
                     </Card>

@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/context/AuthContext';
+import { logger } from '@/lib/logger';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,7 +44,7 @@ export default function Login() {
         try {
             await login(values);
         } catch (err: unknown) {
-            // TODO: Send to error reporting service (Sentry, etc.)
+            logger.error('Login failed', err, { email: values.email });
             setError("Invalid credentials or server error");
         } finally {
             setIsLoading(false);

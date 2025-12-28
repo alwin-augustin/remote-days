@@ -8,12 +8,13 @@ import {
     Modal,
     ScrollView,
     Alert,
+    Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { formatDate } from '@remotedays/shared';
 import { useCreateRequest } from '../hooks';
 import { theme } from '../constants/theme';
-import { LoadingSpinner } from './LoadingSpinner';
 import { GradientButton } from './GradientButton';
 import { LocationType } from '@remotedays/types';
 
@@ -23,11 +24,22 @@ interface CreateRequestModalProps {
 }
 
 export function CreateRequestModal({ visible, onClose }: CreateRequestModalProps) {
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [status, setStatus] = useState<LocationType>('home');
     const [reason, setReason] = useState('');
 
     const createMutation = useCreateRequest();
+
+    const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        // On Android, the picker closes automatically
+        if (Platform.OS === 'android') {
+            setShowDatePicker(false);
+        }
+        if (selectedDate) {
+            setDate(selectedDate);
+        }
+    };
 
     const handleSubmit = () => {
         if (!reason.trim()) {
@@ -35,16 +47,21 @@ export function CreateRequestModal({ visible, onClose }: CreateRequestModalProps
             return;
         }
 
+        // Format date as YYYY-MM-DD for API
+        const formattedDate = date.toISOString().split('T')[0];
+
         createMutation.mutate(
-            { date, status, reason },
+            { date: formattedDate, status, reason },
             {
                 onSuccess: () => {
                     Alert.alert('Success', 'Request submitted successfully.');
                     setReason('');
+                    setDate(new Date());
                     onClose();
                 },
-                onError: (error: any) => {
-                    Alert.alert('Error', error.response?.data?.message || 'Failed to submit request.');
+                onError: (error: unknown) => {
+                    const message = error instanceof Error ? error.message : 'Failed to submit request.';
+                    Alert.alert('Error', message);
                 },
             }
         );
@@ -62,15 +79,36 @@ export function CreateRequestModal({ visible, onClose }: CreateRequestModalProps
                     </View>
 
                     <ScrollView style={styles.form}>
-                        {/* Date Input (Simple string for now, enhanced picker ideally) */}
+                        {/* Date Picker */}
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={date}
-                                onChangeText={setDate}
-                                placeholder="2025-01-01"
-                            />
+                            <Text style={styles.label}>Date</Text>
+                            <TouchableOpacity
+                                style={styles.dateButton}
+                                onPress={() => setShowDatePicker(true)}
+                            >
+                                <Ionicons name="calendar" size={20} color={theme.colors.primary} />
+                                <Text style={styles.dateText}>{formatDate(date)}</Text>
+                            </TouchableOpacity>
+
+                            {showDatePicker && (
+                                <View style={styles.datePickerContainer}>
+                                    <DateTimePicker
+                                        value={date}
+                                        mode="date"
+                                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                        onChange={handleDateChange}
+                                        maximumDate={new Date()} // Can't request for future dates
+                                    />
+                                    {Platform.OS === 'ios' && (
+                                        <TouchableOpacity
+                                            style={styles.datePickerDone}
+                                            onPress={() => setShowDatePicker(false)}
+                                        >
+                                            <Text style={styles.datePickerDoneText}>Done</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            )}
                         </View>
 
                         {/* Status Selection */}
@@ -175,9 +213,41 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.md,
         padding: theme.spacing.md,
         ...theme.typography.body,
+        color: theme.colors.text.primary,
     },
     textArea: {
         height: 100,
+    },
+    dateButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+        backgroundColor: theme.colors.background,
+        borderWidth: 1,
+        borderColor: theme.colors.border.light,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.md,
+    },
+    dateText: {
+        ...theme.typography.body,
+        color: theme.colors.text.primary,
+    },
+    datePickerContainer: {
+        marginTop: theme.spacing.sm,
+        backgroundColor: theme.colors.background,
+        borderRadius: theme.borderRadius.md,
+        overflow: 'hidden',
+    },
+    datePickerDone: {
+        alignItems: 'center',
+        padding: theme.spacing.md,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border.light,
+    },
+    datePickerDoneText: {
+        ...theme.typography.body,
+        color: theme.colors.primary,
+        fontWeight: '600',
     },
     statusContainer: {
         flexDirection: 'row',
