@@ -3,6 +3,7 @@ import { EntryService } from './entry.service';
 import { IAuditRepository } from '../repositories/audit.repository';
 import { IUserRepository } from '../repositories/user.repository';
 import { EmailService } from './email.service';
+import { PushService } from './push.service';
 import { EntryRequest, RequestStatus, work_status } from '@remotedays/types';
 import { AppError } from '../errors/app-error';
 import { createLogger } from '../utils/logger';
@@ -10,6 +11,8 @@ import { createLogger } from '../utils/logger';
 const log = createLogger('RequestService');
 
 export class RequestService {
+    private pushService: PushService | null = null;
+
     constructor(
         private requestRepo: IRequestRepository,
         private entryService: EntryService,
@@ -17,6 +20,10 @@ export class RequestService {
         private userRepo: IUserRepository,
         private emailService: EmailService
     ) { }
+
+    setPushService(pushService: PushService) {
+        this.pushService = pushService;
+    }
 
     async createRequest(userId: string, date: string, status: work_status, reason: string): Promise<EntryRequest> {
         if (!reason || reason.trim().length === 0) {
@@ -112,12 +119,28 @@ export class RequestService {
             const subject = `Your Request was ${newStatus.toUpperCase()}`;
             const text = `Your request to change status to '${request.requested_status}' for ${request.date} has been ${newStatus} by ${admin?.first_name || 'HR'}.\n\nNote: ${adminNote || 'No additional notes.'}`;
 
+            // Send email notification
             await this.emailService.sendEmail(
                 user.email,
                 subject,
                 text,
                 `<p>${text.replace(/\n/g, '<br>')}</p>`
             ).catch(err => log.error({ err, email: user.email }, `Failed to email user ${user.email}`));
+
+            // Send push notification
+            if (this.pushService) {
+                const dateStr = typeof request.date === 'object'
+                    ? (request.date as Date).toISOString().split('T')[0]
+                    : request.date;
+
+                if (action === 'approve') {
+                    await this.pushService.sendRequestApproved(request.user_id, dateStr, adminNote)
+                        .catch(err => log.error({ err }, 'Failed to send push notification'));
+                } else {
+                    await this.pushService.sendRequestRejected(request.user_id, dateStr, adminNote)
+                        .catch(err => log.error({ err }, 'Failed to send push notification'));
+                }
+            }
         }
 
         return updatedRequest;

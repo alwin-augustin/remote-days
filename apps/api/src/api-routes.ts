@@ -8,6 +8,7 @@ import notificationRoutes from './admin/notifications/notification.routes';
 import holidayRoutes from './admin/holidays/holiday.routes';
 import requestRoutes from './requests/request.routes';
 import auditRoutes from './admin/audit.routes';
+import pushTokenRoutes from './users/push-token.routes';
 
 import { EntryRepository } from './repositories/entry.repository';
 import { EntryService } from './services/entry.service';
@@ -39,6 +40,7 @@ import { RequestService } from './services/request.service';
 import { RequestController } from './requests/request.controller';
 import { AuditService } from './services/audit.service';
 import { AuditController } from './admin/audit.controller';
+import { PushService } from './services/push.service';
 
 export default async function apiRoutes(server: FastifyInstance) {
     if (!server.pg) {
@@ -68,6 +70,11 @@ export default async function apiRoutes(server: FastifyInstance) {
     const requestService = new RequestService(requestRepo, entryService, auditRepo, userRepo, emailService);
     const auditService = new AuditService(auditRepo);
 
+    // Push notification service - wire up to notification and request services
+    const pushService = new PushService(server);
+    notificationService.setPushService(pushService);
+    requestService.setPushService(pushService);
+
     const entriesController = new EntriesController(entryService);
     const authController = new AuthController(authService, userService);
     const adminController = new AdminController(userService);
@@ -88,4 +95,5 @@ export default async function apiRoutes(server: FastifyInstance) {
     server.register(holidayRoutes, { prefix: '', controller: holidayController });
     server.register(requestRoutes, { prefix: '', controller: requestController });
     server.register(auditRoutes, { prefix: '', auditController });
+    server.register(pushTokenRoutes);
 }

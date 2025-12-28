@@ -159,6 +159,39 @@ CREATE INDEX idx_security_events_type ON security_events (event_type, created_at
 CREATE INDEX idx_security_events_user ON security_events (user_id, created_at DESC);
 CREATE INDEX idx_security_events_ip ON security_events (ip_address, created_at DESC);
 
+-- 8d. push_tokens (for mobile push notifications)
+CREATE TABLE push_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  token TEXT NOT NULL,
+  platform VARCHAR(20) NOT NULL CHECK (platform IN ('ios', 'android', 'web')),
+  device_name VARCHAR(255),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, token)
+);
+
+CREATE INDEX idx_push_tokens_user ON push_tokens(user_id);
+CREATE INDEX idx_push_tokens_active ON push_tokens(is_active) WHERE is_active = true;
+
+-- 8e. push_notification_logs (tracking sent push notifications)
+CREATE TABLE push_notification_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  notification_type VARCHAR(50) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  body TEXT,
+  data JSONB,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed', 'delivered')),
+  error_message TEXT,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_push_logs_user ON push_notification_logs(user_id);
+CREATE INDEX idx_push_logs_type ON push_notification_logs(notification_type);
+
 -- 9. helpful indexes
 CREATE INDEX idx_entries_user_date ON entries (user_id, date);
 CREATE INDEX idx_entries_date ON entries (date);
