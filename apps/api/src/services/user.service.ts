@@ -39,8 +39,7 @@ export class UserService {
       ...userData,
       password_hash,
       role: data.role || 'employee',
-      // Ensure mandatory fields are present or let repo validation handle it
-    } as unknown as Omit<User, 'user_id' | 'created_at' | 'is_active'>);
+    });
   }
 
   async findByEmail(email: string): Promise<User | null> {

@@ -54,9 +54,10 @@ export default function UserImport() {
             } else if (res.data.errors.length > 0) {
                 toast.warning('Import completed with errors');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            toast.error(error.response?.data?.message || 'Failed to upload CSV');
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || 'Failed to upload CSV');
         } finally {
             setIsLoading(false);
         }

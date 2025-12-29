@@ -1,5 +1,5 @@
-import { IEntryRepository } from '../repositories/entry.repository';
-import { work_status, Entry, EmployeeStats } from '@remotedays/types';
+import { IEntryRepository, Entry } from '../repositories/entry.repository';
+import { work_status, EmployeeStats } from '@remotedays/types';
 import { AppError } from '../errors/app-error';
 import { config } from '../config/env';
 

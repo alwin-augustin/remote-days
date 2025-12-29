@@ -67,8 +67,9 @@ export function RequestChangeDialog({ defaultDate, onSuccess }: RequestChangeDia
             setOpen(false);
             form.reset();
             if (onSuccess) onSuccess();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to submit request');
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            toast.error(err.response?.data?.message || 'Failed to submit request');
         }
     };
 

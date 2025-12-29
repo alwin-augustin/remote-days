@@ -50,8 +50,9 @@ async function adminRoutes(
         },
       },
     },
-    async (request: FastifyRequest<{ Body: { onlyPending?: boolean } }>, reply: FastifyReply) => {
-      const { onlyPending = false } = request.body || {};
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const body = request.body as { onlyPending?: boolean } | undefined;
+      const { onlyPending = false } = body || {};
 
       request.log.info(`Admin triggered daily email worker (onlyPending: ${onlyPending})`);
 

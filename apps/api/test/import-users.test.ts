@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { build } from '../src/app';
 import * as fs from 'fs';
@@ -6,6 +6,13 @@ import * as path from 'path';
 import { FastifyInstance } from 'fastify';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
+
+// Mock email service to prevent actual email sending
+vi.mock('../src/services/email.service', () => {
+  const EmailService = vi.fn();
+  EmailService.prototype.sendEmail = vi.fn().mockResolvedValue(true);
+  return { EmailService };
+});
 
 describe('User Import Feature', () => {
     let container: StartedPostgreSqlContainer;
@@ -62,7 +69,7 @@ describe('User Import Feature', () => {
     it('should import users from valid CSV', async () => {
         const csvContent = `email,first_name,last_name,country_of_residence,work_country
 test1@example.com,Test,One,FR,FR
-test2@example.com,Test,Two,US,US`;
+test2@example.com,Test,Two,BE,BE`;
 
         const boundary = '--------------------------boundary';
         const payload = `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="users.csv"\r\nContent-Type: text/csv\r\n\r\n${csvContent}\r\n--${boundary}--`;

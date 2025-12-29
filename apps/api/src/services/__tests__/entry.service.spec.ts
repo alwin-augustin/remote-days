@@ -13,6 +13,7 @@ describe('EntryService', () => {
       upsert: vi.fn(),
       findByUserAndDate: vi.fn(),
       findByUserAndMonth: vi.fn(),
+      findAllByUser: vi.fn(),
       getStatsForYear: vi.fn(),
     };
     mockAuditRepo = {

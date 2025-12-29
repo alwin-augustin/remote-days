@@ -263,7 +263,7 @@ export class PushService {
       const result = await response.json();
       return result.data as ExpoPushTicket[];
     } catch (error) {
-      this.fastify.log.error('Failed to send push notifications', error);
+      this.fastify.log.error({ err: error }, 'Failed to send push notifications');
       return messages.map(() => ({ status: 'error' as const, message: 'Network error' }));
     }
   }

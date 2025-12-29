@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -84,13 +84,13 @@ export default function EmployeeSummary() {
 
     // --- Handlers ---
 
-    const handleRiskFilterChange = (filter: 'exceeded' | 'critical' | 'high' | 'moderate' | null) => {
+    const handleRiskFilterChange = useCallback((filter: 'exceeded' | 'critical' | 'high' | 'moderate' | null) => {
         if (filter) {
             navigate(`/hr/employees?filter=${filter}`);
         } else {
             navigate('/hr/employees');
         }
-    };
+    }, [navigate]);
 
     // --- Priority Alerts ---
     const priorityAlerts = useMemo(() => {
@@ -148,7 +148,7 @@ export default function EmployeeSummary() {
         }
 
         return alerts;
-    }, [annualSummaries, riskStats, date]);
+    }, [annualSummaries, riskStats, date, handleRiskFilterChange]);
 
     // --- Daily Stats ---
     const dailyStats = useMemo(() => {

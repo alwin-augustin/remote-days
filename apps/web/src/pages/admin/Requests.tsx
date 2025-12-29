@@ -44,8 +44,9 @@ export default function Requests() {
             toast.success(`Request ${variables.action}d`);
             queryClient.invalidateQueries({ queryKey: ['requests'] });
         },
-        onError: (err: any) => {
-            toast.error(err.response?.data?.message || 'Failed to process request');
+        onError: (err: unknown) => {
+            const error = err as { response?: { data?: { message?: string } } };
+            toast.error(error.response?.data?.message || 'Failed to process request');
         },
     });
 

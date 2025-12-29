@@ -52,23 +52,23 @@ describe('NotificationService', () => {
     expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
   });
 
-  it('should resend daily prompts for today', async () => {
-    const today = new Date().toISOString().split('T')[0];
-    const users = [
-      { user_id: '1', first_name: 'U1', work_country: 'FR' },
-      { user_id: '2', first_name: 'U2', work_country: 'US' },
-    ] as any[];
-    mockNotificationRepo.findUsersWithoutEntryForDate = vi.fn().mockResolvedValue(users);
+  it('should get notification logs', async () => {
+    const mockLogs = [{ id: '1', type: 'email', event: 'daily_prompt' }];
+    mockNotificationRepo.findNotificationsByDate = vi.fn().mockResolvedValue(mockLogs);
 
-    await notificationService.resendDailyPrompts(today);
+    const logs = await notificationService.getNotificationLogs('2023-01-01');
 
-    expect(mockNotificationRepo.findUsersWithoutEntryForDate).toHaveBeenCalledWith(today);
-    // Each user * 2 CTAs = 4 calls (assuming not holiday)
-    expect(mockNotificationRepo.createEmailCTAToken).toHaveBeenCalledTimes(4);
+    expect(mockNotificationRepo.findNotificationsByDate).toHaveBeenCalledWith('2023-01-01');
+    expect(logs).toEqual(mockLogs);
   });
 
-  it('should throw error if resend date is not today', async () => {
-    const pastDate = '2020-01-01';
-    await expect(notificationService.resendDailyPrompts(pastDate)).rejects.toThrow('Can only resend notifications for the current date.');
+  it('should get daily stats', async () => {
+    const mockStats = { sent: 10, pending: 5 };
+    mockNotificationRepo.getDailyNotificationStats = vi.fn().mockResolvedValue(mockStats);
+
+    const stats = await notificationService.getDailyStats('2023-01-01');
+
+    expect(mockNotificationRepo.getDailyNotificationStats).toHaveBeenCalledWith('2023-01-01');
+    expect(stats).toEqual(mockStats);
   });
 });

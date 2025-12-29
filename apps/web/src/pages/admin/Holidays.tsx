@@ -50,7 +50,7 @@ export default function Holidays() {
     const { data: holidays, isLoading } = useQuery({
         queryKey: ['holidays', filterCountry],
         queryFn: async () => {
-            const params: any = {};
+            const params: { country_code?: string } = {};
             if (filterCountry && filterCountry !== 'all') {
                 params.country_code = filterCountry;
             }
@@ -70,8 +70,9 @@ export default function Holidays() {
             setNewCountry('_GLOBAL_');
             queryClient.invalidateQueries({ queryKey: ['holidays'] });
         },
-        onError: (err: any) => {
-            toast.error(err.response?.data?.message || 'Failed to add holiday');
+        onError: (err: unknown) => {
+            const error = err as { response?: { data?: { message?: string } } };
+            toast.error(error.response?.data?.message || 'Failed to add holiday');
         },
     });
 

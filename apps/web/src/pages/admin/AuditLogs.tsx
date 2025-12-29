@@ -22,7 +22,7 @@ type AuditLog = {
     action: string;
     actor_id: string;
     target_id?: string;
-    details: any;
+    details: Record<string, unknown>;
     created_at: string;
     actor_email?: string;
     actor_first_name?: string;

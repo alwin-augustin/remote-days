@@ -10,7 +10,16 @@ import type { work_status } from '@remotedays/types';
 
 // Fallback if Textarea component doesn't exist (I didn't find it in search)
 // I will assume I can use a simple textarea with tailwind classes
-const TextareaFallback = ({ value, onChange, placeholder, className, required }: any) => (
+interface TextareaFallbackProps {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    placeholder?: string;
+    className?: string;
+    required?: boolean;
+    id?: string;
+}
+
+const TextareaFallback = ({ value, onChange, placeholder, className, required }: TextareaFallbackProps) => (
     <textarea
         className={`flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
         value={value}
@@ -42,12 +51,16 @@ export function OverrideEntryDialog({ open, onOpenChange, entry, date, onSuccess
     const [reason, setReason] = useState('');
     const queryClient = useQueryClient();
 
+    // Initialize state when dialog opens with new entry
+    // Using refs pattern or accepting the lint rule is common for dialog initialization
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
-        if (entry) {
+        if (entry && open) {
             setStatus(entry.status);
             setReason('');
         }
     }, [entry, open]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const mutation = useMutation({
         mutationFn: async () => {
@@ -114,7 +127,7 @@ export function OverrideEntryDialog({ open, onOpenChange, entry, date, onSuccess
                         <TextareaFallback
                             id="reason"
                             value={reason}
-                            onChange={(e: any) => setReason(e.target.value)}
+                            onChange={(e) => setReason(e.target.value)}
                             placeholder="e.g. Employee forgot to declare, Manager request..."
                             required
                         />

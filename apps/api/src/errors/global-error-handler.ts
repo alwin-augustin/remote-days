@@ -28,13 +28,16 @@ export function globalErrorHandler(
 
   // Handle AppError instances (our custom errors)
   if (error instanceof AppError) {
+    const errorObj: ErrorResponse['error'] = {
+      code: error.code,
+      message: error.message,
+    };
+    if (error.details) {
+      errorObj.details = error.details;
+    }
     const response: ErrorResponse = {
       success: false,
-      error: {
-        code: error.code,
-        message: error.message,
-        ...(error.details && { details: error.details }),
-      },
+      error: errorObj,
       meta: {
         requestId,
         timestamp,
@@ -94,13 +97,16 @@ export function globalErrorHandler(
 
   // Don't expose internal error details in production
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const internalErrorObj: ErrorResponse['error'] = {
+    code: ErrorCode.INTERNAL_SERVER_ERROR,
+    message: isDevelopment ? error.message : 'Internal Server Error',
+  };
+  if (isDevelopment && error.stack) {
+    internalErrorObj.details = { stack: error.stack };
+  }
   const response: ErrorResponse = {
     success: false,
-    error: {
-      code: ErrorCode.INTERNAL_SERVER_ERROR,
-      message: isDevelopment ? error.message : 'Internal Server Error',
-      ...(isDevelopment && error.stack && { details: { stack: error.stack } }),
-    },
+    error: internalErrorObj,
     meta: {
       requestId,
       timestamp,

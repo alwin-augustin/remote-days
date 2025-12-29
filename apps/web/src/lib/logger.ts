@@ -31,6 +31,7 @@ function formatMessage(level: LogLevel, message: string, context?: LogContext): 
  * Send error to monitoring service (Sentry, etc.)
  * TODO: Implement integration with error tracking service
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function reportError(_error: Error, _context?: LogContext): void {
   // In production, send to error tracking service
   // Example: Sentry.captureException(_error, { extra: _context });

@@ -156,8 +156,10 @@ describe('HR Integration', () => {
 
     expect(res.statusCode).toBe(200);
     const stats = JSON.parse(res.payload);
-    expect(stats.danger_count).toBeDefined();
-    expect(stats.warning_count).toBeDefined();
+    expect(stats.exceeded_count).toBeDefined();
+    expect(stats.critical_count).toBeDefined();
+    expect(stats.high_count).toBeDefined();
+    expect(stats.moderate_count).toBeDefined();
     expect(stats.missing_count).toBeDefined();
   });
 });

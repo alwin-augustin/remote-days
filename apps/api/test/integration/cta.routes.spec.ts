@@ -71,6 +71,8 @@ describe('CTA Integration', () => {
     });
 
     expect(res.statusCode).toBe(400);
-    expect(JSON.parse(res.payload)).toEqual({ status: 'error', message: 'Invalid token' });
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(false);
+    expect(body.error.message).toBe('Invalid token');
   });
 });
