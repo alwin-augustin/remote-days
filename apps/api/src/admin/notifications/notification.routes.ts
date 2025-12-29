@@ -6,6 +6,7 @@ async function notificationRoutes(
   options: { notificationController: NotificationController }
 ) {
   const { notificationController } = options;
+  // Get notification statistics for a given date
   server.get(
     '/admin/notifications/stats',
     {
@@ -14,14 +15,7 @@ async function notificationRoutes(
     notificationController.getNotificationStatsHandler as any
   );
 
-  server.post(
-    '/admin/notifications/resend',
-    {
-      preHandler: [server.authenticate, server.authorize('hr')],
-    },
-    notificationController.resendDailyPromptsHandler as any
-  );
-
+  // Get notification logs for a given date
   server.get(
     '/admin/notifications/logs',
     {
@@ -29,6 +23,8 @@ async function notificationRoutes(
     },
     notificationController.getNotificationLogsHandler as any
   );
+
+  // Note: Use POST /admin/trigger-daily-emails with onlyPending=true to resend to pending users
 }
 
 export default notificationRoutes;

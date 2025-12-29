@@ -53,6 +53,23 @@ async function getActiveUsers(fastify: FastifyInstance): Promise<User[]> {
 }
 
 /**
+ * Fetches active users who haven't declared their status for a given date.
+ */
+async function getUsersWithoutEntry(fastify: FastifyInstance, dateString: string): Promise<User[]> {
+  const { rows: users } = await fastify.pg.query<User>(
+    `SELECT u.* FROM users u
+     WHERE u.is_active = true
+     AND NOT EXISTS (
+       SELECT 1 FROM entries e
+       WHERE e.user_id = u.user_id AND e.date = $1
+     )`,
+    [dateString]
+  );
+  fastify.log.info(`Found ${users.length} users without entries for ${dateString}.`);
+  return users;
+}
+
+/**
  * Determines if an email should be sent to a specific user.
  */
 function shouldSendEmailToUser(
@@ -106,12 +123,11 @@ async function generateAuthTokens(
   return links;
 }
 
-import { generateEmailHtml } from '../services/email-templates';
-
-// ...
+import { generateDailyCheckInEmail } from '../services/email-templates';
+import { format as formatDate } from 'date-fns';
 
 /**
- * Sends the daily prompt email to the user.
+ * Sends the daily prompt email to the user with the new modern design.
  */
 async function sendDailyPromptEmail(
   fastify: FastifyInstance,
@@ -119,41 +135,75 @@ async function sendDailyPromptEmail(
   links: Record<string, string>,
   todayDateString: string
 ): Promise<void> {
-  const subject = `Where are you working today? (${todayDateString})`;
-  const text = `Hello ${user.first_name},\n\nPlease let us know where you are working today:\n\nHome: ${links['home']}\nOffice: ${links['office']}\n\nHave a great day!`;
+  // Format date nicely for display (e.g., "Monday, December 30, 2024")
+  const dateForDisplay = formatDate(new Date(todayDateString), 'EEEE, MMMM d, yyyy');
 
-  const html = generateEmailHtml(
-    `Where are you working today?`,
+  const subject = `🏠 Where are you working today? · ${formatDate(new Date(todayDateString), 'MMM d')}`;
+  const text = `Good morning ${user.first_name}!\n\nWhere are you working today (${dateForDisplay})?\n\n🏠 Home: ${links['home']}\n🏢 Office: ${links['office']}\n\nJust click one button — it takes 2 seconds!\n\n- Remote Days Team`;
+
+  const html = generateDailyCheckInEmail(
     user.first_name,
-    `Please let us know your work location for today (${todayDateString}).`,
-    [
-      { label: 'Working from Home', url: links['home'], color: 'success' },
-      { label: 'Working from Office', url: links['office'], color: 'info' },
-    ]
+    dateForDisplay,
+    links['home'],
+    links['office']
   );
 
   await emailService.sendEmail(user.email, subject, text, html);
-  fastify.log.info(`Sent email prompt to ${user.email}`);
+  fastify.log.info(`Sent daily check-in email to ${user.email}`);
 }
 
 // --- Main Worker Function ---
 
-export async function sendEmailPrompts(fastify: FastifyInstance) {
-  fastify.log.info('Running daily email prompt worker...');
+export interface SendEmailOptions {
+  onlyPending?: boolean; // If true, only send to users who haven't declared yet
+}
+
+export interface SendEmailResult {
+  totalUsers: number;
+  sentCount: number;
+  skippedCount: number;
+  date: string;
+}
+
+export async function sendEmailPrompts(
+  fastify: FastifyInstance,
+  options: SendEmailOptions = {}
+): Promise<SendEmailResult> {
+  const { onlyPending = false } = options;
+
+  fastify.log.info(`Running daily email prompt worker (onlyPending: ${onlyPending})...`);
 
   const dateInfo = getTodayDateInfo();
   const holidayData = await getHolidayData(fastify, dateInfo.todayDateString);
-  const users = await getActiveUsers(fastify);
   const appUrl = config.APP_URL;
+
+  // Get users based on the option
+  const users = onlyPending
+    ? await getUsersWithoutEntry(fastify, dateInfo.todayDateString)
+    : await getActiveUsers(fastify);
+
+  let sentCount = 0;
+  let skippedCount = 0;
 
   for (const user of users) {
     if (!shouldSendEmailToUser(user, dateInfo, holidayData, fastify)) {
+      skippedCount++;
       continue;
     }
 
     const links = await generateAuthTokens(fastify, user, dateInfo.todayDateString, appUrl);
     await sendDailyPromptEmail(fastify, user, links, dateInfo.todayDateString);
+    sentCount++;
   }
+
+  fastify.log.info(`Email worker completed: sent ${sentCount}, skipped ${skippedCount}`);
+
+  return {
+    totalUsers: users.length,
+    sentCount,
+    skippedCount,
+    date: dateInfo.todayDateString,
+  };
 }
 
 export function startWorker(fastify: FastifyInstance) {

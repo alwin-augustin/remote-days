@@ -4,7 +4,8 @@ import { HolidayService } from './holiday.service';
 import { PushService } from './push.service';
 import { randomUUID } from 'crypto';
 import { config } from '../config/env';
-import { generateEmailHtml } from './email-templates';
+import { generateDailyCheckInEmail } from './email-templates';
+import { format as formatDate } from 'date-fns';
 
 export class NotificationService {
   private pushService: PushService | null = null;
@@ -42,20 +43,21 @@ export class NotificationService {
       links[action] = `${config.APP_URL}/cta?token=${token}`;
     }
 
-    const subject = `Where are you working today? (${targetDate})`;
+    // Format date nicely for display (e.g., "Monday, December 30, 2024")
+    const dateForDisplay = formatDate(new Date(targetDate), 'EEEE, MMMM d, yyyy');
+    const shortDate = formatDate(new Date(targetDate), 'MMM d');
+
+    const subject = `🏠 Where are you working today? · ${shortDate}`;
 
     // Plain text fallback
-    const text = `Hello ${user.first_name},\n\nPlease let us know where you are working today (${targetDate}):\n\nHome: ${links['home']}\nOffice: ${links['office']}\n\nHave a great day!`;
+    const text = `Good morning ${user.first_name}!\n\nWhere are you working today (${dateForDisplay})?\n\n🏠 Home: ${links['home']}\n🏢 Office: ${links['office']}\n\nJust click one button — it takes 2 seconds!\n\n- Remote Days Team`;
 
-    // Styled HTML
-    const html = generateEmailHtml(
-      'Daily Status Update',
+    // Modern styled HTML
+    const html = generateDailyCheckInEmail(
       user.first_name,
-      `<p>It's time to update your work status for <strong>${targetDate}</strong>.</p><p>Please select your location below to keep the team updated.</p>`,
-      [
-        { label: '🏠 Working from Home', url: links['home'], color: 'success' },
-        { label: '🏢 Working from Office', url: links['office'], color: 'info' },
-      ]
+      dateForDisplay,
+      links['home'],
+      links['office']
     );
 
     await this.emailService.sendEmail(user.email, subject, text, html);
@@ -71,19 +73,6 @@ export class NotificationService {
     }
 
     await this.notificationRepo.createNotification(user.user_id, 'email', 'daily_prompt', { targetDate, links });
-  }
-
-  async resendDailyPrompts(date: string) {
-    const today = new Date().toISOString().split('T')[0];
-    if (date !== today) {
-      throw new Error('Can only resend notifications for the current date.');
-    }
-
-    const usersToNotify = await this.notificationRepo.findUsersWithoutEntryForDate(date);
-    for (const user of usersToNotify) {
-      await this.sendDailyPromptToUser(user, date);
-    }
-    return { notifiedCount: usersToNotify.length };
   }
 
   async getNotificationLogs(date: string) {

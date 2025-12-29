@@ -3,7 +3,7 @@ module.exports = {
     {
       name: "remotedays-api",
       script: "server.js",
-      cwd: "./api-standalone",
+      cwd: "/home/ec2-user/remote-days",
       instances: 1, // Or "max" to use all CPUs
       autorestart: true,
       watch: false,

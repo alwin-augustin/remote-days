@@ -71,7 +71,27 @@ services:
     networks:
       - remotedays-network
 
-  # 5. Seeding (Run once on startup)
+  # 5. pgAdmin (Database GUI)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: remotedays-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@remotedays.app
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./docker/pgadmin/pgpass:/pgadmin4/pgpass:ro
+    depends_on:
+      - db
+    networks:
+      - remotedays-network
+
+  # 6. Seeding (Run once on startup)
   seed:
     build:
       context: .
@@ -99,6 +119,7 @@ services:
 
 volumes:
   postgres_data:
+  pgadmin_data:
 
 
 networks:

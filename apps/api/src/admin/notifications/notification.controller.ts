@@ -19,18 +19,6 @@ export class NotificationController {
     }
   };
 
-  resendDailyPromptsHandler = async (request: FastifyRequest<{ Body: { date?: string } }>, reply: FastifyReply) => {
-    const targetDate = request.body.date || new Date().toISOString().split('T')[0]; // Default to today
-
-    try {
-      const result = await this.notificationService.resendDailyPrompts(targetDate);
-      reply.code(200).send({ message: `Resent daily prompts to ${result.notifiedCount} users.`, ...result });
-    } catch (err) {
-      request.log.error(err, 'Error resending daily prompts');
-      reply.code(500).send({ message: 'Error resending daily prompts' });
-    }
-  };
-
   getNotificationLogsHandler = async (
     request: FastifyRequest<{ Querystring: { date?: string } }>,
     reply: FastifyReply
