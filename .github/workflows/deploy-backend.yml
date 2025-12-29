@@ -1,12 +1,10 @@
 name: Deploy Backend
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
-    paths:
-      - 'apps/api/**'
-      - 'packages/types/**'
-      - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
 concurrency:
@@ -14,103 +12,29 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: '20'
   APP_DIR: /home/ec2-user/remote-days
 
 jobs:
-  # ===========================================
-  # Build & Test
-  # ===========================================
-  build:
-    name: Build & Test
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Type check
-        run: npx tsc --project apps/api/tsconfig.json --noEmit
-
-      - name: Run tests
-        run: npm run test --workspace=@remotedays/api
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
-          JWT_SECRET: test-secret-key-for-ci-min-32-chars
-          NODE_ENV: test
-
-      - name: Build API
-        run: npm run build --workspace=@remotedays/api
-
-      - name: Create deployment artifacts
-        run: |
-          mkdir -p deploy
-
-          # Copy built server
-          cp apps/api/dist/server.js deploy/
-
-          # Create production package.json (without devDependencies)
-          node -e "
-            const fs = require('fs');
-            const pkg = require('./apps/api/package.json');
-            delete pkg.devDependencies;
-            delete pkg.scripts;
-            pkg.scripts = { start: 'node server.js' };
-            fs.writeFileSync('deploy/package.json', JSON.stringify(pkg, null, 2));
-          "
-
-          # Copy ecosystem config
-          cp ecosystem.config.js deploy/
-
-          # Create tarball
-          tar -czf artifact.tar.gz -C deploy .
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: deploy-artifact
-          path: artifact.tar.gz
-          retention-days: 7
-
   # ===========================================
   # Deploy to Production
   # ===========================================
   deploy:
     name: Deploy to EC2
-    needs: build
     runs-on: ubuntu-latest
+    # Only deploy if CI succeeded (or manual trigger)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: production
       url: https://api.remotedays.app
 
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - name: Download API artifact from CI
+        uses: dawidd6/action-download-artifact@v3
         with:
-          name: deploy-artifact
+          workflow: ci.yml
+          name: api-artifact
+          run_id: ${{ github.event.workflow_run.id }}
+          if_no_artifact_found: fail
 
       - name: Copy files to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -118,15 +42,25 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: artifact.tar.gz
+          source: api-artifact.tar.gz
           target: /home/ec2-user/remote-days
 
       - name: Deploy and restart
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          APP_URL: ${{ secrets.APP_URL }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: DATABASE_URL,JWT_SECRET,APP_URL,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM
           script: |
             set -e
             APP_DIR="/home/ec2-user/remote-days"
@@ -146,13 +80,28 @@ jobs:
 
             # Extract new version
             echo "Extracting new version..."
-            if [ -f "artifact.tar.gz" ]; then
-              tar -xzf artifact.tar.gz
-              rm artifact.tar.gz
+            if [ -f "api-artifact.tar.gz" ]; then
+              tar -xzf api-artifact.tar.gz
+              rm api-artifact.tar.gz
             else
-              echo "Error: artifact.tar.gz not found!"
+              echo "Error: api-artifact.tar.gz not found!"
               exit 1
             fi
+
+            # Generate .env file from GitHub secrets
+            echo "Generating .env file..."
+            cat > .env << EOF
+            DATABASE_URL=${DATABASE_URL}
+            JWT_SECRET=${JWT_SECRET}
+            APP_URL=${APP_URL}
+            NODE_ENV=production
+            PORT=3000
+            SMTP_HOST=${SMTP_HOST}
+            SMTP_PORT=${SMTP_PORT}
+            SMTP_USER=${SMTP_USER}
+            SMTP_PASS=${SMTP_PASS}
+            EMAIL_FROM=${EMAIL_FROM}
+            EOF
 
             # Install production dependencies
             echo "Installing dependencies..."

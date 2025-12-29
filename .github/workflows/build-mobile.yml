@@ -8,12 +8,6 @@ on:
       - 'packages/types/**'
       - 'packages/shared/**'
       - '.github/workflows/build-mobile.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'apps/mobile/**'
-      - 'packages/types/**'
-      - 'packages/shared/**'
   workflow_dispatch:
     inputs:
       platform:
@@ -44,40 +38,10 @@ env:
 
 jobs:
   # ===========================================
-  # Lint and Type Check
-  # ===========================================
-  validate:
-    name: Validate Mobile App
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Type check
-        run: npm run typecheck --workspace=@remotedays/mobile --if-present
-
-      - name: Lint
-        run: npm run lint --workspace=@remotedays/mobile --if-present
-
-      - name: Run tests
-        run: npm run test --workspace=@remotedays/mobile --if-present
-
-  # ===========================================
-  # EAS Build (Production only)
+  # EAS Build
   # ===========================================
   build:
     name: EAS Build
-    needs: validate
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     env:
       BUILD_PLATFORM: ${{ github.event.inputs.platform || 'all' }}

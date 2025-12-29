@@ -1,13 +1,10 @@
 name: Deploy Frontend
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'packages/types/**'
-      - 'packages/shared/**'
-      - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
     inputs:
       environment:
@@ -24,7 +21,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20'
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
 
@@ -35,6 +31,8 @@ jobs:
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
+    # Only deploy if CI succeeded (or manual trigger)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: ${{ github.event.inputs.environment || 'production' }}
       url: ${{ steps.deploy.outputs.url }}
@@ -46,7 +44,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20'
           cache: 'npm'
 
       - name: Install Vercel CLI
