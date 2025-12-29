@@ -1,23 +1,17 @@
 name: Deploy Frontend
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  push:
     branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/types/**'
+      - 'packages/shared/**'
+      - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deployment environment'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-          - production
-          - preview
 
 concurrency:
-  group: deploy-frontend-${{ github.ref }}
+  group: deploy-frontend
   cancel-in-progress: true
 
 env:
@@ -25,77 +19,38 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
 
 jobs:
-  # ===========================================
-  # Deploy to Vercel
-  # ===========================================
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
-    # Only deploy if CI succeeded (or manual trigger)
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     environment:
-      name: ${{ github.event.inputs.environment || 'production' }}
+      name: production
       url: ${{ steps.deploy.outputs.url }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Pull Vercel Environment Info
+      - name: Pull Vercel Environment
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: apps/web
 
-      - name: Build Project (Production)
-        if: github.event.inputs.environment != 'preview'
+      - name: Build with Vercel
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: apps/web
         env:
-          VITE_API_URL: ${{ vars.API_URL }}
+          VITE_API_URL: https://api.remotedays.app
 
-      - name: Build Project (Preview)
-        if: github.event.inputs.environment == 'preview'
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: apps/web
-        env:
-          VITE_API_URL: ${{ vars.API_URL }}
-
-      - name: Deploy to Vercel (Production)
-        id: deploy-prod
-        if: github.event.inputs.environment != 'preview'
+      - name: Deploy to Vercel
+        id: deploy
         run: |
           URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> $GITHUB_OUTPUT
         working-directory: apps/web
 
-      - name: Deploy to Vercel (Preview)
-        id: deploy-preview
-        if: github.event.inputs.environment == 'preview'
+      - name: Summary
         run: |
-          URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=$URL" >> $GITHUB_OUTPUT
-        working-directory: apps/web
-
-      - name: Set deployment URL
-        id: deploy
-        run: |
-          if [ -n "${{ steps.deploy-prod.outputs.url }}" ]; then
-            echo "url=${{ steps.deploy-prod.outputs.url }}" >> $GITHUB_OUTPUT
-          else
-            echo "url=${{ steps.deploy-preview.outputs.url }}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Deployment Summary
-        run: |
-          echo "## Frontend Deployment Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Frontend Deployed" >> $GITHUB_STEP_SUMMARY
           echo "**URL:** ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
