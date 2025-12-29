@@ -1,8 +1,6 @@
 import { IEntryRepository, Entry } from '../repositories/entry.repository';
 import { work_status, EmployeeStats } from '@remotedays/types';
 import { AppError } from '../errors/app-error';
-import { config } from '../config/env';
-
 import { IAuditRepository } from '../repositories/audit.repository';
 
 export class EntryService {
@@ -94,13 +92,25 @@ export class EntryService {
     const stats = await this.entryRepo.getStatsForYear(userId, currentYear);
 
     const homeCount = parseInt(stats.home_days, 10) || 0;
+    const maxDays = parseInt(stats.max_remote_days, 10) || 34;
+    const percentageUsed = maxDays > 0 ? Math.min(100, Math.round((homeCount / maxDays) * 100)) : 0;
+
+    // Determine compliance status based on percentage
+    let complianceStatus: 'safe' | 'warning' | 'critical' | 'exceeded' = 'safe';
+    if (homeCount > maxDays) {
+      complianceStatus = 'exceeded';
+    } else if (percentageUsed >= 90) {
+      complianceStatus = 'critical';
+    } else if (percentageUsed >= 75) {
+      complianceStatus = 'warning';
+    }
 
     return {
       remoteDaysCount: homeCount,
-      remoteDaysLimit: config.MAX_HOME_DAYS,
-      complianceStatus: 'safe', // Logic to determine this can be added if shared utils are available, otherwise default safely
-      daysRemaining: Math.max(0, config.MAX_HOME_DAYS - homeCount),
-      percentageUsed: Math.min(100, Math.round((homeCount / config.MAX_HOME_DAYS) * 100)),
+      remoteDaysLimit: maxDays,
+      complianceStatus,
+      daysRemaining: Math.max(0, maxDays - homeCount),
+      percentageUsed,
     };
   }
 }

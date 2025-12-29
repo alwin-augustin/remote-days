@@ -81,14 +81,18 @@ export class EntryRepository implements IEntryRepository {
 
   async getStatsForYear(userId: string, year: number | string) {
     const { rows } = await this.pool.query(
-      `SELECT 
-         COUNT(*) FILTER (WHERE status = 'home') as home_days,
-         COUNT(*) FILTER (WHERE status = 'office') as office_days
-       FROM entries
-       WHERE user_id = $1
-       AND date_part('year', date) = $2`,
+      `SELECT
+         COUNT(e.id) FILTER (WHERE e.status = 'home') as home_days,
+         COUNT(e.id) FILTER (WHERE e.status = 'office') as office_days,
+         u.country_of_residence,
+         COALESCE(ct.max_remote_days, 34) as max_remote_days
+       FROM users u
+       LEFT JOIN entries e ON u.user_id = e.user_id AND date_part('year', e.date) = $2
+       LEFT JOIN country_thresholds ct ON u.country_of_residence = ct.country_code
+       WHERE u.user_id = $1
+       GROUP BY u.user_id, u.country_of_residence, ct.max_remote_days`,
       [userId, year]
     );
-    return rows[0];
+    return rows[0] || { home_days: '0', office_days: '0', country_of_residence: 'FR', max_remote_days: 34 };
   }
 }

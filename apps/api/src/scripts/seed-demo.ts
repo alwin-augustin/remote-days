@@ -2,7 +2,7 @@ import * as bcrypt from 'bcrypt';
 import db from '../db';
 import * as dotenv from 'dotenv';
 import fastify from 'fastify';
-import { format, subDays, isWeekend, eachDayOfInterval, startOfYear } from 'date-fns';
+import { format, subDays, subHours, isWeekend, eachDayOfInterval, startOfYear, addHours } from 'date-fns';
 
 dotenv.config({ path: '../../.env' });
 
@@ -66,12 +66,66 @@ const REQUEST_REASONS = [
   'Conference call required quiet environment'
 ];
 
+// IP addresses for security events and login attempts
+const IP_ADDRESSES = [
+  '192.168.1.100', '192.168.1.101', '10.0.0.50', '10.0.0.51',
+  '172.16.0.10', '172.16.0.11', '82.165.120.45', '91.121.85.33',
+  '213.186.33.5', '176.31.254.23', '51.255.68.100', '37.59.42.88',
+  '185.234.219.50', '195.154.161.11', '78.193.78.21', '80.67.169.12'
+];
+
+// User agents for security events
+const USER_AGENTS = [
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1',
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+  'Mozilla/5.0 (iPad; CPU OS 17_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1',
+  'RemoteDays/1.0.0 (iOS; iPhone15,2)',
+  'RemoteDays/1.0.0 (Android; Pixel 8 Pro)'
+];
+
+// Notification types
+const NOTIFICATION_TYPES = ['daily_prompt', 'warning_75', 'warning_90', 'breach', 'request_approved', 'request_rejected'];
+
+// Security event types
+const SECURITY_EVENT_TYPES = ['login_success', 'login_failure', 'password_reset_request', 'password_reset_complete', 'data_export', 'session_created', 'session_expired', 'account_locked', 'account_unlocked'];
+
+// Push notification types
+const PUSH_NOTIFICATION_TYPES = ['daily_reminder', 'request_approved', 'request_rejected', 'threshold_warning', 'threshold_breach'];
+
+// Device names for push tokens
+const DEVICE_NAMES = ['iPhone 15 Pro', 'iPhone 14', 'Pixel 8 Pro', 'Samsung Galaxy S24', 'iPad Pro', 'MacBook Pro'];
+
+// Audit log reasons for HR overrides
+const OVERRIDE_REASONS = [
+  'Employee requested correction via email',
+  'Data entry error identified by HR',
+  'Manager confirmed incorrect declaration',
+  'Compliance audit correction',
+  'System sync issue resolved',
+  'Employee on approved leave - auto-corrected'
+];
+
 function getRandomElement<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function getRandomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomTimestampWithinDays(daysBack: number): Date {
+  const now = new Date();
+  const msBack = daysBack * 24 * 60 * 60 * 1000;
+  const randomMs = Math.floor(Math.random() * msBack);
+  return new Date(now.getTime() - randomMs);
+}
+
+function formatTimestamp(date: Date): string {
+  return date.toISOString();
 }
 
 function generateWorkDays(year: number): string[] {
@@ -98,6 +152,10 @@ async function seedDemoData() {
 
     // 1. Clean all existing data
     console.log('1. Cleaning existing data...');
+    await client.query('TRUNCATE TABLE push_notification_logs CASCADE;');
+    await client.query('TRUNCATE TABLE push_tokens CASCADE;');
+    await client.query('TRUNCATE TABLE security_events CASCADE;');
+    await client.query('TRUNCATE TABLE login_attempts CASCADE;');
     await client.query('TRUNCATE TABLE requests CASCADE;');
     await client.query('TRUNCATE TABLE notifications CASCADE;');
     await client.query('TRUNCATE TABLE audit_logs CASCADE;');
@@ -357,6 +415,324 @@ async function seedDemoData() {
     );
     console.log('   ✓ FR: 34 days, BE: 34 days, DE: 34 days, LU: unlimited\n');
 
+    // 9. Generate login attempts for last 2 weeks
+    console.log('9. Generating login attempts (2 weeks)...');
+    const allUsers = [
+      { id: adminId, email: 'admin@remotedays.app' },
+      { id: hrId, email: 'hr@remotedays.app' },
+      { id: mainEmployeeId, email: 'employee@remotedays.app' },
+      ...employeeIds.map((emp, i) => ({
+        id: emp.id,
+        email: `employee${i + 1}@remotedays.app`
+      }))
+    ];
+
+    let loginAttemptCount = 0;
+    // Successful logins - each user logs in 1-3 times per day for 14 days
+    for (const user of allUsers.slice(0, 50)) { // First 50 users have login activity
+      const loginsPerDay = getRandomInt(1, 3);
+      for (let day = 0; day < 14; day++) {
+        for (let login = 0; login < loginsPerDay; login++) {
+          const timestamp = getRandomTimestampWithinDays(day + 1);
+          await client.query(
+            `INSERT INTO login_attempts (email, ip_address, user_agent, success, created_at)
+             VALUES ($1, $2, $3, true, $4)`,
+            [user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS), formatTimestamp(timestamp)]
+          );
+          loginAttemptCount++;
+        }
+      }
+    }
+
+    // Failed login attempts (wrong password, typos, etc.)
+    const failureReasons = ['Invalid password', 'Account not found', 'Account locked', 'Invalid email format'];
+    for (let i = 0; i < 50; i++) {
+      const timestamp = getRandomTimestampWithinDays(14);
+      const email = Math.random() > 0.5
+        ? getRandomElement(allUsers).email
+        : `typo${getRandomInt(1, 100)}@remotedays.app`;
+      await client.query(
+        `INSERT INTO login_attempts (email, ip_address, user_agent, success, failure_reason, created_at)
+         VALUES ($1, $2, $3, false, $4, $5)`,
+        [email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS), getRandomElement(failureReasons), formatTimestamp(timestamp)]
+      );
+      loginAttemptCount++;
+    }
+    console.log(`   ✓ Created ${loginAttemptCount} login attempts\n`);
+
+    // 10. Generate security events for last 2 weeks
+    console.log('10. Generating security events (2 weeks)...');
+    let securityEventCount = 0;
+
+    // Login success events
+    for (const user of allUsers.slice(0, 50)) {
+      for (let i = 0; i < getRandomInt(5, 15); i++) {
+        const timestamp = getRandomTimestampWithinDays(14);
+        await client.query(
+          `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          ['login_success', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
+           JSON.stringify({ method: 'password', mfa: false }), formatTimestamp(timestamp)]
+        );
+        securityEventCount++;
+      }
+    }
+
+    // Login failure events
+    for (let i = 0; i < 30; i++) {
+      const timestamp = getRandomTimestampWithinDays(14);
+      const user = getRandomElement(allUsers);
+      await client.query(
+        `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        ['login_failure', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
+         JSON.stringify({ reason: 'invalid_password', attempts: getRandomInt(1, 3) }), formatTimestamp(timestamp)]
+      );
+      securityEventCount++;
+    }
+
+    // Session created events
+    for (const user of allUsers.slice(0, 30)) {
+      for (let i = 0; i < getRandomInt(2, 5); i++) {
+        const timestamp = getRandomTimestampWithinDays(14);
+        await client.query(
+          `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          ['session_created', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
+           JSON.stringify({ session_duration: '24h' }), formatTimestamp(timestamp)]
+        );
+        securityEventCount++;
+      }
+    }
+
+    // Password reset requests (a few)
+    for (let i = 0; i < 5; i++) {
+      const timestamp = getRandomTimestampWithinDays(14);
+      const user = getRandomElement(allUsers);
+      await client.query(
+        `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        ['password_reset_request', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
+         JSON.stringify({ initiated_by: 'user' }), formatTimestamp(timestamp)]
+      );
+      securityEventCount++;
+    }
+
+    // Data export events (HR/Admin only)
+    for (let i = 0; i < 8; i++) {
+      const timestamp = getRandomTimestampWithinDays(14);
+      const adminUser = Math.random() > 0.5 ? { id: adminId, email: 'admin@remotedays.app' } : { id: hrId, email: 'hr@remotedays.app' };
+      await client.query(
+        `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        ['data_export', adminUser.id, adminUser.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
+         JSON.stringify({ export_type: getRandomElement(['csv', 'pdf', 'excel']), records: getRandomInt(50, 500) }), formatTimestamp(timestamp)]
+      );
+      securityEventCount++;
+    }
+
+    // Account locked/unlocked events
+    for (let i = 0; i < 3; i++) {
+      const timestamp = getRandomTimestampWithinDays(14);
+      const user = getRandomElement(allUsers.slice(3)); // Not admin/hr/main employee
+      await client.query(
+        `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        ['account_locked', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
+         JSON.stringify({ reason: 'too_many_failed_attempts', failed_attempts: 5 }), formatTimestamp(timestamp)]
+      );
+      securityEventCount++;
+
+      // Unlock 1 hour later
+      const unlockTime = addHours(timestamp, 1);
+      await client.query(
+        `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        ['account_unlocked', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
+         JSON.stringify({ unlocked_by: 'system', reason: 'lockout_expired' }), formatTimestamp(unlockTime)]
+      );
+      securityEventCount++;
+    }
+    console.log(`   ✓ Created ${securityEventCount} security events\n`);
+
+    // 11. Generate notifications for last 2 weeks
+    console.log('11. Generating notifications (2 weeks)...');
+    let notificationCount = 0;
+
+    // Daily prompts for all active users
+    for (let day = 0; day < 14; day++) {
+      const promptDate = subDays(new Date(), day);
+      if (!isWeekend(promptDate)) {
+        for (const user of allUsers.slice(0, 60)) { // 60 users get daily prompts
+          const timestamp = new Date(promptDate);
+          timestamp.setHours(8, 0, 0, 0); // 8 AM
+          await client.query(
+            `INSERT INTO notifications (user_id, channel, notification_type, payload, sent_at)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [user.id, getRandomElement(['email', 'push']), 'daily_prompt',
+             JSON.stringify({ date: format(promptDate, 'yyyy-MM-dd'), cta_token: 'token_' + Math.random().toString(36).substr(2, 9) }),
+             formatTimestamp(timestamp)]
+          );
+          notificationCount++;
+        }
+      }
+    }
+
+    // Warning notifications for critical/exceeded employees
+    const criticalEmployees = employeeIds.filter(e => e.status === 'critical' || e.status === 'exceeded');
+    for (const emp of criticalEmployees) {
+      const warningType = emp.status === 'exceeded' ? 'breach' : getRandomElement(['warning_75', 'warning_90']);
+      const timestamp = getRandomTimestampWithinDays(14);
+      await client.query(
+        `INSERT INTO notifications (user_id, channel, notification_type, payload, sent_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [emp.id, 'email', warningType,
+         JSON.stringify({ threshold: 34, current_days: getRandomInt(30, 40), country: emp.country }),
+         formatTimestamp(timestamp)]
+      );
+      notificationCount++;
+    }
+
+    // Request approved/rejected notifications
+    for (let i = 0; i < 15; i++) {
+      const user = getRandomElement(employeeIds);
+      const notifType = Math.random() > 0.3 ? 'request_approved' : 'request_rejected';
+      const timestamp = getRandomTimestampWithinDays(14);
+      await client.query(
+        `INSERT INTO notifications (user_id, channel, notification_type, payload, sent_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [user.id, getRandomElement(['email', 'push']), notifType,
+         JSON.stringify({ request_date: format(subDays(new Date(), getRandomInt(1, 30)), 'yyyy-MM-dd'), admin_note: notifType === 'request_approved' ? 'Approved' : 'Insufficient justification' }),
+         formatTimestamp(timestamp)]
+      );
+      notificationCount++;
+    }
+    console.log(`   ✓ Created ${notificationCount} notifications\n`);
+
+    // 12. Generate push tokens for mobile users (~30% of employees)
+    console.log('12. Generating push tokens for mobile users...');
+    let pushTokenCount = 0;
+    const mobileUsers = employeeIds.slice(0, 30); // First 30 employees use mobile app
+
+    for (const user of mobileUsers) {
+      const platform = Math.random() > 0.5 ? 'ios' : 'android';
+      const deviceName = getRandomElement(DEVICE_NAMES);
+      await client.query(
+        `INSERT INTO push_tokens (user_id, token, platform, device_name, is_active, created_at)
+         VALUES ($1, $2, $3, $4, true, $5)`,
+        [user.id, `ExponentPushToken[${Math.random().toString(36).substr(2, 22)}]`, platform, deviceName,
+         formatTimestamp(subDays(new Date(), getRandomInt(7, 60)))]
+      );
+      pushTokenCount++;
+    }
+
+    // Admin and HR also have mobile
+    await client.query(
+      `INSERT INTO push_tokens (user_id, token, platform, device_name, is_active, created_at)
+       VALUES ($1, $2, 'ios', 'iPhone 15 Pro Max', true, $3)`,
+      [adminId, `ExponentPushToken[${Math.random().toString(36).substr(2, 22)}]`, formatTimestamp(subDays(new Date(), 30))]
+    );
+    await client.query(
+      `INSERT INTO push_tokens (user_id, token, platform, device_name, is_active, created_at)
+       VALUES ($1, $2, 'ios', 'iPhone 14 Pro', true, $3)`,
+      [hrId, `ExponentPushToken[${Math.random().toString(36).substr(2, 22)}]`, formatTimestamp(subDays(new Date(), 25))]
+    );
+    pushTokenCount += 2;
+    console.log(`   ✓ Created ${pushTokenCount} push tokens\n`);
+
+    // 13. Generate push notification logs for last 2 weeks
+    console.log('13. Generating push notification logs (2 weeks)...');
+    let pushLogCount = 0;
+
+    for (const user of mobileUsers) {
+      // Daily reminders
+      for (let day = 0; day < 14; day++) {
+        const reminderDate = subDays(new Date(), day);
+        if (!isWeekend(reminderDate)) {
+          const timestamp = new Date(reminderDate);
+          timestamp.setHours(8, 0, 0, 0);
+          const status = Math.random() > 0.95 ? 'failed' : 'sent';
+          await client.query(
+            `INSERT INTO push_notification_logs (user_id, notification_type, title, body, data, status, error_message, sent_at, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [user.id, 'daily_reminder', "📍 Where are you today?", "Tap to declare your work location for today.",
+             JSON.stringify({ date: format(reminderDate, 'yyyy-MM-dd'), action: 'declare' }),
+             status, status === 'failed' ? 'Device not reachable' : null,
+             status === 'sent' ? formatTimestamp(timestamp) : null, formatTimestamp(timestamp)]
+          );
+          pushLogCount++;
+        }
+      }
+
+      // Threshold warnings for critical users
+      if (['critical', 'exceeded'].includes(user.status)) {
+        const timestamp = getRandomTimestampWithinDays(14);
+        const notifType = user.status === 'exceeded' ? 'threshold_breach' : 'threshold_warning';
+        const title = user.status === 'exceeded' ? "⚠️ Threshold Exceeded!" : "⚠️ Approaching Threshold";
+        await client.query(
+          `INSERT INTO push_notification_logs (user_id, notification_type, title, body, data, status, sent_at, created_at)
+           VALUES ($1, $2, $3, $4, $5, 'sent', $6, $7)`,
+          [user.id, notifType, title, `You have used ${getRandomInt(30, 40)} of 34 remote days in ${user.country}.`,
+           JSON.stringify({ country: user.country, threshold: 34 }),
+           formatTimestamp(timestamp), formatTimestamp(timestamp)]
+        );
+        pushLogCount++;
+      }
+    }
+
+    // Request notifications
+    for (let i = 0; i < 20; i++) {
+      const user = getRandomElement(mobileUsers);
+      const isApproved = Math.random() > 0.3;
+      const timestamp = getRandomTimestampWithinDays(14);
+      await client.query(
+        `INSERT INTO push_notification_logs (user_id, notification_type, title, body, data, status, sent_at, created_at)
+         VALUES ($1, $2, $3, $4, $5, 'sent', $6, $7)`,
+        [user.id, isApproved ? 'request_approved' : 'request_rejected',
+         isApproved ? "✅ Request Approved" : "❌ Request Rejected",
+         isApproved ? "Your change request has been approved by HR." : "Your change request was not approved.",
+         JSON.stringify({ request_id: Math.random().toString(36).substr(2, 9) }),
+         formatTimestamp(timestamp), formatTimestamp(timestamp)]
+      );
+      pushLogCount++;
+    }
+    console.log(`   ✓ Created ${pushLogCount} push notification logs\n`);
+
+    // 14. Generate additional audit logs (HR overrides)
+    console.log('14. Generating audit logs (HR overrides)...');
+    let auditLogCount = 0;
+
+    // Get some entry IDs for audit logs
+    const entryResult = await client.query(
+      `SELECT id, user_id, status FROM entries ORDER BY RANDOM() LIMIT 20`
+    );
+
+    for (const entry of entryResult.rows) {
+      const timestamp = getRandomTimestampWithinDays(14);
+      const newStatus = entry.status === 'home' ? 'office' : 'home';
+      await client.query(
+        `INSERT INTO audit_logs (entry_id, actor_user_id, action, previous_status, new_status, reason, details, created_at)
+         VALUES ($1, $2, 'OVERRIDE', $3, $4, $5, $6, $7)`,
+        [entry.id, hrId, entry.status, newStatus, getRandomElement(OVERRIDE_REASONS),
+         JSON.stringify({ source: 'hr_correction', approved_by: 'hr@remotedays.app' }),
+         formatTimestamp(timestamp)]
+      );
+      auditLogCount++;
+    }
+
+    // System audit logs
+    for (let i = 0; i < 10; i++) {
+      const timestamp = getRandomTimestampWithinDays(14);
+      await client.query(
+        `INSERT INTO audit_logs (entry_id, actor_user_id, action, previous_status, new_status, reason, details, created_at)
+         VALUES (NULL, NULL, 'SYSTEM', NULL, NULL, $1, $2, $3)`,
+        ['Daily compliance check completed', JSON.stringify({ users_checked: 103, warnings_sent: getRandomInt(5, 15) }),
+         formatTimestamp(timestamp)]
+      );
+      auditLogCount++;
+    }
+    console.log(`   ✓ Created ${auditLogCount} additional audit logs\n`);
+
     await client.query('COMMIT');
 
     // Summary
@@ -369,12 +745,22 @@ async function seedDemoData() {
     console.log('│ hr@remotedays.app               │ password123  │');
     console.log('│ employee@remotedays.app         │ password123  │');
     console.log('└─────────────────────────────────┴──────────────┘');
-    console.log('\nEmployee Distribution:');
+    console.log('\nEmployee Distribution (by compliance status):');
     console.log(`  • Safe (< 75%): ${COMPLIANCE_DISTRIBUTION.safe} employees`);
     console.log(`  • Warning (75-90%): ${COMPLIANCE_DISTRIBUTION.warning} employees`);
     console.log(`  • Critical (90-100%): ${COMPLIANCE_DISTRIBUTION.critical} employees`);
     console.log(`  • Exceeded (> 100%): ${COMPLIANCE_DISTRIBUTION.exceeded} employees`);
-    console.log('\nTotal: 103 users (1 admin + 1 HR + 101 employees)');
+    console.log('\nData Summary:');
+    console.log('  • 103 users (1 admin + 1 HR + 101 employees)');
+    console.log(`  • ${totalEntries} work entries`);
+    console.log(`  • ${loginAttemptCount} login attempts (2 weeks)`);
+    console.log(`  • ${securityEventCount} security events (2 weeks)`);
+    console.log(`  • ${notificationCount} notifications (2 weeks)`);
+    console.log(`  • ${pushTokenCount} push tokens`);
+    console.log(`  • ${pushLogCount} push notification logs (2 weeks)`);
+    console.log(`  • ${auditLogCount} HR override audit logs`);
+    console.log('  • 17 pending/approved/rejected requests');
+    console.log(`  • ${holidays.length} holidays`);
 
   } catch (err) {
     await client.query('ROLLBACK');

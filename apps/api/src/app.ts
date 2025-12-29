@@ -101,7 +101,7 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     timeWindow: '1 minute',
   });
 
-  server.register(apiRoutes, { prefix: '/api' });
+  server.register(apiRoutes);
 
   server.get('/', async () => {
     return { hello: 'world' };
