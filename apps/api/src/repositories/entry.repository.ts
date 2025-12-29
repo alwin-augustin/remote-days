@@ -16,7 +16,7 @@ export interface IEntryRepository {
   findByUserAndDate(userId: string, date: string): Promise<Entry | undefined>;
   findByUserAndMonth(userId: string, year: number | string, month: number | string): Promise<Entry[]>;
   findAllByUser(userId: string, limit: number, offset: number): Promise<Entry[]>;
-  getStatsForYear(userId: string, year: number | string): Promise<{ home_days: string; office_days: string }>;
+  getStatsForYear(userId: string, year: number | string): Promise<{ home_days: string; office_days: string; country_of_residence: string; max_remote_days: string }>;
 }
 
 export class EntryRepository implements IEntryRepository {
@@ -93,6 +93,6 @@ export class EntryRepository implements IEntryRepository {
        GROUP BY u.user_id, u.country_of_residence, ct.max_remote_days`,
       [userId, year]
     );
-    return rows[0] || { home_days: '0', office_days: '0', country_of_residence: 'FR', max_remote_days: 34 };
+    return rows[0] || { home_days: '0', office_days: '0', country_of_residence: 'FR', max_remote_days: '34' };
   }
 }
