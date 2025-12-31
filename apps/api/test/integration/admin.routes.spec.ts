@@ -8,7 +8,6 @@ describe('Admin Integration', () => {
   let employeeToken: string;
   let adminId: string; // Add adminId here
 
-
   beforeAll(async () => {
     const { app: testApp, repos } = await getTestApp();
     app = testApp;
@@ -26,7 +25,7 @@ describe('Admin Integration', () => {
       work_country: 'FR',
       role: 'admin',
       password_hash: hashedPassword,
-      is_active: true
+      is_active: true,
     });
     adminId = adminUser.user_id;
 
@@ -39,7 +38,7 @@ describe('Admin Integration', () => {
       work_country: 'FR',
       role: 'employee',
       password_hash: hashedPassword,
-      is_active: true
+      is_active: true,
     });
 
     // Login Admin
@@ -49,7 +48,7 @@ describe('Admin Integration', () => {
       payload: { email: 'admin@test.com', password: 'password' },
     });
     const adminCookies = adminRes.headers['set-cookie'];
-    adminToken = (Array.isArray(adminCookies) ? adminCookies[0] : adminCookies as string).split(';')[0];
+    adminToken = (Array.isArray(adminCookies) ? adminCookies[0] : (adminCookies as string)).split(';')[0];
 
     // Login Employee
     const empRes = await app.inject({
@@ -58,7 +57,7 @@ describe('Admin Integration', () => {
       payload: { email: 'emp@test.com', password: 'password' },
     });
     const empCookies = empRes.headers['set-cookie'];
-    employeeToken = (Array.isArray(empCookies) ? empCookies[0] : empCookies as string).split(';')[0];
+    employeeToken = (Array.isArray(empCookies) ? empCookies[0] : (empCookies as string)).split(';')[0];
   });
 
   afterAll(async () => {

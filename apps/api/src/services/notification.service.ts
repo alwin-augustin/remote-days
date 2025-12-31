@@ -14,7 +14,7 @@ export class NotificationService {
     private notificationRepo: INotificationRepository,
     private emailService: EmailService,
     private holidayService: HolidayService
-  ) { }
+  ) {}
 
   setPushService(pushService: PushService) {
     this.pushService = pushService;
@@ -53,12 +53,7 @@ export class NotificationService {
     const text = `Good morning ${user.first_name}!\n\nWhere are you working today (${dateForDisplay})?\n\n🏠 Home: ${links['home']}\n🏢 Office: ${links['office']}\n\nJust click one button — it takes 2 seconds!\n\n- Remote Days Team`;
 
     // Modern styled HTML
-    const html = generateDailyCheckInEmail(
-      user.first_name,
-      dateForDisplay,
-      links['home'],
-      links['office']
-    );
+    const html = generateDailyCheckInEmail(user.first_name, dateForDisplay, links['home'], links['office']);
 
     await this.emailService.sendEmail(user.email, subject, text, html);
 

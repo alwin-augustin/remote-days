@@ -47,11 +47,12 @@ function getMigrationFiles(): { id: string; filename: string; filepath: string }
     return [];
   }
 
-  const files = fs.readdirSync(MIGRATIONS_DIR)
-    .filter(f => f.endsWith('.sql') && !f.includes('.down.'))
+  const files = fs
+    .readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith('.sql') && !f.includes('.down.'))
     .sort();
 
-  return files.map(filename => {
+  return files.map((filename) => {
     // Extract migration ID from filename (e.g., "001_create_table.sql" -> "001")
     const match = filename.match(/^(\d+)/);
     if (!match) {
@@ -85,7 +86,7 @@ async function runMigrations(): Promise<void> {
       return;
     }
 
-    const pendingMigrations = migrationFiles.filter(m => !appliedMigrations.has(m.id));
+    const pendingMigrations = migrationFiles.filter((m) => !appliedMigrations.has(m.id));
 
     if (pendingMigrations.length === 0) {
       console.log('✅ All migrations are already applied.');
@@ -103,10 +104,10 @@ async function runMigrations(): Promise<void> {
 
       try {
         await client.query(sql);
-        await client.query(
-          'INSERT INTO schema_migrations (id, filename) VALUES ($1, $2)',
-          [migration.id, migration.filename]
-        );
+        await client.query('INSERT INTO schema_migrations (id, filename) VALUES ($1, $2)', [
+          migration.id,
+          migration.filename,
+        ]);
         await client.query('COMMIT');
         console.log(`✅ Applied: ${migration.filename}\n`);
       } catch (error) {
@@ -139,7 +140,7 @@ async function showStatus(): Promise<void> {
     const { rows: appliedRows } = await client.query<Migration>(
       'SELECT id, filename, applied_at FROM schema_migrations ORDER BY id'
     );
-    const appliedSet = new Set(appliedRows.map(r => r.id));
+    const appliedSet = new Set(appliedRows.map((r) => r.id));
     const migrationFiles = getMigrationFiles();
 
     console.log('Migrations:\n');
@@ -147,21 +148,19 @@ async function showStatus(): Promise<void> {
     console.log('-------|----------|-----------------------------------|---------------------------');
 
     for (const file of migrationFiles) {
-      const applied = appliedRows.find(r => r.id === file.id);
+      const applied = appliedRows.find((r) => r.id === file.id);
       const status = applied ? '✅ Applied' : '⏳ Pending';
       const appliedAt = applied?.applied_at
         ? new Date(applied.applied_at).toISOString().replace('T', ' ').slice(0, 19)
         : '-';
-      console.log(
-        `${file.id.padEnd(6)} | ${status.padEnd(8)} | ${file.filename.padEnd(33)} | ${appliedAt}`
-      );
+      console.log(`${file.id.padEnd(6)} | ${status.padEnd(8)} | ${file.filename.padEnd(33)} | ${appliedAt}`);
     }
 
     // Check for orphaned migrations (in DB but file missing)
-    const orphaned = appliedRows.filter(r => !migrationFiles.find(f => f.id === r.id));
+    const orphaned = appliedRows.filter((r) => !migrationFiles.find((f) => f.id === r.id));
     if (orphaned.length > 0) {
       console.log('\n⚠️  Orphaned migrations (in DB but file missing):');
-      orphaned.forEach(m => console.log(`   - ${m.id}: ${m.filename}`));
+      orphaned.forEach((m) => console.log(`   - ${m.id}: ${m.filename}`));
     }
 
     console.log('');

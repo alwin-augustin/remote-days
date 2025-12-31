@@ -107,7 +107,7 @@ export class UserRepository implements IUserRepository {
       'role',
       'is_active',
     ];
-    
+
     const fields = (Object.keys(updates) as (keyof User)[]).filter((key) => allowedFields.includes(key));
 
     if (fields.length === 0) return null;

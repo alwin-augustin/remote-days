@@ -145,12 +145,9 @@ export class AuthController {
 
     // Log security event
     if (this.securityService) {
-      await this.securityService.logSecurityEvent(
-        SecurityEventTypes.PASSWORD_RESET_SUCCESS,
-        ip,
-        userAgent,
-        { tokenUsed: token.substring(0, 8) + '...' }
-      );
+      await this.securityService.logSecurityEvent(SecurityEventTypes.PASSWORD_RESET_SUCCESS, ip, userAgent, {
+        tokenUsed: token.substring(0, 8) + '...',
+      });
     }
 
     reply.code(200).send({ message: 'Password has been reset' });

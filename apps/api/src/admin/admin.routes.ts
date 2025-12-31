@@ -18,14 +18,15 @@ async function adminRoutes(
     {
       preHandler: [server.authenticate, server.authorize('hr')],
       schema: {
-        description: 'Manually trigger the daily email reminder worker. Use onlyPending=true to only send to users who haven\'t declared yet.',
+        description:
+          "Manually trigger the daily email reminder worker. Use onlyPending=true to only send to users who haven't declared yet.",
         tags: ['Admin'],
         body: {
           type: 'object',
           properties: {
             onlyPending: {
               type: 'boolean',
-              description: 'If true, only send to users who haven\'t declared their status today',
+              description: "If true, only send to users who haven't declared their status today",
               default: false,
             },
           },

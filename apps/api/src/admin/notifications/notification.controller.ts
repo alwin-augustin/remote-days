@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { NotificationService } from '../../services/notification.service';
 
 export class NotificationController {
-  constructor(private readonly notificationService: NotificationService) { }
+  constructor(private readonly notificationService: NotificationService) {}
 
   getNotificationStatsHandler = async (
     request: FastifyRequest<{ Querystring: { date?: string } }>,

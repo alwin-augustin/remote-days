@@ -78,8 +78,14 @@ export const usersQuerySchema = z.object({
 export const auditLogsQuerySchema = z.object({
   userId: z.string().uuid().optional(),
   action: z.enum(['CREATE', 'UPDATE', 'DELETE', 'OVERRIDE', 'SYSTEM']).optional(),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   limit: z.coerce.number().int().min(1).max(500).optional().default(100),
   offset: z.coerce.number().int().min(0).optional().default(0),
 });

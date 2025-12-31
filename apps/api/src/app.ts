@@ -1,10 +1,13 @@
 import fastify, { FastifyInstance, FastifyServerOptions } from 'fastify';
 import db from './db';
 import cookie from '@fastify/cookie';
-import multipart from '@fastify/multipart';
 import cors from '@fastify/cors';
-import rateLimit from '@fastify/rate-limit';
 import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import rateLimit from '@fastify/rate-limit';
 import authPlugin from './plugins/auth';
 import apiRoutes from './api-routes';
 
@@ -33,7 +36,7 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin for API
   });
 
-  server.register(require('@fastify/swagger'), {
+  server.register(fastifySwagger, {
     openapi: {
       info: {
         title: 'Remote Days API',
@@ -56,7 +59,7 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     },
   });
 
-  server.register(require('@fastify/swagger-ui'), {
+  server.register(fastifySwaggerUi, {
     routePrefix: '/documentation',
     uiConfig: {
       docExpansion: 'list',

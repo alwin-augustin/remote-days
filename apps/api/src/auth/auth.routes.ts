@@ -1,10 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { AuthController } from './auth.controller';
-import {
-  loginJsonSchema,
-  passwordResetRequestJsonSchema,
-  passwordResetJsonSchema,
-} from '../schemas';
+import { loginJsonSchema, passwordResetRequestJsonSchema, passwordResetJsonSchema } from '../schemas';
 
 // Rate limit configurations for auth endpoints
 const authRateLimitConfig = {
