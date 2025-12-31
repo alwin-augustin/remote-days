@@ -6,18 +6,18 @@ interface EmailAction {
 
 // Brand colors matching the landing page
 const BRAND_COLORS = {
-  primary: '#3B82F6',      // Blue 500
-  primaryDark: '#2563EB',  // Blue 600
+  primary: '#3B82F6', // Blue 500
+  primaryDark: '#2563EB', // Blue 600
   primaryLight: '#EFF6FF', // Blue 50
-  success: '#10B981',      // Emerald 500
+  success: '#10B981', // Emerald 500
   successLight: '#D1FAE5', // Emerald 100
-  info: '#3B82F6',         // Blue 500
-  secondary: '#64748B',    // Slate 500
-  danger: '#EF4444',       // Red 500
-  text: '#0F172A',         // Slate 900
-  textMuted: '#64748B',    // Slate 500
-  border: '#E2E8F0',       // Slate 200
-  background: '#F8FAFC',   // Slate 50
+  info: '#3B82F6', // Blue 500
+  secondary: '#64748B', // Slate 500
+  danger: '#EF4444', // Red 500
+  text: '#0F172A', // Slate 900
+  textMuted: '#64748B', // Slate 500
+  border: '#E2E8F0', // Slate 200
+  background: '#F8FAFC', // Slate 50
 };
 
 /**

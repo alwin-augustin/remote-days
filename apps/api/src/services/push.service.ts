@@ -152,9 +152,7 @@ export class PushService {
     for (let i = 0; i < userIds.length; i += batchSize) {
       const batch = userIds.slice(i, i + batchSize);
       const results = await Promise.all(
-        batch.map((userId) =>
-          this.sendToUser(userId, title, body, notificationType, data)
-        )
+        batch.map((userId) => this.sendToUser(userId, title, body, notificationType, data))
       );
 
       for (const result of results) {
@@ -237,9 +235,7 @@ export class PushService {
   /**
    * Send actual push notifications via Expo Push API
    */
-  private async sendPushNotifications(
-    messages: ExpoPushMessage[]
-  ): Promise<ExpoPushTicket[]> {
+  private async sendPushNotifications(messages: ExpoPushMessage[]): Promise<ExpoPushTicket[]> {
     if (messages.length === 0) {
       return [];
     }
@@ -271,16 +267,10 @@ export class PushService {
   /**
    * Handle failed tokens by marking them as inactive
    */
-  private async handleFailedTokens(
-    tokens: PushToken[],
-    results: ExpoPushTicket[]
-  ): Promise<void> {
+  private async handleFailedTokens(tokens: PushToken[], results: ExpoPushTicket[]): Promise<void> {
     for (let i = 0; i < tokens.length; i++) {
       const ticket = results[i];
-      if (
-        ticket.status === 'error' &&
-        ticket.details?.error === 'DeviceNotRegistered'
-      ) {
+      if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
         // Token is no longer valid, mark as inactive
         await this.fastify.pg.query(
           `UPDATE push_tokens SET is_active = false, updated_at = now()
@@ -305,9 +295,7 @@ export class PushService {
   ): Promise<void> {
     const hasSuccess = results.some((r) => r.status === 'ok');
     const status = hasSuccess ? 'sent' : 'failed';
-    const errorMessage = hasSuccess
-      ? null
-      : results.find((r) => r.status === 'error')?.message || 'Unknown error';
+    const errorMessage = hasSuccess ? null : results.find((r) => r.status === 'error')?.message || 'Unknown error';
 
     await this.fastify.pg.query(
       `INSERT INTO push_notification_logs

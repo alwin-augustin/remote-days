@@ -181,7 +181,13 @@ export class HRRepository implements IHRRepository {
     return rows;
   }
 
-  async getRiskStats(date: string): Promise<{ exceeded_count: number; critical_count: number; high_count: number; moderate_count: number; missing_count: number }> {
+  async getRiskStats(date: string): Promise<{
+    exceeded_count: number;
+    critical_count: number;
+    high_count: number;
+    moderate_count: number;
+    missing_count: number;
+  }> {
     // 1. Calculate Annual Risk with 4 tiers
     const riskQuery = `
       WITH user_days_used AS (

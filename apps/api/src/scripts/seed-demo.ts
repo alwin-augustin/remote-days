@@ -18,10 +18,10 @@ const THRESHOLD = 34;
 
 // Distribution of 100 employees by compliance status
 const COMPLIANCE_DISTRIBUTION = {
-  safe: 40,      // 0-25 remote days (< 75%)
-  warning: 30,   // 26-30 remote days (75-90%)
-  critical: 20,  // 31-34 remote days (90-100%)
-  exceeded: 10,  // 35+ remote days (> 100%)
+  safe: 40, // 0-25 remote days (< 75%)
+  warning: 30, // 26-30 remote days (75-90%)
+  critical: 20, // 31-34 remote days (90-100%)
+  exceeded: 10, // 35+ remote days (> 100%)
 };
 
 // Remote day ranges for each status
@@ -37,19 +37,109 @@ const COUNTRIES = ['FR', 'BE', 'DE'];
 
 // First names and last names for generating employees
 const FIRST_NAMES = [
-  'Emma', 'Louis', 'Chloé', 'Lucas', 'Léa', 'Hugo', 'Manon', 'Gabriel', 'Inès', 'Raphaël',
-  'Camille', 'Arthur', 'Sarah', 'Jules', 'Jade', 'Adam', 'Louise', 'Léo', 'Alice', 'Nathan',
-  'Lina', 'Tom', 'Eva', 'Mathis', 'Anna', 'Enzo', 'Zoé', 'Noah', 'Clara', 'Théo',
-  'Charlotte', 'Maxime', 'Marie', 'Alexandre', 'Juliette', 'Paul', 'Lucie', 'Ethan', 'Rose', 'Victor',
-  'Sophie', 'Antoine', 'Margot', 'Clément', 'Ambre', 'Benjamin', 'Romane', 'Quentin', 'Océane', 'Simon'
+  'Emma',
+  'Louis',
+  'Chloé',
+  'Lucas',
+  'Léa',
+  'Hugo',
+  'Manon',
+  'Gabriel',
+  'Inès',
+  'Raphaël',
+  'Camille',
+  'Arthur',
+  'Sarah',
+  'Jules',
+  'Jade',
+  'Adam',
+  'Louise',
+  'Léo',
+  'Alice',
+  'Nathan',
+  'Lina',
+  'Tom',
+  'Eva',
+  'Mathis',
+  'Anna',
+  'Enzo',
+  'Zoé',
+  'Noah',
+  'Clara',
+  'Théo',
+  'Charlotte',
+  'Maxime',
+  'Marie',
+  'Alexandre',
+  'Juliette',
+  'Paul',
+  'Lucie',
+  'Ethan',
+  'Rose',
+  'Victor',
+  'Sophie',
+  'Antoine',
+  'Margot',
+  'Clément',
+  'Ambre',
+  'Benjamin',
+  'Romane',
+  'Quentin',
+  'Océane',
+  'Simon',
 ];
 
 const LAST_NAMES = [
-  'Martin', 'Bernard', 'Dubois', 'Thomas', 'Robert', 'Richard', 'Petit', 'Durand', 'Leroy', 'Moreau',
-  'Simon', 'Laurent', 'Lefebvre', 'Michel', 'Garcia', 'David', 'Bertrand', 'Roux', 'Vincent', 'Fournier',
-  'Morel', 'Girard', 'André', 'Lefevre', 'Mercier', 'Dupont', 'Lambert', 'Bonnet', 'François', 'Martinez',
-  'Müller', 'Schmidt', 'Schneider', 'Fischer', 'Weber', 'Meyer', 'Wagner', 'Becker', 'Schulz', 'Hoffmann',
-  'Peeters', 'Janssens', 'Maes', 'Jacobs', 'Willems', 'Claes', 'Goossens', 'Wouters', 'De Smedt', 'Hermans'
+  'Martin',
+  'Bernard',
+  'Dubois',
+  'Thomas',
+  'Robert',
+  'Richard',
+  'Petit',
+  'Durand',
+  'Leroy',
+  'Moreau',
+  'Simon',
+  'Laurent',
+  'Lefebvre',
+  'Michel',
+  'Garcia',
+  'David',
+  'Bertrand',
+  'Roux',
+  'Vincent',
+  'Fournier',
+  'Morel',
+  'Girard',
+  'André',
+  'Lefevre',
+  'Mercier',
+  'Dupont',
+  'Lambert',
+  'Bonnet',
+  'François',
+  'Martinez',
+  'Müller',
+  'Schmidt',
+  'Schneider',
+  'Fischer',
+  'Weber',
+  'Meyer',
+  'Wagner',
+  'Becker',
+  'Schulz',
+  'Hoffmann',
+  'Peeters',
+  'Janssens',
+  'Maes',
+  'Jacobs',
+  'Willems',
+  'Claes',
+  'Goossens',
+  'Wouters',
+  'De Smedt',
+  'Hermans',
 ];
 
 // Request reasons
@@ -63,15 +153,27 @@ const REQUEST_REASONS = [
   'Public transport strike',
   'Internet issue prevented declaration',
   'Was traveling for client meeting',
-  'Conference call required quiet environment'
+  'Conference call required quiet environment',
 ];
 
 // IP addresses for security events and login attempts
 const IP_ADDRESSES = [
-  '192.168.1.100', '192.168.1.101', '10.0.0.50', '10.0.0.51',
-  '172.16.0.10', '172.16.0.11', '82.165.120.45', '91.121.85.33',
-  '213.186.33.5', '176.31.254.23', '51.255.68.100', '37.59.42.88',
-  '185.234.219.50', '195.154.161.11', '78.193.78.21', '80.67.169.12'
+  '192.168.1.100',
+  '192.168.1.101',
+  '10.0.0.50',
+  '10.0.0.51',
+  '172.16.0.10',
+  '172.16.0.11',
+  '82.165.120.45',
+  '91.121.85.33',
+  '213.186.33.5',
+  '176.31.254.23',
+  '51.255.68.100',
+  '37.59.42.88',
+  '185.234.219.50',
+  '195.154.161.11',
+  '78.193.78.21',
+  '80.67.169.12',
 ];
 
 // User agents for security events
@@ -84,17 +186,40 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
   'Mozilla/5.0 (iPad; CPU OS 17_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1',
   'RemoteDays/1.0.0 (iOS; iPhone15,2)',
-  'RemoteDays/1.0.0 (Android; Pixel 8 Pro)'
+  'RemoteDays/1.0.0 (Android; Pixel 8 Pro)',
 ];
 
 // Notification types
-const NOTIFICATION_TYPES = ['daily_prompt', 'warning_75', 'warning_90', 'breach', 'request_approved', 'request_rejected'];
+const NOTIFICATION_TYPES = [
+  'daily_prompt',
+  'warning_75',
+  'warning_90',
+  'breach',
+  'request_approved',
+  'request_rejected',
+];
 
 // Security event types
-const SECURITY_EVENT_TYPES = ['login_success', 'login_failure', 'password_reset_request', 'password_reset_complete', 'data_export', 'session_created', 'session_expired', 'account_locked', 'account_unlocked'];
+const SECURITY_EVENT_TYPES = [
+  'login_success',
+  'login_failure',
+  'password_reset_request',
+  'password_reset_complete',
+  'data_export',
+  'session_created',
+  'session_expired',
+  'account_locked',
+  'account_unlocked',
+];
 
 // Push notification types
-const PUSH_NOTIFICATION_TYPES = ['daily_reminder', 'request_approved', 'request_rejected', 'threshold_warning', 'threshold_breach'];
+const PUSH_NOTIFICATION_TYPES = [
+  'daily_reminder',
+  'request_approved',
+  'request_rejected',
+  'threshold_warning',
+  'threshold_breach',
+];
 
 // Device names for push tokens
 const DEVICE_NAMES = ['iPhone 15 Pro', 'iPhone 14', 'Pixel 8 Pro', 'Samsung Galaxy S24', 'iPad Pro', 'MacBook Pro'];
@@ -106,7 +231,7 @@ const OVERRIDE_REASONS = [
   'Manager confirmed incorrect declaration',
   'Compliance audit correction',
   'System sync issue resolved',
-  'Employee on approved leave - auto-corrected'
+  'Employee on approved leave - auto-corrected',
 ];
 
 function getRandomElement<T>(arr: T[]): T {
@@ -134,9 +259,7 @@ function generateWorkDays(year: number): string[] {
   const end = today < new Date(year, 11, 31) ? today : new Date(year, 11, 31);
 
   const allDays = eachDayOfInterval({ start, end });
-  return allDays
-    .filter(day => !isWeekend(day))
-    .map(day => format(day, 'yyyy-MM-dd'));
+  return allDays.filter((day) => !isWeekend(day)).map((day) => format(day, 'yyyy-MM-dd'));
 }
 
 async function seedDemoData() {
@@ -219,7 +342,7 @@ async function seedDemoData() {
         employeeIds.push({
           id: result.rows[0].user_id,
           status,
-          country
+          country,
         });
       }
     }
@@ -242,17 +365,17 @@ async function seedDemoData() {
     const mainEmployeeOfficeDays = workDays.slice(mainEmployeeRemoteDays);
 
     for (const day of mainEmployeeHomeDays) {
-      await client.query(
-        `INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'home', 'seed')`,
-        [mainEmployeeId, day]
-      );
+      await client.query(`INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'home', 'seed')`, [
+        mainEmployeeId,
+        day,
+      ]);
       totalEntries++;
     }
     for (const day of mainEmployeeOfficeDays) {
-      await client.query(
-        `INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'office', 'seed')`,
-        [mainEmployeeId, day]
-      );
+      await client.query(`INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'office', 'seed')`, [
+        mainEmployeeId,
+        day,
+      ]);
       totalEntries++;
     }
     console.log(`   ✓ Main employee: ${mainEmployeeRemoteDays} home + ${mainEmployeeOfficeDays.length} office days`);
@@ -268,17 +391,17 @@ async function seedDemoData() {
       const officeDays = shuffledDays.slice(Math.min(remoteDays, workDays.length));
 
       for (const day of homeDays) {
-        await client.query(
-          `INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'home', 'seed')`,
-          [emp.id, day]
-        );
+        await client.query(`INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'home', 'seed')`, [
+          emp.id,
+          day,
+        ]);
         totalEntries++;
       }
       for (const day of officeDays) {
-        await client.query(
-          `INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'office', 'seed')`,
-          [emp.id, day]
-        );
+        await client.query(`INSERT INTO entries (user_id, date, status, source) VALUES ($1, $2, 'office', 'seed')`, [
+          emp.id,
+          day,
+        ]);
         totalEntries++;
       }
     }
@@ -312,7 +435,7 @@ async function seedDemoData() {
           getRandomElement(['home', 'office']),
           getRandomElement(REQUEST_REASONS),
           hrId,
-          'Approved - valid reason provided'
+          'Approved - valid reason provided',
         ]
       );
     }
@@ -325,13 +448,7 @@ async function seedDemoData() {
       await client.query(
         `INSERT INTO requests (user_id, date, requested_status, reason, status, admin_id, admin_note)
          VALUES ($1, $2, 'home', $3, 'rejected', $4, $5)`,
-        [
-          emp.id,
-          randomDay,
-          getRandomElement(REQUEST_REASONS),
-          hrId,
-          'Rejected - insufficient justification'
-        ]
+        [emp.id, randomDay, getRandomElement(REQUEST_REASONS), hrId, 'Rejected - insufficient justification']
       );
     }
     console.log('   ✓ 3 rejected requests');
@@ -358,7 +475,7 @@ async function seedDemoData() {
       { date: '2025-08-15', country: 'LU', description: 'Assumption Day' },
       { date: '2025-11-01', country: 'LU', description: "All Saints' Day" },
       { date: '2025-12-25', country: 'LU', description: 'Christmas Day' },
-      { date: '2025-12-26', country: 'LU', description: 'St. Stephen\'s Day' },
+      { date: '2025-12-26', country: 'LU', description: "St. Stephen's Day" },
 
       // France
       { date: '2025-01-01', country: 'FR', description: "New Year's Day" },
@@ -423,13 +540,14 @@ async function seedDemoData() {
       { id: mainEmployeeId, email: 'employee@remotedays.app' },
       ...employeeIds.map((emp, i) => ({
         id: emp.id,
-        email: `employee${i + 1}@remotedays.app`
-      }))
+        email: `employee${i + 1}@remotedays.app`,
+      })),
     ];
 
     let loginAttemptCount = 0;
     // Successful logins - each user logs in 1-3 times per day for 14 days
-    for (const user of allUsers.slice(0, 50)) { // First 50 users have login activity
+    for (const user of allUsers.slice(0, 50)) {
+      // First 50 users have login activity
       const loginsPerDay = getRandomInt(1, 3);
       for (let day = 0; day < 14; day++) {
         for (let login = 0; login < loginsPerDay; login++) {
@@ -448,13 +566,18 @@ async function seedDemoData() {
     const failureReasons = ['Invalid password', 'Account not found', 'Account locked', 'Invalid email format'];
     for (let i = 0; i < 50; i++) {
       const timestamp = getRandomTimestampWithinDays(14);
-      const email = Math.random() > 0.5
-        ? getRandomElement(allUsers).email
-        : `typo${getRandomInt(1, 100)}@remotedays.app`;
+      const email =
+        Math.random() > 0.5 ? getRandomElement(allUsers).email : `typo${getRandomInt(1, 100)}@remotedays.app`;
       await client.query(
         `INSERT INTO login_attempts (email, ip_address, user_agent, success, failure_reason, created_at)
          VALUES ($1, $2, $3, false, $4, $5)`,
-        [email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS), getRandomElement(failureReasons), formatTimestamp(timestamp)]
+        [
+          email,
+          getRandomElement(IP_ADDRESSES),
+          getRandomElement(USER_AGENTS),
+          getRandomElement(failureReasons),
+          formatTimestamp(timestamp),
+        ]
       );
       loginAttemptCount++;
     }
@@ -471,8 +594,15 @@ async function seedDemoData() {
         await client.query(
           `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          ['login_success', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
-           JSON.stringify({ method: 'password', mfa: false }), formatTimestamp(timestamp)]
+          [
+            'login_success',
+            user.id,
+            user.email,
+            getRandomElement(IP_ADDRESSES),
+            getRandomElement(USER_AGENTS),
+            JSON.stringify({ method: 'password', mfa: false }),
+            formatTimestamp(timestamp),
+          ]
         );
         securityEventCount++;
       }
@@ -485,8 +615,15 @@ async function seedDemoData() {
       await client.query(
         `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        ['login_failure', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
-         JSON.stringify({ reason: 'invalid_password', attempts: getRandomInt(1, 3) }), formatTimestamp(timestamp)]
+        [
+          'login_failure',
+          user.id,
+          user.email,
+          getRandomElement(IP_ADDRESSES),
+          getRandomElement(USER_AGENTS),
+          JSON.stringify({ reason: 'invalid_password', attempts: getRandomInt(1, 3) }),
+          formatTimestamp(timestamp),
+        ]
       );
       securityEventCount++;
     }
@@ -498,8 +635,15 @@ async function seedDemoData() {
         await client.query(
           `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          ['session_created', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
-           JSON.stringify({ session_duration: '24h' }), formatTimestamp(timestamp)]
+          [
+            'session_created',
+            user.id,
+            user.email,
+            getRandomElement(IP_ADDRESSES),
+            getRandomElement(USER_AGENTS),
+            JSON.stringify({ session_duration: '24h' }),
+            formatTimestamp(timestamp),
+          ]
         );
         securityEventCount++;
       }
@@ -512,8 +656,15 @@ async function seedDemoData() {
       await client.query(
         `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        ['password_reset_request', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
-         JSON.stringify({ initiated_by: 'user' }), formatTimestamp(timestamp)]
+        [
+          'password_reset_request',
+          user.id,
+          user.email,
+          getRandomElement(IP_ADDRESSES),
+          getRandomElement(USER_AGENTS),
+          JSON.stringify({ initiated_by: 'user' }),
+          formatTimestamp(timestamp),
+        ]
       );
       securityEventCount++;
     }
@@ -521,12 +672,20 @@ async function seedDemoData() {
     // Data export events (HR/Admin only)
     for (let i = 0; i < 8; i++) {
       const timestamp = getRandomTimestampWithinDays(14);
-      const adminUser = Math.random() > 0.5 ? { id: adminId, email: 'admin@remotedays.app' } : { id: hrId, email: 'hr@remotedays.app' };
+      const adminUser =
+        Math.random() > 0.5 ? { id: adminId, email: 'admin@remotedays.app' } : { id: hrId, email: 'hr@remotedays.app' };
       await client.query(
         `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        ['data_export', adminUser.id, adminUser.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
-         JSON.stringify({ export_type: getRandomElement(['csv', 'pdf', 'excel']), records: getRandomInt(50, 500) }), formatTimestamp(timestamp)]
+        [
+          'data_export',
+          adminUser.id,
+          adminUser.email,
+          getRandomElement(IP_ADDRESSES),
+          getRandomElement(USER_AGENTS),
+          JSON.stringify({ export_type: getRandomElement(['csv', 'pdf', 'excel']), records: getRandomInt(50, 500) }),
+          formatTimestamp(timestamp),
+        ]
       );
       securityEventCount++;
     }
@@ -538,8 +697,15 @@ async function seedDemoData() {
       await client.query(
         `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        ['account_locked', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
-         JSON.stringify({ reason: 'too_many_failed_attempts', failed_attempts: 5 }), formatTimestamp(timestamp)]
+        [
+          'account_locked',
+          user.id,
+          user.email,
+          getRandomElement(IP_ADDRESSES),
+          getRandomElement(USER_AGENTS),
+          JSON.stringify({ reason: 'too_many_failed_attempts', failed_attempts: 5 }),
+          formatTimestamp(timestamp),
+        ]
       );
       securityEventCount++;
 
@@ -548,8 +714,15 @@ async function seedDemoData() {
       await client.query(
         `INSERT INTO security_events (event_type, user_id, email, ip_address, user_agent, details, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        ['account_unlocked', user.id, user.email, getRandomElement(IP_ADDRESSES), getRandomElement(USER_AGENTS),
-         JSON.stringify({ unlocked_by: 'system', reason: 'lockout_expired' }), formatTimestamp(unlockTime)]
+        [
+          'account_unlocked',
+          user.id,
+          user.email,
+          getRandomElement(IP_ADDRESSES),
+          getRandomElement(USER_AGENTS),
+          JSON.stringify({ unlocked_by: 'system', reason: 'lockout_expired' }),
+          formatTimestamp(unlockTime),
+        ]
       );
       securityEventCount++;
     }
@@ -563,15 +736,23 @@ async function seedDemoData() {
     for (let day = 0; day < 14; day++) {
       const promptDate = subDays(new Date(), day);
       if (!isWeekend(promptDate)) {
-        for (const user of allUsers.slice(0, 60)) { // 60 users get daily prompts
+        for (const user of allUsers.slice(0, 60)) {
+          // 60 users get daily prompts
           const timestamp = new Date(promptDate);
           timestamp.setHours(8, 0, 0, 0); // 8 AM
           await client.query(
             `INSERT INTO notifications (user_id, channel, notification_type, payload, sent_at)
              VALUES ($1, $2, $3, $4, $5)`,
-            [user.id, getRandomElement(['email', 'push']), 'daily_prompt',
-             JSON.stringify({ date: format(promptDate, 'yyyy-MM-dd'), cta_token: 'token_' + Math.random().toString(36).substr(2, 9) }),
-             formatTimestamp(timestamp)]
+            [
+              user.id,
+              getRandomElement(['email', 'push']),
+              'daily_prompt',
+              JSON.stringify({
+                date: format(promptDate, 'yyyy-MM-dd'),
+                cta_token: 'token_' + Math.random().toString(36).substr(2, 9),
+              }),
+              formatTimestamp(timestamp),
+            ]
           );
           notificationCount++;
         }
@@ -579,16 +760,20 @@ async function seedDemoData() {
     }
 
     // Warning notifications for critical/exceeded employees
-    const criticalEmployees = employeeIds.filter(e => e.status === 'critical' || e.status === 'exceeded');
+    const criticalEmployees = employeeIds.filter((e) => e.status === 'critical' || e.status === 'exceeded');
     for (const emp of criticalEmployees) {
       const warningType = emp.status === 'exceeded' ? 'breach' : getRandomElement(['warning_75', 'warning_90']);
       const timestamp = getRandomTimestampWithinDays(14);
       await client.query(
         `INSERT INTO notifications (user_id, channel, notification_type, payload, sent_at)
          VALUES ($1, $2, $3, $4, $5)`,
-        [emp.id, 'email', warningType,
-         JSON.stringify({ threshold: 34, current_days: getRandomInt(30, 40), country: emp.country }),
-         formatTimestamp(timestamp)]
+        [
+          emp.id,
+          'email',
+          warningType,
+          JSON.stringify({ threshold: 34, current_days: getRandomInt(30, 40), country: emp.country }),
+          formatTimestamp(timestamp),
+        ]
       );
       notificationCount++;
     }
@@ -601,9 +786,16 @@ async function seedDemoData() {
       await client.query(
         `INSERT INTO notifications (user_id, channel, notification_type, payload, sent_at)
          VALUES ($1, $2, $3, $4, $5)`,
-        [user.id, getRandomElement(['email', 'push']), notifType,
-         JSON.stringify({ request_date: format(subDays(new Date(), getRandomInt(1, 30)), 'yyyy-MM-dd'), admin_note: notifType === 'request_approved' ? 'Approved' : 'Insufficient justification' }),
-         formatTimestamp(timestamp)]
+        [
+          user.id,
+          getRandomElement(['email', 'push']),
+          notifType,
+          JSON.stringify({
+            request_date: format(subDays(new Date(), getRandomInt(1, 30)), 'yyyy-MM-dd'),
+            admin_note: notifType === 'request_approved' ? 'Approved' : 'Insufficient justification',
+          }),
+          formatTimestamp(timestamp),
+        ]
       );
       notificationCount++;
     }
@@ -620,8 +812,13 @@ async function seedDemoData() {
       await client.query(
         `INSERT INTO push_tokens (user_id, token, platform, device_name, is_active, created_at)
          VALUES ($1, $2, $3, $4, true, $5)`,
-        [user.id, `ExponentPushToken[${Math.random().toString(36).substr(2, 22)}]`, platform, deviceName,
-         formatTimestamp(subDays(new Date(), getRandomInt(7, 60)))]
+        [
+          user.id,
+          `ExponentPushToken[${Math.random().toString(36).substr(2, 22)}]`,
+          platform,
+          deviceName,
+          formatTimestamp(subDays(new Date(), getRandomInt(7, 60))),
+        ]
       );
       pushTokenCount++;
     }
@@ -630,7 +827,11 @@ async function seedDemoData() {
     await client.query(
       `INSERT INTO push_tokens (user_id, token, platform, device_name, is_active, created_at)
        VALUES ($1, $2, 'ios', 'iPhone 15 Pro Max', true, $3)`,
-      [adminId, `ExponentPushToken[${Math.random().toString(36).substr(2, 22)}]`, formatTimestamp(subDays(new Date(), 30))]
+      [
+        adminId,
+        `ExponentPushToken[${Math.random().toString(36).substr(2, 22)}]`,
+        formatTimestamp(subDays(new Date(), 30)),
+      ]
     );
     await client.query(
       `INSERT INTO push_tokens (user_id, token, platform, device_name, is_active, created_at)
@@ -655,10 +856,17 @@ async function seedDemoData() {
           await client.query(
             `INSERT INTO push_notification_logs (user_id, notification_type, title, body, data, status, error_message, sent_at, created_at)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [user.id, 'daily_reminder', "📍 Where are you today?", "Tap to declare your work location for today.",
-             JSON.stringify({ date: format(reminderDate, 'yyyy-MM-dd'), action: 'declare' }),
-             status, status === 'failed' ? 'Device not reachable' : null,
-             status === 'sent' ? formatTimestamp(timestamp) : null, formatTimestamp(timestamp)]
+            [
+              user.id,
+              'daily_reminder',
+              '📍 Where are you today?',
+              'Tap to declare your work location for today.',
+              JSON.stringify({ date: format(reminderDate, 'yyyy-MM-dd'), action: 'declare' }),
+              status,
+              status === 'failed' ? 'Device not reachable' : null,
+              status === 'sent' ? formatTimestamp(timestamp) : null,
+              formatTimestamp(timestamp),
+            ]
           );
           pushLogCount++;
         }
@@ -668,13 +876,19 @@ async function seedDemoData() {
       if (['critical', 'exceeded'].includes(user.status)) {
         const timestamp = getRandomTimestampWithinDays(14);
         const notifType = user.status === 'exceeded' ? 'threshold_breach' : 'threshold_warning';
-        const title = user.status === 'exceeded' ? "⚠️ Threshold Exceeded!" : "⚠️ Approaching Threshold";
+        const title = user.status === 'exceeded' ? '⚠️ Threshold Exceeded!' : '⚠️ Approaching Threshold';
         await client.query(
           `INSERT INTO push_notification_logs (user_id, notification_type, title, body, data, status, sent_at, created_at)
            VALUES ($1, $2, $3, $4, $5, 'sent', $6, $7)`,
-          [user.id, notifType, title, `You have used ${getRandomInt(30, 40)} of 34 remote days in ${user.country}.`,
-           JSON.stringify({ country: user.country, threshold: 34 }),
-           formatTimestamp(timestamp), formatTimestamp(timestamp)]
+          [
+            user.id,
+            notifType,
+            title,
+            `You have used ${getRandomInt(30, 40)} of 34 remote days in ${user.country}.`,
+            JSON.stringify({ country: user.country, threshold: 34 }),
+            formatTimestamp(timestamp),
+            formatTimestamp(timestamp),
+          ]
         );
         pushLogCount++;
       }
@@ -688,11 +902,15 @@ async function seedDemoData() {
       await client.query(
         `INSERT INTO push_notification_logs (user_id, notification_type, title, body, data, status, sent_at, created_at)
          VALUES ($1, $2, $3, $4, $5, 'sent', $6, $7)`,
-        [user.id, isApproved ? 'request_approved' : 'request_rejected',
-         isApproved ? "✅ Request Approved" : "❌ Request Rejected",
-         isApproved ? "Your change request has been approved by HR." : "Your change request was not approved.",
-         JSON.stringify({ request_id: Math.random().toString(36).substr(2, 9) }),
-         formatTimestamp(timestamp), formatTimestamp(timestamp)]
+        [
+          user.id,
+          isApproved ? 'request_approved' : 'request_rejected',
+          isApproved ? '✅ Request Approved' : '❌ Request Rejected',
+          isApproved ? 'Your change request has been approved by HR.' : 'Your change request was not approved.',
+          JSON.stringify({ request_id: Math.random().toString(36).substr(2, 9) }),
+          formatTimestamp(timestamp),
+          formatTimestamp(timestamp),
+        ]
       );
       pushLogCount++;
     }
@@ -703,9 +921,7 @@ async function seedDemoData() {
     let auditLogCount = 0;
 
     // Get some entry IDs for audit logs
-    const entryResult = await client.query(
-      `SELECT id, user_id, status FROM entries ORDER BY RANDOM() LIMIT 20`
-    );
+    const entryResult = await client.query(`SELECT id, user_id, status FROM entries ORDER BY RANDOM() LIMIT 20`);
 
     for (const entry of entryResult.rows) {
       const timestamp = getRandomTimestampWithinDays(14);
@@ -713,9 +929,15 @@ async function seedDemoData() {
       await client.query(
         `INSERT INTO audit_logs (entry_id, actor_user_id, action, previous_status, new_status, reason, details, created_at)
          VALUES ($1, $2, 'OVERRIDE', $3, $4, $5, $6, $7)`,
-        [entry.id, hrId, entry.status, newStatus, getRandomElement(OVERRIDE_REASONS),
-         JSON.stringify({ source: 'hr_correction', approved_by: 'hr@remotedays.app' }),
-         formatTimestamp(timestamp)]
+        [
+          entry.id,
+          hrId,
+          entry.status,
+          newStatus,
+          getRandomElement(OVERRIDE_REASONS),
+          JSON.stringify({ source: 'hr_correction', approved_by: 'hr@remotedays.app' }),
+          formatTimestamp(timestamp),
+        ]
       );
       auditLogCount++;
     }
@@ -726,8 +948,11 @@ async function seedDemoData() {
       await client.query(
         `INSERT INTO audit_logs (entry_id, actor_user_id, action, previous_status, new_status, reason, details, created_at)
          VALUES (NULL, NULL, 'SYSTEM', NULL, NULL, $1, $2, $3)`,
-        ['Daily compliance check completed', JSON.stringify({ users_checked: 103, warnings_sent: getRandomInt(5, 15) }),
-         formatTimestamp(timestamp)]
+        [
+          'Daily compliance check completed',
+          JSON.stringify({ users_checked: 103, warnings_sent: getRandomInt(5, 15) }),
+          formatTimestamp(timestamp),
+        ]
       );
       auditLogCount++;
     }
@@ -761,7 +986,6 @@ async function seedDemoData() {
     console.log(`  • ${auditLogCount} HR override audit logs`);
     console.log('  • 17 pending/approved/rejected requests');
     console.log(`  • ${holidays.length} holidays`);
-
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Seed failed:', err);

@@ -4,7 +4,7 @@ import { EntryService } from '../services/entry.service';
 import { AppError } from '../errors/app-error';
 
 export class EntriesController {
-  constructor(private readonly entryService: EntryService) { }
+  constructor(private readonly entryService: EntryService) {}
 
   createEntryHandler = async (
     request: FastifyRequest<{ Body: { status: work_status; date: string } }>,

@@ -7,7 +7,7 @@ export class EntryService {
   constructor(
     private entryRepo: IEntryRepository,
     private auditRepo: IAuditRepository
-  ) { }
+  ) {}
 
   async createOrUpdateEntry(
     userId: string,

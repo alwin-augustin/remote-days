@@ -16,11 +16,14 @@ export interface IEntryRepository {
   findByUserAndDate(userId: string, date: string): Promise<Entry | undefined>;
   findByUserAndMonth(userId: string, year: number | string, month: number | string): Promise<Entry[]>;
   findAllByUser(userId: string, limit: number, offset: number): Promise<Entry[]>;
-  getStatsForYear(userId: string, year: number | string): Promise<{ home_days: string; office_days: string; country_of_residence: string; max_remote_days: string }>;
+  getStatsForYear(
+    userId: string,
+    year: number | string
+  ): Promise<{ home_days: string; office_days: string; country_of_residence: string; max_remote_days: string }>;
 }
 
 export class EntryRepository implements IEntryRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
   async findAllByUser(userId: string, limit: number, offset: number): Promise<Entry[]> {
     const { rows } = await this.pool.query<Entry>(

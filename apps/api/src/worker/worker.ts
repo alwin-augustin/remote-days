@@ -141,12 +141,7 @@ async function sendDailyPromptEmail(
   const subject = `🏠 Where are you working today? · ${formatDate(new Date(todayDateString), 'MMM d')}`;
   const text = `Good morning ${user.first_name}!\n\nWhere are you working today (${dateForDisplay})?\n\n🏠 Home: ${links['home']}\n🏢 Office: ${links['office']}\n\nJust click one button — it takes 2 seconds!\n\n- Remote Days Team`;
 
-  const html = generateDailyCheckInEmail(
-    user.first_name,
-    dateForDisplay,
-    links['home'],
-    links['office']
-  );
+  const html = generateDailyCheckInEmail(user.first_name, dateForDisplay, links['home'], links['office']);
 
   await emailService.sendEmail(user.email, subject, text, html);
   fastify.log.info(`Sent daily check-in email to ${user.email}`);

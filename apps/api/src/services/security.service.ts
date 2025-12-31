@@ -121,10 +121,7 @@ export class SecurityService {
    */
   async clearLoginAttempts(email: string): Promise<void> {
     try {
-      await this.fastify.pg.query(
-        `DELETE FROM login_attempts WHERE email = $1`,
-        [email]
-      );
+      await this.fastify.pg.query(`DELETE FROM login_attempts WHERE email = $1`, [email]);
     } catch (error) {
       this.fastify.log.error({ error, email }, 'Failed to clear login attempts');
     }

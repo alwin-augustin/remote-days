@@ -13,7 +13,7 @@ export default defineConfig({
       exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts', 'src/types/**'],
     },
     // Increase timeout for integration tests involving DB
-    testTimeout: 20000, 
+    testTimeout: 20000,
     hookTimeout: 30000,
     env: {
       NODE_ENV: 'test',

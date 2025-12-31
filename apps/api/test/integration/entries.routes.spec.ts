@@ -26,7 +26,7 @@ describe('Entries Routes Integration', () => {
       work_country: 'FR',
       role: 'hr',
       password_hash: hashedPassword,
-      is_active: true
+      is_active: true,
     });
     hrId = hr.user_id;
 
@@ -39,7 +39,7 @@ describe('Entries Routes Integration', () => {
       work_country: 'FR',
       role: 'employee',
       password_hash: hashedPassword,
-      is_active: true
+      is_active: true,
     });
     employeeId = emp.user_id;
 
@@ -50,7 +50,7 @@ describe('Entries Routes Integration', () => {
       payload: { email: 'hr@test.com', password: 'password' },
     });
     const cookiesHr = resHr.headers['set-cookie'];
-    hrToken = (Array.isArray(cookiesHr) ? cookiesHr[0] : cookiesHr as string).split(';')[0];
+    hrToken = (Array.isArray(cookiesHr) ? cookiesHr[0] : (cookiesHr as string)).split(';')[0];
 
     // Login Employee
     const resEmp = await app.inject({
@@ -59,7 +59,7 @@ describe('Entries Routes Integration', () => {
       payload: { email: 'emp@test.com', password: 'password' },
     });
     const cookiesEmp = resEmp.headers['set-cookie'];
-    employeeToken = (Array.isArray(cookiesEmp) ? cookiesEmp[0] : cookiesEmp as string).split(';')[0];
+    employeeToken = (Array.isArray(cookiesEmp) ? cookiesEmp[0] : (cookiesEmp as string)).split(';')[0];
   });
 
   afterAll(async () => {
@@ -80,8 +80,8 @@ describe('Entries Routes Integration', () => {
         targetUserId: employeeId,
         date,
         status,
-        reason
-      }
+        reason,
+      },
     });
 
     if (res.statusCode !== 200) {
@@ -100,7 +100,9 @@ describe('Entries Routes Integration', () => {
     // though repository currently just sets it to 'web'. We might want to improve this later.
 
     // 3. Verify Audit Log
-    const auditRes = await app.pg.query('SELECT * FROM audit_logs WHERE action = $1 ORDER BY created_at DESC LIMIT 1', ['OVERRIDE']);
+    const auditRes = await app.pg.query('SELECT * FROM audit_logs WHERE action = $1 ORDER BY created_at DESC LIMIT 1', [
+      'OVERRIDE',
+    ]);
     expect(auditRes.rows.length).toBe(1);
     const log = auditRes.rows[0];
     expect(log.actor_user_id).toBe(hrId);
@@ -118,8 +120,8 @@ describe('Entries Routes Integration', () => {
         targetUserId: employeeId,
         date: '2025-05-21',
         status: 'home',
-        reason: '   ' // Empty reason
-      }
+        reason: '   ', // Empty reason
+      },
     });
     expect(res.statusCode).toBe(400);
   });
@@ -133,8 +135,8 @@ describe('Entries Routes Integration', () => {
         targetUserId: employeeId, // trying to override self or other
         date: '2025-05-22',
         status: 'home',
-        reason: 'self override'
-      }
+        reason: 'self override',
+      },
     });
     expect(res.statusCode).toBe(403);
   });

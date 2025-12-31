@@ -18,11 +18,7 @@ interface ErrorResponse {
   };
 }
 
-export function globalErrorHandler(
-  error: FastifyError,
-  request: FastifyRequest,
-  reply: FastifyReply
-) {
+export function globalErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply) {
   const requestId = request.id;
   const timestamp = new Date().toISOString();
 

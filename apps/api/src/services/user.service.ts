@@ -22,7 +22,7 @@ export class UserService {
     private readonly tokenRepo: ITokenRepository,
     private readonly emailService: EmailService,
     private readonly entryRepo: IEntryRepository
-  ) { }
+  ) {}
 
   async createUser(data: Partial<User> & { temp_password?: string }): Promise<User> {
     if (!data.temp_password) {

@@ -25,7 +25,7 @@ describe('HR Integration', () => {
       work_country: 'FR',
       role: 'hr',
       password_hash: hashedPassword,
-      is_active: true
+      is_active: true,
     });
 
     // Create Employee
@@ -37,7 +37,7 @@ describe('HR Integration', () => {
       work_country: 'FR',
       role: 'employee',
       password_hash: hashedPassword,
-      is_active: true
+      is_active: true,
     });
     employeeId = emp.user_id;
 
@@ -48,7 +48,7 @@ describe('HR Integration', () => {
       payload: { email: 'hr@test.com', password: 'password' },
     });
     const cookies = res.headers['set-cookie'];
-    hrToken = (Array.isArray(cookies) ? cookies[0] : cookies as string).split(';')[0];
+    hrToken = (Array.isArray(cookies) ? cookies[0] : (cookies as string)).split(';')[0];
 
     // Create Entry for Employee
     const today = new Date().toISOString().split('T')[0];
