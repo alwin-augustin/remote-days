@@ -74,7 +74,7 @@ function App() {
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/users/import" element={<UserImport />} />
             <Route path="/admin/countries" element={<CountryThresholds />} />
-            <Route path="/admin/notifications/stats" element={<NotificationHistory />} />
+            <Route path="/admin/notifications/trigger" element={<NotificationHistory />} />
             <Route path="/admin/audit" element={<AuditLogs />} />
           </Route>
         </Route>
