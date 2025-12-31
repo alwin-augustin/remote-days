@@ -36,13 +36,13 @@ export default function NotificationHistory() {
 
     const resendMutation = useMutation({
         mutationFn: async () => {
-            return api.post('/admin/notifications/resend', { date: formattedDate });
+            return api.post('/admin/trigger-daily-emails', { onlyPending: true });
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'notifications'] });
             toast.success(data.data.message || "Notifications sent");
         },
-        onError: () => toast.error("Failed to resend notifications"),
+        onError: () => toast.error("Failed to trigger notifications"),
     });
 
     return (

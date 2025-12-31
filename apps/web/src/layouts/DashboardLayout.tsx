@@ -108,7 +108,7 @@ export default function DashboardLayout() {
 
                                     <SidebarLink to="/admin/users" icon={Settings} label="User Management" collapsed={collapsed} />
                                     <SidebarLink to="/admin/countries" icon={Building} label="Countries" collapsed={collapsed} />
-                                    <SidebarLink to="/admin/notifications/stats" icon={Bell} label="Notifications" collapsed={collapsed} />
+                                    <SidebarLink to="/admin/notifications/trigger" icon={Bell} label="Trigger Notifications" collapsed={collapsed} />
 
                                     <SidebarLink to="/admin/holidays" icon={Calendar} label="Holidays" collapsed={collapsed} />
                                     <SidebarLink to="/admin/requests" icon={FileText} label="Requests" collapsed={collapsed} />
