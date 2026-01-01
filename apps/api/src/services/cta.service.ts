@@ -2,14 +2,16 @@ import { ITokenRepository } from '../repositories/token.repository';
 import { IEntryRepository } from '../repositories/entry.repository';
 import { AppError } from '../errors/app-error';
 import { work_status } from '@remotedays/types';
+import { IUserRepository } from '../repositories/user.repository';
 
 export class CtaService {
   constructor(
     private tokenRepo: ITokenRepository,
-    private entryRepo: IEntryRepository
+    private entryRepo: IEntryRepository,
+    private userRepo: IUserRepository // Added dependency
   ) {}
 
-  async recordStatusFromToken(token: string): Promise<{ status: string; date: string }> {
+  async recordStatusFromToken(token: string, email?: string): Promise<{ status: string; date: string }> {
     if (!token) {
       throw new AppError('Token is required', 400);
     }
@@ -18,6 +20,14 @@ export class CtaService {
 
     if (!tokenData) {
       throw new AppError('Invalid token', 400);
+    }
+
+    // Verify email if provided (Security Check)
+    if (email) {
+      const user = await this.userRepo.findById(tokenData.user_id);
+      if (!user || user.email.toLowerCase() !== email.toLowerCase()) {
+        throw new AppError('Token does not match the provided email', 403);
+      }
     }
 
     if (tokenData.action === 'password-reset') {

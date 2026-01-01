@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { AdminController } from './admin.controller';
 import { CountryController } from './country.controller';
-import { sendEmailPrompts } from '../worker/worker';
+import { emailJobManager } from '../worker/email-job.manager';
 
 async function adminRoutes(
   server: FastifyInstance,
@@ -12,23 +12,18 @@ async function adminRoutes(
 ) {
   const { adminController, countryController } = options;
 
-  // Trigger daily email worker manually (Admin/HR)
+  // Trigger daily email worker manually (Admin/HR) - Asynchronous Job
   server.post(
     '/admin/trigger-daily-emails',
     {
       preHandler: [server.authenticate, server.authorize('hr')],
       schema: {
-        description:
-          "Manually trigger the daily email reminder worker. Use onlyPending=true to only send to users who haven't declared yet.",
+        description: 'Manually trigger the daily email reminder worker. Returns a job ID immediately.',
         tags: ['Admin'],
         body: {
           type: 'object',
           properties: {
-            onlyPending: {
-              type: 'boolean',
-              description: "If true, only send to users who haven't declared their status today",
-              default: false,
-            },
+            onlyPending: { type: 'boolean', default: false },
           },
         },
         response: {
@@ -37,15 +32,7 @@ async function adminRoutes(
             properties: {
               success: { type: 'boolean' },
               message: { type: 'string' },
-              data: {
-                type: 'object',
-                properties: {
-                  totalUsers: { type: 'number' },
-                  sentCount: { type: 'number' },
-                  skippedCount: { type: 'number' },
-                  date: { type: 'string' },
-                },
-              },
+              jobId: { type: 'string' },
             },
           },
         },
@@ -55,24 +42,43 @@ async function adminRoutes(
       const body = request.body as { onlyPending?: boolean } | undefined;
       const { onlyPending = false } = body || {};
 
-      request.log.info(`Admin triggered daily email worker (onlyPending: ${onlyPending})`);
+      request.log.info(`Admin triggering daily email job (onlyPending: ${onlyPending})`);
 
-      try {
-        const result = await sendEmailPrompts(server, { onlyPending });
+      const job = emailJobManager.startJob(server, { onlyPending });
 
-        const mode = onlyPending ? 'pending users only' : 'all users';
-        reply.code(200).send({
-          success: true,
-          message: `Sent ${result.sentCount} emails (${mode}). Check Mailpit at http://localhost:8025 to see the emails.`,
-          data: result,
-        });
-      } catch (error: any) {
-        request.log.error(error, 'Failed to send daily email prompts');
-        reply.code(500).send({
-          success: false,
-          message: `Failed to send emails: ${error.message}`,
-        });
+      reply.code(200).send({
+        success: true,
+        message: 'Email sending scheduled. Track progress using the job ID.',
+        jobId: job.id,
+      });
+    }
+  );
+
+  // Get Email Job Status
+  server.get<{ Params: { id: string } }>(
+    '/admin/email-jobs/:id',
+    {
+      preHandler: [server.authenticate, server.authorize('hr')],
+      schema: {
+        description: 'Get the status of an email sending job',
+        tags: ['Admin'],
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+        },
+      },
+    },
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const { id } = request.params;
+      const job = emailJobManager.getJob(id);
+
+      if (!job) {
+        return reply.code(404).send({ message: 'Job not found' });
       }
+
+      reply.code(200).send(job);
     }
   );
 

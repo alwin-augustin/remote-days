@@ -67,7 +67,7 @@ export default async function apiRoutes(server: FastifyInstance) {
   const authService = new AuthService(userRepo, tokenRepo, emailService);
   const countryService = new CountryService(countryRepo);
   const hrService = new HRService(hrRepo);
-  const ctaService = new CtaService(tokenRepo, entryRepo);
+  const ctaService = new CtaService(tokenRepo, entryRepo, userRepo);
   const holidayService = new HolidayService(holidayRepo);
   const notificationService = new NotificationService(notificationRepo, emailService, holidayService);
   const requestService = new RequestService(requestRepo, entryService, auditRepo, userRepo, emailService);
