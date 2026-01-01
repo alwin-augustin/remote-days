@@ -53,7 +53,6 @@ jobs:
         run: |
           URL=$(vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> $GITHUB_OUTPUT
-        working-directory: apps/web
 
       - name: Summary
         run: |
