@@ -262,6 +262,15 @@ function generateWorkDays(year: number): string[] {
   return allDays.filter((day) => !isWeekend(day)).map((day) => format(day, 'yyyy-MM-dd'));
 }
 
+// Helper to sanitize strings for emails (remove accents, headers etc)
+function sanitizeString(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
 async function seedDemoData() {
   const server = fastify();
   await server.register(db);
@@ -331,7 +340,7 @@ async function seedDemoData() {
         const firstName = getRandomElement(FIRST_NAMES);
         const lastName = getRandomElement(LAST_NAMES);
         const country = getRandomElement(COUNTRIES);
-        const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${employeeCount}@remotedays.app`;
+        const email = `${sanitizeString(firstName)}.${sanitizeString(lastName)}${employeeCount}@remotedays.app`;
 
         const result = await client.query(
           `INSERT INTO users (email, first_name, last_name, country_of_residence, work_country, password_hash, role, is_active)

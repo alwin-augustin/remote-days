@@ -116,7 +116,9 @@ async function generateAuthTokens(
       'INSERT INTO email_cta_tokens (token, user_id, action, target_date, expires_at) VALUES ($1, $2, $3, $4, $5)',
       [token, user.user_id, action, todayDateString, expiresAt]
     );
-    links[action] = `${appUrl}/cta?token=${token}`;
+    // Encrypt email before putting in URL
+    const encryptedEmail = encrypt(user.email);
+    links[action] = `${appUrl}/cta?token=${token}&email=${encodeURIComponent(encryptedEmail)}`;
     fastify.log.info(`Generated token for ${user.email}, action ${action}`);
   }
 
@@ -125,6 +127,7 @@ async function generateAuthTokens(
 
 import { generateDailyCheckInEmail } from '../services/email-templates';
 import { format as formatDate } from 'date-fns';
+import { encrypt } from '../utils/crypto';
 
 /**
  * Sends the daily prompt email to the user with the new modern design.
@@ -160,9 +163,17 @@ export interface SendEmailResult {
   date: string;
 }
 
+export interface ProgressUpdate {
+  total: number;
+  sent: number;
+  skipped: number;
+  percent: number;
+}
+
 export async function sendEmailPrompts(
   fastify: FastifyInstance,
-  options: SendEmailOptions = {}
+  options: SendEmailOptions = {},
+  onProgress?: (update: ProgressUpdate) => void
 ): Promise<SendEmailResult> {
   const { onlyPending = false } = options;
 
@@ -179,22 +190,59 @@ export async function sendEmailPrompts(
 
   let sentCount = 0;
   let skippedCount = 0;
+  const total = users.length;
+  const batchSize = 10;
 
-  for (const user of users) {
-    if (!shouldSendEmailToUser(user, dateInfo, holidayData, fastify)) {
-      skippedCount++;
-      continue;
+  // Initial progress report
+  if (onProgress) {
+    onProgress({ total, sent: 0, skipped: 0, percent: 0 });
+  }
+
+  // Process in batches
+  for (let i = 0; i < total; i += batchSize) {
+    const batch = users.slice(i, i + batchSize);
+
+    // Process batch concurrently
+    await Promise.all(
+      batch.map(async (user) => {
+        try {
+          if (!shouldSendEmailToUser(user, dateInfo, holidayData, fastify)) {
+            skippedCount++;
+            return;
+          }
+
+          const links = await generateAuthTokens(fastify, user, dateInfo.todayDateString, appUrl);
+          await sendDailyPromptEmail(fastify, user, links, dateInfo.todayDateString);
+          sentCount++;
+        } catch (err) {
+          fastify.log.error(err, `Failed to send email to ${user.email}`);
+          // Treat as skipped/failed but continue
+          skippedCount++; // Or track errors separately if needed
+        }
+      })
+    );
+
+    // Update progress after batch
+    const processed = Math.min(i + batchSize, total);
+    if (onProgress) {
+      onProgress({
+        total,
+        sent: sentCount,
+        skipped: skippedCount,
+        percent: Math.round((processed / total) * 100),
+      });
     }
 
-    const links = await generateAuthTokens(fastify, user, dateInfo.todayDateString, appUrl);
-    await sendDailyPromptEmail(fastify, user, links, dateInfo.todayDateString);
-    sentCount++;
+    // Optional small delay between batches to be nice to SMTP
+    if (i + batchSize < total) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
   }
 
   fastify.log.info(`Email worker completed: sent ${sentCount}, skipped ${skippedCount}`);
 
   return {
-    totalUsers: users.length,
+    totalUsers: total,
     sentCount,
     skippedCount,
     date: dateInfo.todayDateString,

@@ -10,6 +10,7 @@ export default function CtaPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const token = searchParams.get('token');
+    const email = searchParams.get('email');
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>(token ? 'loading' : 'error');
     const [message, setMessage] = useState(token ? '' : 'Invalid link: Missing token.');
     const [details, setDetails] = useState<{ status: string; date: string } | null>(null);
@@ -19,7 +20,7 @@ export default function CtaPage() {
 
         const processToken = async () => {
             try {
-                const res = await api.post<{ message: string; status: string; date: string }>('/cta/process', { token });
+                const res = await api.post<{ message: string; status: string; date: string }>('/cta/process', { token, email });
                 setStatus('success');
                 setMessage(res.data.message);
                 setDetails({ status: res.data.status, date: res.data.date });
@@ -32,7 +33,7 @@ export default function CtaPage() {
         };
 
         processToken();
-    }, [token]);
+    }, [token, email]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
