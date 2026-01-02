@@ -26,6 +26,7 @@ interface Config {
   // Business Rules
   MAX_HOME_DAYS: number;
   JWT_EXPIRATION: string;
+  DAILY_EMAIL_LIMIT?: number;
 }
 
 const getEnv = (key: string, required = true): string => {
@@ -52,4 +53,5 @@ export const config: Config = {
   EMAIL_FROM: process.env.EMAIL_FROM || 'noreply@remotedays.app',
   MAX_HOME_DAYS: parseInt(process.env.MAX_HOME_DAYS || '104', 10),
   JWT_EXPIRATION: process.env.JWT_EXPIRATION || '1d',
+  DAILY_EMAIL_LIMIT: process.env.DAILY_EMAIL_LIMIT ? parseInt(process.env.DAILY_EMAIL_LIMIT, 10) : undefined,
 };

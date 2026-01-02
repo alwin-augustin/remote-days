@@ -188,6 +188,15 @@ export async function sendEmailPrompts(
     ? await getUsersWithoutEntry(fastify, dateInfo.todayDateString)
     : await getActiveUsers(fastify);
 
+  // Apply Daily Email Limit if configured
+  if (config.DAILY_EMAIL_LIMIT && users.length > config.DAILY_EMAIL_LIMIT) {
+    fastify.log.warn(
+      `Daily Email Limit applied: Reducing target users from ${users.length} to ${config.DAILY_EMAIL_LIMIT}`
+    );
+    // Truncate the array in place or reassign. Reassigning is safer here.
+    users.splice(config.DAILY_EMAIL_LIMIT);
+  }
+
   let sentCount = 0;
   let skippedCount = 0;
   const total = users.length;

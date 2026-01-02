@@ -44,7 +44,6 @@ jobs:
 
       - name: Build Web App
         run: npm run build --workspace=@remotedays/web
-        working-directory: apps/web
         env:
           VITE_API_URL: https://api.remotedays.app
 
@@ -53,6 +52,7 @@ jobs:
         run: |
           URL=$(vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> $GITHUB_OUTPUT
+        working-directory: apps/web
 
       - name: Summary
         run: |
