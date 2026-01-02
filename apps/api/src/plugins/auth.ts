@@ -3,7 +3,6 @@ import fp from 'fastify-plugin';
 import { User } from '@remotedays/types';
 import * as jwt from 'jsonwebtoken';
 
-// Extend the FastifyRequest interface to include the user property
 declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
