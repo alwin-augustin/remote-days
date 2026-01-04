@@ -261,10 +261,18 @@ jobs:
         env:
           VITE_API_URL: https://api.remotedays.app
 
-      - name: Deploy to Vercel
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/web
+
+      - name: Build for Vercel (prebuilt)
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/web
+
+      - name: Deploy to Vercel (prebuilt)
         id: deploy
         run: |
-          URL=$(vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }})
+          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> $GITHUB_OUTPUT
         working-directory: apps/web
 
