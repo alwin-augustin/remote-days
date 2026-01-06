@@ -8,9 +8,15 @@
     "outDir": "./dist",
     "resolveJsonModule": true,
     "paths": {
-      "@tracker/types": ["../../packages/types"]
+      "@remotedays/types": [
+        "../../packages/types"
+      ]
     }
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

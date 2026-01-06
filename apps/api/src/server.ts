@@ -5,9 +5,12 @@ import { startWorker } from './worker/worker';
 const server = build({
   logger: {
     level: 'info',
-    transport: {
-      target: 'pino-pretty',
-    },
+    transport:
+      config.NODE_ENV === 'development'
+        ? {
+            target: 'pino-pretty',
+          }
+        : undefined,
   },
 });
 
@@ -26,7 +29,6 @@ const signals = ['SIGINT', 'SIGTERM'];
 signals.forEach((signal) => {
   process.on(signal, async () => {
     server.log.info(`Received ${signal}, shutting down gracefully...`);
-    await server.close();
     await server.close();
     server.log.info('Server shut down.');
     process.exit(0);

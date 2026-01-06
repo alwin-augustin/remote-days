@@ -134,14 +134,13 @@ const seedFakeData = async () => {
 
     for (const holiday of holidays) {
       await client.query(
-        "INSERT INTO holidays (date, country_code, description) VALUES ($1, $2, $3) ON CONFLICT (date, country_code) DO NOTHING",
+        'INSERT INTO holidays (date, country_code, description) VALUES ($1, $2, $3) ON CONFLICT (date, country_code) DO NOTHING',
         [holiday.date, holiday.country_code, holiday.description]
       );
     }
 
     // 3. Ensure Default Admin & HR
     console.log('Ensuring default accounts...');
-    let adminId, hrId;
 
     const upsertUser = async (email: string, role: string, first: string, last: string) => {
       const res = await client.query(
@@ -153,9 +152,9 @@ const seedFakeData = async () => {
       return res.rows[0].user_id;
     };
 
-    adminId = await upsertUser('admin@example.com', 'admin', 'Super', 'Admin');
-    hrId = await upsertUser('hr@example.com', 'hr', 'Jane', 'HR');
-    const employeeId = await upsertUser('employee@example.com', 'employee', 'John', 'Doe');
+    const adminId = await upsertUser('admin@example.com', 'admin', 'Super', 'Admin');
+    const hrId = await upsertUser('hr@example.com', 'hr', 'Jane', 'HR');
+    await upsertUser('employee@example.com', 'employee', 'John', 'Doe');
 
     // 4. Generate Users (5 HR, 495 Employees)
     console.log('Generating 500 users...');
@@ -170,7 +169,7 @@ const seedFakeData = async () => {
         countryOfResidence: faker.helpers.arrayElement(['FR', 'BE', 'DE', 'ES']),
         workCountry: 'FR',
         role: 'hr',
-        passwordHash: commonPasswordHash
+        passwordHash: commonPasswordHash,
       });
     }
 
@@ -183,16 +182,36 @@ const seedFakeData = async () => {
         countryOfResidence: faker.helpers.arrayElement(['FR', 'BE', 'DE', 'ES']),
         workCountry: 'FR',
         role: 'employee',
-        passwordHash: commonPasswordHash
+        passwordHash: commonPasswordHash,
       });
     }
 
     // Insert Users
     // We need to insert and get IDs back. Batch insert complicates returning IDs mapped to roles.
     // So we'll just insert them and then select them back.
-    const userValues = users.map(u => [u.email, u.firstName, u.lastName, u.countryOfResidence, u.workCountry, u.role, u.passwordHash, true]);
-    await batchInsert(client, 'users',
-      ['email', 'first_name', 'last_name', 'country_of_residence', 'work_country', 'role', 'password_hash', 'is_active'],
+    const userValues = users.map((u) => [
+      u.email,
+      u.firstName,
+      u.lastName,
+      u.countryOfResidence,
+      u.workCountry,
+      u.role,
+      u.passwordHash,
+      true,
+    ]);
+    await batchInsert(
+      client,
+      'users',
+      [
+        'email',
+        'first_name',
+        'last_name',
+        'country_of_residence',
+        'work_country',
+        'role',
+        'password_hash',
+        'is_active',
+      ],
       userValues
     );
 
@@ -221,14 +240,14 @@ const seedFakeData = async () => {
             user_id: user.user_id,
             date: format(date, 'yyyy-MM-dd'),
             status: status,
-            source: 'seed'
+            source: 'seed',
           });
         }
       }
     }
 
     // Insert Entries
-    const entryValues = entries.map(e => [e.user_id, e.date, e.status, e.source]);
+    const entryValues = entries.map((e) => [e.user_id, e.date, e.status, e.source]);
     await batchInsert(client, 'entries', ['user_id', 'date', 'status', 'source'], entryValues);
 
     // 6. Generate Notifications
@@ -244,17 +263,21 @@ const seedFakeData = async () => {
           channel: 'email',
           notification_type: faker.helpers.arrayElement(notificationTypes),
           payload: JSON.stringify({ message: 'Please check your status.' }),
-          sent_at: new Date().toISOString()
+          sent_at: new Date().toISOString(),
         });
       }
     }
 
-    const notifValues = notifications.map(n => [n.user_id, n.channel, n.notification_type, n.payload, n.sent_at]);
-    await batchInsert(client, 'notifications', ['user_id', 'channel', 'notification_type', 'payload', 'sent_at'], notifValues);
+    const notifValues = notifications.map((n) => [n.user_id, n.channel, n.notification_type, n.payload, n.sent_at]);
+    await batchInsert(
+      client,
+      'notifications',
+      ['user_id', 'channel', 'notification_type', 'payload', 'sent_at'],
+      notifValues
+    );
 
     await client.query('COMMIT');
     console.log('Seed completed successfully!');
-
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Seed failed:', err);

@@ -1,7 +1,7 @@
 import * as cron from 'node-cron';
 import { FastifyInstance } from 'fastify';
 import { randomUUID } from 'crypto';
-import type { User } from '@tracker/types';
+import type { User } from '@remotedays/types';
 import { utcToZonedTime, format } from 'date-fns-tz';
 import { emailService } from '../services/email.service';
 import { config } from '../config/env';
@@ -35,11 +35,10 @@ function getTodayDateInfo(): DateInfo {
  * Fetches holidays for the current date from the database.
  */
 async function getHolidayData(fastify: FastifyInstance, dateString: string): Promise<HolidayData> {
-  const { rows: holidaysToday } = await fastify.pg.query(
-    'SELECT country_code FROM holidays WHERE date = $1',
-    [dateString]
-  );
-  const holidayCountries = new Set(holidaysToday.map(h => h.country_code));
+  const { rows: holidaysToday } = await fastify.pg.query('SELECT country_code FROM holidays WHERE date = $1', [
+    dateString,
+  ]);
+  const holidayCountries = new Set(holidaysToday.map((h) => h.country_code));
   const isGlobalHoliday = holidayCountries.has(null);
   return { isGlobalHoliday, holidayCountries };
 }
@@ -50,6 +49,23 @@ async function getHolidayData(fastify: FastifyInstance, dateString: string): Pro
 async function getActiveUsers(fastify: FastifyInstance): Promise<User[]> {
   const { rows: users } = await fastify.pg.query<User>('SELECT * FROM users WHERE is_active = true');
   fastify.log.info(`Found ${users.length} active users.`);
+  return users;
+}
+
+/**
+ * Fetches active users who haven't declared their status for a given date.
+ */
+async function getUsersWithoutEntry(fastify: FastifyInstance, dateString: string): Promise<User[]> {
+  const { rows: users } = await fastify.pg.query<User>(
+    `SELECT u.* FROM users u
+     WHERE u.is_active = true
+     AND NOT EXISTS (
+       SELECT 1 FROM entries e
+       WHERE e.user_id = u.user_id AND e.date = $1
+     )`,
+    [dateString]
+  );
+  fastify.log.info(`Found ${users.length} users without entries for ${dateString}.`);
   return users;
 }
 
@@ -97,22 +113,24 @@ async function generateAuthTokens(
     expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiration
 
     await fastify.pg.query(
-      "INSERT INTO email_cta_tokens (token, user_id, action, target_date, expires_at) VALUES ($1, $2, $3, $4, $5)",
+      'INSERT INTO email_cta_tokens (token, user_id, action, target_date, expires_at) VALUES ($1, $2, $3, $4, $5)',
       [token, user.user_id, action, todayDateString, expiresAt]
     );
-    links[action] = `${appUrl}/cta?token=${token}`;
+    // Encrypt email before putting in URL
+    const encryptedEmail = encrypt(user.email);
+    links[action] = `${appUrl}/cta?token=${token}&email=${encodeURIComponent(encryptedEmail)}`;
     fastify.log.info(`Generated token for ${user.email}, action ${action}`);
   }
 
   return links;
 }
 
-import { generateEmailHtml } from '../services/email-templates';
-
-// ...
+import { generateDailyCheckInEmail } from '../services/email-templates';
+import { format as formatDate } from 'date-fns';
+import { encrypt } from '../utils/crypto';
 
 /**
- * Sends the daily prompt email to the user.
+ * Sends the daily prompt email to the user with the new modern design.
  */
 async function sendDailyPromptEmail(
   fastify: FastifyInstance,
@@ -120,41 +138,115 @@ async function sendDailyPromptEmail(
   links: Record<string, string>,
   todayDateString: string
 ): Promise<void> {
-  const subject = `Where are you working today? (${todayDateString})`;
-  const text = `Hello ${user.first_name},\n\nPlease let us know where you are working today:\n\nHome: ${links['home']}\nOffice: ${links['office']}\n\nHave a great day!`;
+  // Format date nicely for display (e.g., "Monday, December 30, 2024")
+  const dateForDisplay = formatDate(new Date(todayDateString), 'EEEE, MMMM d, yyyy');
 
-  const html = generateEmailHtml(
-    `Where are you working today?`,
-    user.first_name,
-    `Please let us know your work location for today (${todayDateString}).`,
-    [
-      { label: 'Working from Home', url: links['home'], color: 'success' },
-      { label: 'Working from Office', url: links['office'], color: 'info' }
-    ]
-  );
+  const subject = `🏠 Where are you working today? · ${formatDate(new Date(todayDateString), 'MMM d')}`;
+  const text = `Good morning ${user.first_name}!\n\nWhere are you working today (${dateForDisplay})?\n\n🏠 Home: ${links['home']}\n🏢 Office: ${links['office']}\n\nJust click one button — it takes 2 seconds!\n\n- Remote Days Team`;
+
+  const html = generateDailyCheckInEmail(user.first_name, dateForDisplay, links['home'], links['office']);
 
   await emailService.sendEmail(user.email, subject, text, html);
-  fastify.log.info(`Sent email prompt to ${user.email}`);
+  fastify.log.info(`Sent daily check-in email to ${user.email}`);
 }
 
 // --- Main Worker Function ---
 
-export async function sendEmailPrompts(fastify: FastifyInstance) {
-  fastify.log.info('Running daily email prompt worker...');
+export interface SendEmailOptions {
+  onlyPending?: boolean; // If true, only send to users who haven't declared yet
+}
+
+export interface SendEmailResult {
+  totalUsers: number;
+  sentCount: number;
+  skippedCount: number;
+  date: string;
+}
+
+export interface ProgressUpdate {
+  total: number;
+  sent: number;
+  skipped: number;
+  percent: number;
+}
+
+export async function sendEmailPrompts(
+  fastify: FastifyInstance,
+  options: SendEmailOptions = {},
+  onProgress?: (update: ProgressUpdate) => void
+): Promise<SendEmailResult> {
+  const { onlyPending = false } = options;
+
+  fastify.log.info(`Running daily email prompt worker (onlyPending: ${onlyPending})...`);
 
   const dateInfo = getTodayDateInfo();
   const holidayData = await getHolidayData(fastify, dateInfo.todayDateString);
-  const users = await getActiveUsers(fastify);
   const appUrl = config.APP_URL;
 
-  for (const user of users) {
-    if (!shouldSendEmailToUser(user, dateInfo, holidayData, fastify)) {
-      continue;
+  // Get users based on the option
+  const users = onlyPending
+    ? await getUsersWithoutEntry(fastify, dateInfo.todayDateString)
+    : await getActiveUsers(fastify);
+
+  let sentCount = 0;
+  let skippedCount = 0;
+  const total = users.length;
+  const batchSize = 10;
+
+  // Initial progress report
+  if (onProgress) {
+    onProgress({ total, sent: 0, skipped: 0, percent: 0 });
+  }
+
+  // Process in batches
+  for (let i = 0; i < total; i += batchSize) {
+    const batch = users.slice(i, i + batchSize);
+
+    // Process batch concurrently
+    await Promise.all(
+      batch.map(async (user) => {
+        try {
+          if (!shouldSendEmailToUser(user, dateInfo, holidayData, fastify)) {
+            skippedCount++;
+            return;
+          }
+
+          const links = await generateAuthTokens(fastify, user, dateInfo.todayDateString, appUrl);
+          await sendDailyPromptEmail(fastify, user, links, dateInfo.todayDateString);
+          sentCount++;
+        } catch (err) {
+          fastify.log.error(err, `Failed to send email to ${user.email}`);
+          // Treat as skipped/failed but continue
+          skippedCount++; // Or track errors separately if needed
+        }
+      })
+    );
+
+    // Update progress after batch
+    const processed = Math.min(i + batchSize, total);
+    if (onProgress) {
+      onProgress({
+        total,
+        sent: sentCount,
+        skipped: skippedCount,
+        percent: Math.round((processed / total) * 100),
+      });
     }
 
-    const links = await generateAuthTokens(fastify, user, dateInfo.todayDateString, appUrl);
-    await sendDailyPromptEmail(fastify, user, links, dateInfo.todayDateString);
+    // Optional small delay between batches to be nice to SMTP
+    if (i + batchSize < total) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
   }
+
+  fastify.log.info(`Email worker completed: sent ${sentCount}, skipped ${skippedCount}`);
+
+  return {
+    totalUsers: total,
+    sentCount,
+    skippedCount,
+    date: dateInfo.todayDateString,
+  };
 }
 
 export function startWorker(fastify: FastifyInstance) {

@@ -1,5 +1,5 @@
 {
-  "name": "teletravail-tracker-root",
+  "name": "remote-days-monorepo",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
@@ -7,14 +7,27 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:api": "npm run dev --workspace=apps/api",
-    "dev:web": "npm run dev --workspace=apps/web",
-    "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces"
+    "dev:api": "npm run dev --workspace=@remotedays/api",
+    "dev:web": "npm run dev --workspace=@remotedays/web",
+    "dev:mobile": "npm run start --workspace=@remotedays/mobile",
+    "build": "npm run build --workspaces --if-present",
+    "build:api": "npm run build --workspace=@remotedays/api",
+    "build:web": "npm run build --workspace=@remotedays/web",
+    "clean": "npm run clean --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {
-    "concurrently": "^8.0.0",
-    "typescript": "^5.0.0",
-    "ts-node-dev": "^2.0.0"
+    "typescript": "~5.9.0"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.62.0",
+    "ajv": "^8.17.1",
+    "axios": "^1.7.9",
+    "date-fns": "^2.30.0",
+    "zod": "^3.24.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
   }
 }

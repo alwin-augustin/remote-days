@@ -3,12 +3,12 @@ import { CountryService } from '../services/country.service';
 import { AppError } from '../errors/app-error';
 
 export class CountryController {
-  constructor(private readonly countryService: CountryService) { }
+  constructor(private readonly countryService: CountryService) {}
 
   getCountriesHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     const countries = await this.countryService.getAllCountries();
     reply.code(200).send(countries);
-  }
+  };
 
   createCountryHandler = async (
     request: FastifyRequest<{ Body: { country_code: string; max_remote_days: number } }>,
@@ -29,7 +29,7 @@ export class CountryController {
       }
       throw err;
     }
-  }
+  };
 
   updateCountryHandler = async (
     request: FastifyRequest<{ Params: { code: string }; Body: { max_remote_days: number } }>,
@@ -47,5 +47,5 @@ export class CountryController {
       throw new AppError('Country not found', 404);
     }
     reply.code(200).send(updatedCountry);
-  }
+  };
 }

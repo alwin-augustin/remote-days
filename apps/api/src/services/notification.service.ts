@@ -1,14 +1,24 @@
 import { INotificationRepository, UserToNotify } from '../repositories/notification.repository';
 import { EmailService } from './email.service';
+import { HolidayService } from './holiday.service';
+import { PushService } from './push.service';
 import { randomUUID } from 'crypto';
 import { config } from '../config/env';
-import { generateEmailHtml } from './email-templates';
+import { generateDailyCheckInEmail } from './email-templates';
+import { format as formatDate } from 'date-fns';
 
 export class NotificationService {
+  private pushService: PushService | null = null;
+
   constructor(
     private notificationRepo: INotificationRepository,
-    private emailService: EmailService
-  ) { }
+    private emailService: EmailService,
+    private holidayService: HolidayService
+  ) {}
+
+  setPushService(pushService: PushService) {
+    this.pushService = pushService;
+  }
 
   async getDailyStats(date: string) {
     return this.notificationRepo.getDailyNotificationStats(date);
@@ -17,6 +27,12 @@ export class NotificationService {
   async sendDailyPromptToUser(user: UserToNotify, targetDate: string) {
     const actions = ['home', 'office'];
     const links: Record<string, string> = {};
+
+    // Check availability - skip holidays
+    const isHoliday = await this.holidayService.isHoliday(targetDate, user.work_country);
+    if (isHoliday) {
+      return;
+    }
 
     for (const action of actions) {
       const token = randomUUID();
@@ -27,37 +43,34 @@ export class NotificationService {
       links[action] = `${config.APP_URL}/cta?token=${token}`;
     }
 
-    const subject = `Where are you working today? (${targetDate})`;
+    // Format date nicely for display (e.g., "Monday, December 30, 2024")
+    const dateForDisplay = formatDate(new Date(targetDate), 'EEEE, MMMM d, yyyy');
+    const shortDate = formatDate(new Date(targetDate), 'MMM d');
+
+    const subject = `🏠 Where are you working today? · ${shortDate}`;
 
     // Plain text fallback
-    const text = `Hello ${user.first_name},\n\nPlease let us know where you are working today (${targetDate}):\n\nHome: ${links['home']}\nOffice: ${links['office']}\n\nHave a great day!`;
+    const text = `Good morning ${user.first_name}!\n\nWhere are you working today (${dateForDisplay})?\n\n🏠 Home: ${links['home']}\n🏢 Office: ${links['office']}\n\nJust click one button — it takes 2 seconds!\n\n- Remote Days Team`;
 
-    // Styled HTML
-    const html = generateEmailHtml(
-      'Daily Status Update',
-      user.first_name,
-      `<p>It's time to update your work status for <strong>${targetDate}</strong>.</p><p>Please select your location below to keep the team updated.</p>`,
-      [
-        { label: '🏠 Working from Home', url: links['home'], color: 'success' },
-        { label: '🏢 Working from Office', url: links['office'], color: 'info' }
-      ]
-    );
+    // Modern styled HTML
+    const html = generateDailyCheckInEmail(user.first_name, dateForDisplay, links['home'], links['office']);
 
     await this.emailService.sendEmail(user.email, subject, text, html);
 
-    await this.notificationRepo.createNotification(
-      user.user_id,
-      'email',
-      'daily_prompt',
-      { targetDate, links }
-    );
+    // Also send push notification if available
+    if (this.pushService) {
+      try {
+        await this.pushService.sendDailyReminder(user.user_id, targetDate);
+      } catch (err) {
+        // Log but don't fail - push is supplementary
+        console.error('Failed to send push notification:', err);
+      }
+    }
+
+    await this.notificationRepo.createNotification(user.user_id, 'email', 'daily_prompt', { targetDate, links });
   }
 
-  async resendDailyPrompts(date: string) {
-    const usersToNotify = await this.notificationRepo.findUsersWithoutEntryForDate(date);
-    for (const user of usersToNotify) {
-      await this.sendDailyPromptToUser(user, date);
-    }
-    return { notifiedCount: usersToNotify.length };
+  async getNotificationLogs(date: string) {
+    return this.notificationRepo.findNotificationsByDate(date);
   }
 }

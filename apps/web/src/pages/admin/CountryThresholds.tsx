@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { api } from '@/lib/api';
-import type { CountryThreshold } from '@tracker/types';
+import type { CountryThreshold } from '@remotedays/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {

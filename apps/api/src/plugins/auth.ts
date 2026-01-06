@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
-import { User } from '@tracker/types';
+import { User } from '@remotedays/types';
 import * as jwt from 'jsonwebtoken';
 
 // Extend the FastifyRequest interface to include the user property
@@ -16,7 +16,15 @@ declare module 'fastify' {
 
 async function authPlugin(fastify: FastifyInstance) {
   fastify.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
-    const token = request.cookies.token;
+    let token = request.cookies.token;
+
+    if (!token && request.headers.authorization) {
+      const parts = request.headers.authorization.split(' ');
+      if (parts.length === 2 && parts[0] === 'Bearer') {
+        token = parts[1];
+      }
+    }
+
     if (!token) {
       return reply.code(401).send({ message: 'Authentication required' });
     }
@@ -41,7 +49,7 @@ async function authPlugin(fastify: FastifyInstance) {
   fastify.decorate('authorize', (requiredRole: User['role']) => {
     return async (request: FastifyRequest, reply: FastifyReply) => {
       const userRole = request.user?.role;
-      
+
       if (!userRole) {
         return reply.code(403).send({ message: 'Forbidden' });
       }

@@ -32,7 +32,7 @@ describe('Auth Integration', () => {
       work_country: 'FR',
       role: 'employee',
       password_hash: hashedPassword,
-      is_active: true
+      is_active: true,
     });
 
     const res = await app.inject({
@@ -65,7 +65,7 @@ describe('Auth Integration', () => {
   });
 
   it('should get current user profile', async () => {
-    // Login first to get token (reuse previous flow or create helper if needed, but we can just re-login or use token from first test if we saved it. 
+    // Login first to get token (reuse previous flow or create helper if needed, but we can just re-login or use token from first test if we saved it.
     // Tests in same file run sequentially by default in vitest unless configured otherwise, but better to be explicit)
 
     // Let's just re-login to be safe and explicit
@@ -75,7 +75,7 @@ describe('Auth Integration', () => {
       payload: { email: 'test@example.com', password: 'password123' },
     });
     const cookies = loginRes.headers['set-cookie'];
-    const token = (Array.isArray(cookies) ? cookies[0] : cookies as string).split(';')[0];
+    const token = (Array.isArray(cookies) ? cookies[0] : (cookies as string)).split(';')[0];
 
     const meRes = await app.inject({
       method: 'GET',
@@ -96,7 +96,7 @@ describe('Auth Integration', () => {
     expect(res.statusCode).toBe(204);
     const cookies = res.headers['set-cookie'];
     expect(cookies).toBeDefined();
-    const cookieString = Array.isArray(cookies) ? cookies[0] : cookies as string;
+    const cookieString = Array.isArray(cookies) ? cookies[0] : (cookies as string);
     // Expect cookie to be cleared (empty value or past expiration)
     expect(cookieString).toContain('token=;');
   });

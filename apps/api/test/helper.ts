@@ -31,8 +31,8 @@ export async function getTestApp(): Promise<TestContext> {
       repos: {
         user: new UserRepository(app.pg.pool),
         entry: new EntryRepository(app.pg.pool),
-        notification: new NotificationRepository(app.pg.pool)
-      }
+        notification: new NotificationRepository(app.pg.pool),
+      },
     };
   }
 
@@ -63,7 +63,7 @@ export async function getTestApp(): Promise<TestContext> {
   const repos = {
     user: new UserRepository(pool),
     entry: new EntryRepository(pool),
-    notification: new NotificationRepository(pool)
+    notification: new NotificationRepository(pool),
   };
 
   return { app, repos };
@@ -80,7 +80,9 @@ export async function closeTestApp() {
 
 // Helper to reset DB state between tests if needed
 export async function truncateTables(app: FastifyInstance) {
-  await app.pg.query('TRUNCATE TABLE users, entries, email_cta_tokens, notifications, audit_logs RESTART IDENTITY CASCADE');
+  await app.pg.query(
+    'TRUNCATE TABLE users, entries, email_cta_tokens, notifications, audit_logs RESTART IDENTITY CASCADE'
+  );
   // Re-seed essential data if needed (like countries)
   await app.pg.query(`
     INSERT INTO country_thresholds (country_code, max_remote_days)

@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/context/AuthContext';
+import { logger } from '@/lib/logger';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,7 +44,7 @@ export default function Login() {
         try {
             await login(values);
         } catch (err: unknown) {
-            console.error(err);
+            logger.error('Login failed', err, { email: values.email });
             setError("Invalid credentials or server error");
         } finally {
             setIsLoading(false);
@@ -51,7 +52,11 @@ export default function Login() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4">
+            <div className="mb-8 flex flex-col items-center">
+                <img src="/logo.png" alt="Remote Days Logo" className="h-20 w-20 mb-4 rounded-xl shadow-lg" />
+                <h1 className="text-3xl font-bold text-primary">Remote Days</h1>
+            </div>
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold">Login</CardTitle>
@@ -111,6 +116,13 @@ export default function Login() {
                 <CardFooter className="flex flex-col gap-2">
                     <div className="text-center text-sm text-gray-500">
                         Need an account? Contact your HR administrator.
+                    </div>
+                    <div className="text-center text-xs text-gray-400 mt-2">
+                        <Link to="/legal/privacy" className="hover:underline">Privacy Policy</Link>
+                        {' | '}
+                        <Link to="/legal/terms" className="hover:underline">Terms of Service</Link>
+                        {' | '}
+                        <Link to="/legal/cookies" className="hover:underline">Cookies</Link>
                     </div>
                 </CardFooter>
             </Card>

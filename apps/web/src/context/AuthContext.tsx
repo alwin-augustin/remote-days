@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect } from 'react';
-import type { User } from '@tracker/types';
+import type { User } from '@remotedays/types';
 import { api } from '@/lib/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';

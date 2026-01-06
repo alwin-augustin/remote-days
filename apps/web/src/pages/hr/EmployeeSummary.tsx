@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { api } from '@/lib/api';
-import type { work_status } from '@tracker/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import type { work_status } from '@remotedays/types';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar as CalendarIcon, Filter } from 'lucide-react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import {
     Popover,
@@ -15,14 +13,9 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
+import { RiskDistributionCards } from '@/components/RiskDistributionCards';
+import { PriorityAlertPanel } from '@/components/PriorityAlertPanel';
+import { DailyDeclarationSummary } from '@/components/DailyDeclarationSummary';
 
 type DailyEntry = {
     user_id: string;
@@ -34,25 +27,45 @@ type DailyEntry = {
     work_country?: string;
 }
 
-const STATUS_COLORS: Record<work_status, string> = {
-    home: 'bg-green-100 text-green-800 border-green-200',
-    office: 'bg-blue-100 text-blue-800 border-blue-200',
-    travel: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    sick: 'bg-red-100 text-red-800 border-red-200',
-    unknown: 'bg-gray-100 text-gray-800 border-gray-200',
-};
+type EmployeeSummaryType = {
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    country_of_residence: string;
+    work_country: string;
+    days_used_current_year: number;
+    max_remote_days: number;
+    days_remaining: number;
+    percent_used: number;
+    traffic_light: 'red' | 'orange' | 'green';
+}
 
-import { TablePagination } from '@/components/TablePagination';
+type RiskStats = {
+    exceeded_count: number;
+    critical_count: number;
+    high_count: number;
+    moderate_count: number;
+    missing_count: number;
+}
 
 export default function EmployeeSummary() {
+    const navigate = useNavigate();
     const [date, setDate] = useState<Date>(new Date());
     const formattedDate = format(date, 'yyyy-MM-dd');
-    const [selectedStatus, setSelectedStatus] = useState<work_status | 'all'>('all');
-    const [filter, setFilter] = useState('');
-    const [page, setPage] = useState(1);
-    const pageSize = 10;
 
-    const { data: entries, isLoading } = useQuery({
+    // --- Queries ---
+
+    // 1. Risk Stats
+    const { data: riskStats } = useQuery({
+        queryKey: ['hr', 'stats', 'risk', formattedDate],
+        queryFn: async () => {
+            const res = await api.get<RiskStats>(`/hr/stats/risk?date=${formattedDate}`);
+            return res.data;
+        }
+    });
+
+    // 2. Daily Entries
+    const { data: dailyEntries } = useQuery({
         queryKey: ['hr', 'daily', formattedDate],
         queryFn: async () => {
             const res = await api.get<DailyEntry[]>(`/hr/entries/daily?date=${formattedDate}`);
@@ -60,30 +73,108 @@ export default function EmployeeSummary() {
         },
     });
 
-    const filteredEntries = entries?.filter(entry => {
-        const matchesText = !filter ||
-            `${entry.first_name} ${entry.last_name}`.toLowerCase().includes(filter.toLowerCase()) ||
-            entry.email.toLowerCase().includes(filter.toLowerCase());
-
-        const matchesStatus = selectedStatus === 'all' || entry.status === selectedStatus;
-        return matchesText && matchesStatus;
+    // 3. Annual Summary
+    const { data: annualSummaries } = useQuery({
+        queryKey: ['hr', 'summary'],
+        queryFn: async () => {
+            const res = await api.get<EmployeeSummaryType[]>('/hr/summary');
+            return res.data;
+        },
     });
 
-    // Group stats
-    const stats = entries?.reduce((acc, curr) => {
-        acc[curr.status] = (acc[curr.status] || 0) + 1;
-        return acc;
-    }, {} as Record<work_status, number>);
+    // --- Handlers ---
+
+    const handleRiskFilterChange = useCallback((filter: 'exceeded' | 'critical' | 'high' | 'moderate' | null) => {
+        if (filter) {
+            navigate(`/hr/employees?filter=${filter}`);
+        } else {
+            navigate('/hr/employees');
+        }
+    }, [navigate]);
+
+    // --- Priority Alerts ---
+    const priorityAlerts = useMemo(() => {
+        const alerts: Array<{
+            id: string;
+            type: 'exceeded' | 'critical' | 'missing';
+            title: string;
+            description: string;
+            actionLabel: string;
+            onAction: () => void;
+        }> = [];
+
+        // Exceeded limit alerts
+        const exceededEmployees = annualSummaries?.filter(s => Number(s.percent_used) >= 100) || [];
+        exceededEmployees.slice(0, 3).forEach(emp => {
+            alerts.push({
+                id: `exceeded-${emp.user_id}`,
+                type: 'exceeded',
+                title: `${emp.first_name} ${emp.last_name} (${emp.work_country})`,
+                description: `${emp.days_used_current_year}/${emp.max_remote_days} days used (${Number(emp.percent_used).toFixed(0)}%)`,
+                actionLabel: 'View Details',
+                onAction: () => handleRiskFilterChange('exceeded'),
+            });
+        });
+
+        // Critical alerts
+        const criticalEmployees = annualSummaries?.filter(s => {
+            const pct = Number(s.percent_used);
+            return pct >= 90 && pct < 100;
+        }) || [];
+        if (criticalEmployees.length > 0) {
+            alerts.push({
+                id: 'critical-summary',
+                type: 'critical',
+                title: `${criticalEmployees.length} employees in critical zone`,
+                description: '90-100% of allowance used. Will likely exceed soon.',
+                actionLabel: 'View List',
+                onAction: () => handleRiskFilterChange('critical'),
+            });
+        }
+
+        // Missing declarations
+        if (riskStats && riskStats.missing_count > 0) {
+            alerts.push({
+                id: 'missing',
+                type: 'missing',
+                title: `${riskStats.missing_count} employees haven't declared today`,
+                description: `As of ${format(date, 'PPP')}`,
+                actionLabel: 'Send Reminder',
+                onAction: () => {
+                    // TODO: Implement send reminder
+                    alert('Send reminder feature coming soon');
+                },
+            });
+        }
+
+        return alerts;
+    }, [annualSummaries, riskStats, date, handleRiskFilterChange]);
+
+    // --- Daily Stats ---
+    const dailyStats = useMemo(() => {
+        if (!dailyEntries) return {};
+        return dailyEntries.reduce((acc, curr) => {
+            acc[curr.status] = (acc[curr.status] || 0) + 1;
+            return acc;
+        }, {} as Record<work_status, number>);
+    }, [dailyEntries]);
+
+    const totalEmployees = annualSummaries?.length || 0;
+    const declaredToday = (Object.values(dailyStats) as number[]).reduce((sum: number, count: number) => sum + count, 0) - ((dailyStats as Record<work_status, number>).unknown || 0);
 
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <h1 className="text-3xl font-bold tracking-tight">Employee Summary</h1>
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Team Compliance Dashboard</h1>
+                    <p className="text-muted-foreground">Monitor employee compliance and declarations</p>
+                </div>
                 <div className="flex items-center gap-2">
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
-                                variant={"outline"}
+                                variant="outline"
                                 className={cn(
                                     "w-[240px] justify-start text-left font-normal",
                                     !date && "text-muted-foreground"
@@ -102,91 +193,31 @@ export default function EmployeeSummary() {
                             />
                         </PopoverContent>
                     </Popover>
-                    <Button variant="outline" size="icon" onClick={() => { setFilter(''); setSelectedStatus('all'); }}>
-                        <Filter className="h-4 w-4" />
-                    </Button>
                 </div>
             </div>
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {(['home', 'office', 'travel', 'sick', 'unknown'] as work_status[]).map(status => (
-                    <Card
-                        key={status}
-                        className={cn(
-                            "cursor-pointer transition-colors hover:bg-muted/50",
-                            selectedStatus === status && "ring-2 ring-primary"
-                        )}
-                        onClick={() => setSelectedStatus(selectedStatus === status ? 'all' : status)}
-                    >
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium capitalize">
-                                {status.replace('_', ' ')}
-                            </CardTitle>
-                            <div className={cn("w-2 h-2 rounded-full", STATUS_COLORS[status].split(' ')[0].replace('bg-', 'bg-text-'))} />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats?.[status] || 0}</div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+            {/* Priority Alerts */}
+            {priorityAlerts.length > 0 && (
+                <PriorityAlertPanel alerts={priorityAlerts} />
+            )}
 
-            {/* Employee List */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Daily Status List</CardTitle>
-                    <div className="pt-2">
-                        <Input
-                            placeholder="Search employee..."
-                            className="max-w-sm"
-                            value={filter}
-                            onChange={(e) => setFilter(e.target.value)}
-                        />
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                    ) : filteredEntries?.length === 0 ? (
-                        <div className="text-center p-8 text-muted-foreground">No entries found for this date.</div>
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Employee</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Country</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredEntries?.slice((page - 1) * pageSize, page * pageSize).map(entry => (
-                                    <TableRow key={entry.email}>
-                                        <TableCell className="font-medium">
-                                            {entry.first_name} {entry.last_name}
-                                        </TableCell>
-                                        <TableCell>{entry.email}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className={STATUS_COLORS[entry.status]}>
-                                                {entry.status}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{entry.work_country || entry.country_of_residence || '-'}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
-                    <div className="mt-4">
-                        <TablePagination
-                            currentPage={page}
-                            totalPages={Math.ceil((filteredEntries?.length || 0) / pageSize)}
-                            onPageChange={setPage}
-                        />
-                    </div>
-                </CardContent>
-            </Card >
-        </div >
+            {/* Risk Distribution Cards */}
+            <RiskDistributionCards
+                exceededCount={riskStats?.exceeded_count || 0}
+                criticalCount={riskStats?.critical_count || 0}
+                highCount={riskStats?.high_count || 0}
+                moderateCount={riskStats?.moderate_count || 0}
+                onFilterChange={handleRiskFilterChange}
+                activeFilter={null}
+            />
+
+            {/* Daily Declaration Summary */}
+            <DailyDeclarationSummary
+                date={formattedDate}
+                totalEmployees={totalEmployees}
+                declared={declaredToday}
+                statusCounts={dailyStats}
+            />
+        </div>
     );
 }

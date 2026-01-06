@@ -32,17 +32,34 @@ export interface UserToNotify {
   email: string;
   first_name: string;
   country_of_residence: string;
+  work_country: string;
 }
 
 export interface INotificationRepository {
   getDailyNotificationStats(date: string): Promise<NotificationStats>;
   findUsersWithoutEntryForDate(date: string): Promise<UserToNotify[]>;
-  createEmailCTAToken(userId: string, action: string, targetDate: string, expiresAt: Date, token: string): Promise<EmailCTAToken>;
+  createEmailCTAToken(
+    userId: string,
+    action: string,
+    targetDate: string,
+    expiresAt: Date,
+    token: string
+  ): Promise<EmailCTAToken>;
   createNotification(userId: string, channel: string, notificationType: string, payload: object): Promise<Notification>;
+  findNotificationsByDate(date: string): Promise<
+    {
+      id: string;
+      sent_at: Date;
+      user_first_name: string;
+      user_last_name: string;
+      user_email: string;
+      notification_type: string;
+    }[]
+  >;
 }
 
 export class NotificationRepository implements INotificationRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
   async getDailyNotificationStats(date: string): Promise<NotificationStats> {
     const { rows } = await this.pool.query<NotificationStats>(
@@ -61,7 +78,7 @@ export class NotificationRepository implements INotificationRepository {
   async findUsersWithoutEntryForDate(date: string): Promise<UserToNotify[]> {
     const { rows } = await this.pool.query<UserToNotify>(
       `SELECT
-        u.user_id, u.email, u.first_name, u.country_of_residence
+        u.user_id, u.email, u.first_name, u.country_of_residence, u.work_country
        FROM users u
        WHERE u.is_active = TRUE
        AND NOT EXISTS (
@@ -73,7 +90,13 @@ export class NotificationRepository implements INotificationRepository {
     return rows;
   }
 
-  async createEmailCTAToken(userId: string, action: string, targetDate: string, expiresAt: Date, token: string): Promise<EmailCTAToken> {
+  async createEmailCTAToken(
+    userId: string,
+    action: string,
+    targetDate: string,
+    expiresAt: Date,
+    token: string
+  ): Promise<EmailCTAToken> {
     const { rows } = await this.pool.query<EmailCTAToken>(
       `INSERT INTO email_cta_tokens (token, user_id, action, target_date, expires_at)
        VALUES ($1, $2, $3, $4, $5) RETURNING *;`,
@@ -82,12 +105,46 @@ export class NotificationRepository implements INotificationRepository {
     return rows[0];
   }
 
-  async createNotification(userId: string, channel: string, notificationType: string, payload: object): Promise<Notification> {
+  async createNotification(
+    userId: string,
+    channel: string,
+    notificationType: string,
+    payload: object
+  ): Promise<Notification> {
     const { rows } = await this.pool.query<Notification>(
       `INSERT INTO notifications (user_id, channel, notification_type, payload)
        VALUES ($1, $2, $3, $4) RETURNING *;`,
       [userId, channel, notificationType, payload]
     );
     return rows[0];
+    return rows[0];
+  }
+
+  async findNotificationsByDate(date: string): Promise<
+    {
+      id: string;
+      sent_at: Date;
+      user_first_name: string;
+      user_last_name: string;
+      user_email: string;
+      notification_type: string;
+    }[]
+  > {
+    const { rows } = await this.pool.query<{
+      id: string;
+      sent_at: Date;
+      user_first_name: string;
+      user_last_name: string;
+      user_email: string;
+      notification_type: string;
+    }>(
+      `SELECT n.id, n.sent_at, u.first_name as user_first_name, u.last_name as user_last_name, u.email as user_email, n.notification_type
+       FROM notifications n
+       JOIN users u ON n.user_id = u.user_id
+       WHERE DATE(n.sent_at) = $1::date
+       ORDER BY n.sent_at DESC`,
+      [date]
+    );
+    return rows;
   }
 }

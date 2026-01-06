@@ -2,26 +2,26 @@ services:
   # 1. The Database (Postgres 15)
   db:
     image: postgres:15-alpine
-    container_name: tracker-db
+    container_name: remotedays-db
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: ${DB_USER:-admin}
-      POSTGRES_PASSWORD: ${DB_PASS:-password}
-      POSTGRES_DB: ${DB_NAME:-tracker}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: remote_days
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Optional: Auto-run SQL scripts on first boot
       - ./docker/postgres:/docker-entrypoint-initdb.d
     networks:
-      - tracker-network
+      - remotedays-network
 
   # 2. The Backend (Node API)
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile.dev
-    container_name: tracker-api
+    container_name: remotedays-api
     ports:
       - "3000:3000"
     volumes:
@@ -29,25 +29,25 @@ services:
       - ./packages:/app/packages
       - /app/node_modules
     environment:
-      DATABASE_URL: postgres://${DB_USER:-admin}:${DB_PASS:-password}@db:5432/${DB_NAME:-tracker}
+      DATABASE_URL: postgres://postgres:postgres@db:5432/remote_days
       PORT: 3000
       JWT_SECRET: "dev-secret-do-not-use-in-prod"
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       SMTP_SECURE: "false"
-      SMTP_FROM: "no-reply@tracker.local"
+      SMTP_FROM: "no-reply@remotedays.local"
     depends_on:
       - db
       - mailpit
     networks:
-      - tracker-network
+      - remotedays-network
 
   # 3. The Frontend (React)
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile.dev
-    container_name: tracker-web
+    container_name: remotedays-web
     ports:
       - "5173:5173"
     volumes:
@@ -59,32 +59,52 @@ services:
       VITE_API_URL: http://localhost:3000
       VITE_PROXY_TARGET: "http://api:3000"
     networks:
-      - tracker-network
+      - remotedays-network
 
   # 4. Email Catching (Mailpit)
   mailpit:
     image: axllent/mailpit
-    container_name: tracker-mailpit
+    container_name: remotedays-mailpit
     ports:
       - "8025:8025"
       - "1025:1025"
     networks:
-      - tracker-network
+      - remotedays-network
 
-  # 5. Seeding (Run once on startup)
+  # 5. pgAdmin (Database GUI)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: remotedays-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@remotedays.app
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./docker/pgadmin/pgpass:/pgadmin4/pgpass:ro
+    depends_on:
+      - db
+    networks:
+      - remotedays-network
+
+  # 6. Seeding (Run once on startup)
   seed:
     build:
       context: .
       dockerfile: apps/api/Dockerfile.dev
-    container_name: tracker-seed
-    # Override the default command to run the seed script
-    command: [ "npm", "run", "db:seed:fake", "--workspace=apps/api" ]
+    container_name: remotedays-seed
+    # Override the default command to run the demo seed script (100 users)
+    command: [ "npm", "run", "db:seed:demo", "--workspace=apps/api" ]
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages
       - /app/node_modules
     environment:
-      DATABASE_URL: postgres://${DB_USER:-admin}:${DB_PASS:-password}@db:5432/${DB_NAME:-tracker}
+      DATABASE_URL: postgres://postgres:postgres@db:5432/remote_days
       JWT_SECRET: "dev-secret-do-not-use-in-prod"
     depends_on:
       db:
@@ -92,15 +112,16 @@ services:
       api:
         condition: service_started
     networks:
-      - tracker-network
+      - remotedays-network
     # Only run this profile if specifically requested or if we want it to run every time 'up' is called without arguments?
     # User said "so that it will work in the launch".
     # Defaulting to standard execution, but it will exit after completion.
 
 volumes:
   postgres_data:
+  pgadmin_data:
 
 
 networks:
-  tracker-network:
+  remotedays-network:
     driver: bridge

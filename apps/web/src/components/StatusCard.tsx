@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import type { work_status } from '@tracker/types';
+import type { work_status } from '@remotedays/types';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Home, Building, Plane, Stethoscope, HelpCircle, type LucideIcon } from 'lucide-react';
+import { Loader2, Home, Building, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -13,13 +13,14 @@ interface StatusCardProps {
     selectedDate?: Date;
 }
 
-const STATUS_CONFIG: Record<work_status, { label: string; icon: LucideIcon; color: string }> = {
+// Employee self-declaration options - only home and office
+// Travel, sick, and unknown can only be set by HR/Admin via override
+const STATUS_CONFIG: Record<'home' | 'office', { label: string; icon: LucideIcon; color: string }> = {
     home: { label: 'Home Office', icon: Home, color: 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200' },
     office: { label: 'Office', icon: Building, color: 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200' },
-    travel: { label: 'Business Travel', icon: Plane, color: 'bg-yellow-100 text-yellow-700 border-yellow-200 hover:bg-yellow-200' },
-    sick: { label: 'Sick Leave', icon: Stethoscope, color: 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200' },
-    unknown: { label: 'Not Set', icon: HelpCircle, color: 'bg-gray-100 text-gray-700 border-gray-200' },
 };
+
+const EMPLOYEE_STATUSES: ('home' | 'office')[] = ['home', 'office'];
 
 export default function StatusCard({ currentStatus, selectedDate = new Date() }: StatusCardProps) {
     const queryClient = useQueryClient();
@@ -31,11 +32,13 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
             const res = await api.post('/entries', { status, date: formattedDate });
             return res.data;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['entries'] });
-            queryClient.invalidateQueries({ queryKey: ['stats'] });
+        onSuccess: async () => {
+            // Force immediate refetch to update compliance stats
+            await Promise.all([
+                queryClient.refetchQueries({ queryKey: ['entries'] }),
+                queryClient.refetchQueries({ queryKey: ['stats'] }),
+            ]);
             toast.success("Status updated!");
-            // Note: need to install sonner or use hook for toast
         },
         onError: (error: unknown) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,14 +51,20 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
         mutation.mutate(status);
     };
 
+    const isSelectionLocked = !!currentStatus && currentStatus !== 'unknown' && isToday;
+
     return (
         <Card className="w-full">
             <CardHeader>
                 <CardTitle>Work Status for {isToday ? "Today" : format(selectedDate, 'EEEE, MMM d')}</CardTitle>
-                <CardDescription>Where are you working from?</CardDescription>
+                <CardDescription>
+                    {isSelectionLocked
+                        ? "Status is locked for today. Submit a request to change it."
+                        : "Where are you working from?"}
+                </CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                {(['home', 'office', 'travel', 'sick'] as work_status[]).map((status) => {
+            <CardContent className="grid grid-cols-2 gap-4">
+                {EMPLOYEE_STATUSES.map((status) => {
                     const config = STATUS_CONFIG[status];
                     const Icon = config.icon;
                     const isActive = currentStatus === status;
@@ -66,12 +75,13 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
                             className={cn(
                                 "h-24 flex-col gap-2 border-2 transition-all duration-200 active:scale-95",
                                 isActive
-                                    ? cn(config.color, "border-current ring-2 ring-offset-2 ring-primary/20 shadow-sm")
+                                    ? cn(config.color, "border-current ring-2 ring-offset-2 ring-primary/20 shadow-sm opacity-100")
                                     : "hover:border-primary/50 hover:bg-muted/50",
-                                mutation.isPending && "opacity-50 cursor-not-allowed"
+                                mutation.isPending && "opacity-50 cursor-not-allowed",
+                                isSelectionLocked && !isActive && "opacity-50 cursor-not-allowed" // Dim non-selected items when locked
                             )}
                             onClick={() => handleStatusChange(status)}
-                            disabled={mutation.isPending}
+                            disabled={mutation.isPending || isSelectionLocked}
                         >
                             {mutation.isPending && isActive ? <Loader2 className="h-6 w-6 animate-spin" /> : <Icon className="h-6 w-6" />}
                             <span className="font-medium">{config.label}</span>
