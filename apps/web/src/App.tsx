@@ -3,7 +3,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import Login from './pages/Login';
 import { Toaster } from '@/components/ui/sonner';
-import { CookieConsent } from '@/components/CookieConsent';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 
 import EmployeeSummary from '@/pages/hr/EmployeeSummary';
@@ -82,7 +81,6 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />
-      <CookieConsent />
       <PWAInstallPrompt />
     </>
   );
