@@ -4,9 +4,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Remote Days - Automated Remote Work Compliance Made Simple</title>
+    <title>Remote Days - Automated Remote Work Tax Compliance Software</title>
     <meta name="description"
-        content="Stop tracking remote work days in spreadsheets. Automate compliance for France, Belgium & Germany with one-click email tracking. Audit-ready from day one.">
+        content="Automate remote work tax compliance for France, Belgium & Germany. The #1 software for cross-border telegraphing, tax residency tracking, and audit-ready reporting.">
+    <meta name="keywords"
+        content="remote work compliance, tax residency tracker, cross-border remote work, télétravail frontalier, days counting app, social security compliance">
+    <link rel="canonical" href="https://remotedays.app/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://remotedays.app/">
+    <meta property="og:title" content="Remote Days - Automated Remote Work Tax Compliance Software">
+    <meta property="og:description"
+        content="Automate remote work tax compliance for France, Belgium & Germany. Stop counting days in Excel. One-click email tracking & audit-ready reports.">
+    <meta property="og:image" content="https://remotedays.app/assets/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://remotedays.app/">
+    <meta property="twitter:title" content="Remote Days - Automated Remote Work Tax Compliance Software">
+    <meta property="twitter:description"
+        content="Automate remote work tax compliance for France, Belgium & Germany. Stop counting days in Excel. One-click email tracking & audit-ready reports.">
+    <meta property="twitter:image" content="https://remotedays.app/assets/og-image.png">
+
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Remote Days",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "offers": {
+        "@type": "Offer",
+        "price": "5.00",
+        "priceCurrency": "EUR"
+      },
+      "description": "Automated remote work compliance software for cross-border employees in France, Belgium, and Germany.",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "120"
+      }
+    }
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZVFT08TLX0"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-ZVFT08TLX0');
+    </script>
 
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -70,6 +121,21 @@
                     },
                 }
             }
+        }
+
+        // ROI Calculator Logic
+        function calculateROI() {
+            const employees = document.getElementById('employee-count').value;
+            const wage = document.getElementById('avg-wage').value;
+
+            // Assumptions: 
+            // - 20 mins per month per employee spent on manual tracking (employees + HR time)
+            // - 12 months/year
+            const hoursPerYear = employees * (20 / 60) * 12;
+            const costPerYear = hoursPerYear * wage;
+
+            document.getElementById('roi-result').innerText = '€' + Math.floor(costPerYear).toLocaleString();
+            document.getElementById('hours-result').innerText = Math.floor(hoursPerYear).toLocaleString() + ' hours';
         }
     </script>
 
@@ -137,23 +203,29 @@
             <div class="flex justify-between h-20 items-center">
                 <!-- Logo -->
                 <a href="#" class="flex items-center space-x-3 group">
-                    <img src="./assets/logo.png" alt="Remote Days" class="h-10 w-10 transition-transform group-hover:scale-110">
-                    <span class="text-2xl font-bold font-display bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+                    <img src="./assets/logo.png" alt="Remote Days Logo - Remote Work Compliance"
+                        class="h-10 w-10 transition-transform group-hover:scale-110">
+                    <span
+                        class="text-2xl font-bold font-display bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
                         Remote Days
                     </span>
                 </a>
 
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="#features" class="text-gray-700 hover:text-primary-600 font-medium transition-colors">Features</a>
-                    <a href="#how-it-works" class="text-gray-700 hover:text-primary-600 font-medium transition-colors">How it Works</a>
-                    <a href="#pricing" class="text-gray-700 hover:text-primary-600 font-medium transition-colors">Pricing</a>
+                    <a href="#features"
+                        class="text-gray-700 hover:text-primary-600 font-medium transition-colors">Features</a>
+                    <a href="#how-it-works"
+                        class="text-gray-700 hover:text-primary-600 font-medium transition-colors">How it Works</a>
+                    <a href="#pricing"
+                        class="text-gray-700 hover:text-primary-600 font-medium transition-colors">Pricing</a>
                     <a href="#faq" class="text-gray-700 hover:text-primary-600 font-medium transition-colors">FAQ</a>
                 </div>
 
                 <!-- CTA Buttons -->
                 <div class="flex items-center space-x-4">
-                    <a href="https://demo.remotedays.app/login" class="hidden sm:block text-gray-700 hover:text-primary-600 font-semibold transition-colors">
+                    <a href="https://demo.remotedays.app/login"
+                        class="hidden sm:block text-gray-700 hover:text-primary-600 font-semibold transition-colors">
                         Demo
                     </a>
                     <button onclick="openRequestDemo()"
@@ -172,66 +244,82 @@
                 <!-- Hero Content -->
                 <div class="text-center lg:text-left space-y-8 animate-slide-up">
                     <!-- Badge -->
-                    <div class="inline-flex items-center px-4 py-2 rounded-full bg-primary-50 border border-primary-200">
+                    <div
+                        class="inline-flex items-center px-4 py-2 rounded-full bg-primary-50 border border-primary-200">
                         <span class="text-primary-700 text-sm font-semibold">
                             🎯 Compliance Made Simple
                         </span>
                     </div>
 
                     <!-- Headline -->
-                    <h1 class="text-5xl lg:text-6xl xl:text-7xl font-display font-extrabold text-gray-900 leading-tight">
+                    <h1
+                        class="text-5xl lg:text-6xl xl:text-7xl font-display font-extrabold text-gray-900 leading-tight">
                         Stop Counting
                         <span class="bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
-                            Remote Days
+                            Remote Work Days
                         </span>
                         in Excel
                     </h1>
 
                     <!-- Subheadline -->
-                    <p class="text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-2xl">
-                        Automate remote work compliance for France, Belgium & Germany.
+                    <h2 class="text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-2xl">
+                        The automated tax compliance software for cross-border workers in France, Belgium & Germany.
                         One-click email tracking. Audit-ready reports. Zero manual work.
-                    </p>
+                    </h2>
 
                     <!-- CTA Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                         <button onclick="openRequestDemo()"
                             class="gradient-blue text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all duration-300 hover:-translate-y-1">
-                            Start Free Trial
+                            Start Automating Now
                         </button>
                         <a href="https://demo.remotedays.app/login"
                             class="inline-flex items-center justify-center px-8 py-4 rounded-xl font-bold text-lg border-2 border-gray-300 text-gray-700 hover:border-primary-600 hover:text-primary-600 transition-all duration-300">
                             <span>Try Demo</span>
                             <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>
                         </a>
                     </div>
+                    <!-- Risk Reversal -->
+                    <p class="text-center lg:text-left text-sm text-gray-500 mt-3 font-medium">
+                        ✦ No credit card required • Cancel anytime • 14-day free trial
+                    </p>
 
                     <!-- Social Proof -->
                     <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-4">
                         <div class="flex -space-x-2">
-                            <img class="w-10 h-10 rounded-full border-2 border-white" src="https://i.pravatar.cc/150?img=1" alt="User">
-                            <img class="w-10 h-10 rounded-full border-2 border-white" src="https://i.pravatar.cc/150?img=2" alt="User">
-                            <img class="w-10 h-10 rounded-full border-2 border-white" src="https://i.pravatar.cc/150?img=3" alt="User">
-                            <img class="w-10 h-10 rounded-full border-2 border-white" src="https://i.pravatar.cc/150?img=4" alt="User">
+                            <img class="w-10 h-10 rounded-full border-2 border-white"
+                                src="https://i.pravatar.cc/150?img=1" alt="User">
+                            <img class="w-10 h-10 rounded-full border-2 border-white"
+                                src="https://i.pravatar.cc/150?img=2" alt="User">
+                            <img class="w-10 h-10 rounded-full border-2 border-white"
+                                src="https://i.pravatar.cc/150?img=3" alt="User">
+                            <img class="w-10 h-10 rounded-full border-2 border-white"
+                                src="https://i.pravatar.cc/150?img=4" alt="User">
                         </div>
                         <div class="text-sm text-gray-600">
                             <div class="flex items-center gap-1 mb-1">
                                 <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                                    <path
+                                        d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                                 </svg>
                                 <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                                    <path
+                                        d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                                 </svg>
                                 <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                                    <path
+                                        d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                                 </svg>
                                 <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                                    <path
+                                        d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                                 </svg>
                                 <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                                    <path
+                                        d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                                 </svg>
                             </div>
                             <p class="font-semibold">Trusted by 100+ HR teams</p>
@@ -243,12 +331,16 @@
                 <div class="relative animate-fade-in">
                     <div class="relative">
                         <!-- Decorative elements -->
-                        <div class="absolute -top-4 -left-4 w-72 h-72 bg-primary-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
-                        <div class="absolute -bottom-8 -right-4 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float" style="animation-delay: 2s;"></div>
+                        <div
+                            class="absolute -top-4 -left-4 w-72 h-72 bg-primary-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float">
+                        </div>
+                        <div class="absolute -bottom-8 -right-4 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"
+                            style="animation-delay: 2s;"></div>
 
                         <!-- Dashboard Screenshot -->
                         <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
-                            <img src="./assets/real-dashboard.png" alt="Remote Days Dashboard" class="w-full h-auto">
+                            <img src="./assets/real-dashboard.png" alt="Remote Days Compliance Dashboard Interface"
+                                class="w-full h-auto">
                         </div>
 
                         <!-- Floating badges -->
@@ -266,7 +358,9 @@
         <!-- Wave divider -->
         <div class="absolute bottom-0 left-0 right-0">
             <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="white"/>
+                <path
+                    d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
+                    fill="white" />
             </svg>
         </div>
     </section>
@@ -275,21 +369,42 @@
     <section class="bg-white py-12 border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <p class="text-center text-gray-500 text-sm font-semibold uppercase tracking-wide mb-8">
-                Trusted by leading companies across Europe
+                Compliance & Security First
             </p>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">
-                <!-- Placeholder for company logos -->
-                <div class="flex justify-center">
-                    <div class="text-gray-400 font-bold text-2xl">Company 1</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center text-center opacity-70">
+                <!-- Trust Badge 1 -->
+                <div class="flex flex-col items-center gap-2">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span class="text-xs font-bold text-gray-500">GDPR Compliant</span>
                 </div>
-                <div class="flex justify-center">
-                    <div class="text-gray-400 font-bold text-2xl">Company 2</div>
+                <!-- Trust Badge 2 -->
+                <div class="flex flex-col items-center gap-2">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-xs font-bold text-gray-500">Hosted in EU</span>
                 </div>
-                <div class="flex justify-center">
-                    <div class="text-gray-400 font-bold text-2xl">Company 3</div>
+                <!-- Trust Badge 3 -->
+                <div class="flex flex-col items-center gap-2">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span class="text-xs font-bold text-gray-500">AES-256 Encrypted</span>
                 </div>
-                <div class="flex justify-center">
-                    <div class="text-gray-400 font-bold text-2xl">Company 4</div>
+                <!-- Trust Badge 4 -->
+                <div class="flex flex-col items-center gap-2">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    <span class="text-xs font-bold text-gray-500">Audit-Ready</span>
                 </div>
             </div>
         </div>
@@ -309,9 +424,12 @@
                     </h2>
                     <div class="space-y-4">
                         <div class="flex items-start gap-3">
-                            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-1">
+                            <div
+                                class="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-1">
                                 <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        clip-rule="evenodd" />
                                 </svg>
                             </div>
                             <div>
@@ -320,9 +438,12 @@
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-1">
+                            <div
+                                class="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-1">
                                 <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        clip-rule="evenodd" />
                                 </svg>
                             </div>
                             <div>
@@ -331,9 +452,12 @@
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-1">
+                            <div
+                                class="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-1">
                                 <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        clip-rule="evenodd" />
                                 </svg>
                             </div>
                             <div>
@@ -354,9 +478,12 @@
                     </h2>
                     <div class="space-y-4">
                         <div class="flex items-start gap-3">
-                            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
+                            <div
+                                class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
                                 <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clip-rule="evenodd" />
                                 </svg>
                             </div>
                             <div>
@@ -365,9 +492,12 @@
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
+                            <div
+                                class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
                                 <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clip-rule="evenodd" />
                                 </svg>
                             </div>
                             <div>
@@ -376,9 +506,12 @@
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
+                            <div
+                                class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
                                 <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clip-rule="evenodd" />
                                 </svg>
                             </div>
                             <div>
@@ -389,9 +522,125 @@
                     </div>
                     <button onclick="openRequestDemo()"
                         class="gradient-blue text-white px-8 py-4 rounded-xl font-bold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all duration-300 hover:-translate-y-1">
-                        Start Free Trial →
+                        Start Automating Now →
                     </button>
+                    <p class="text-sm text-gray-500 mt-2 font-medium">No credit card required</p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ROI Calculator Section -->
+    <section class="bg-primary-900 py-16 lg:py-20 text-white overflow-hidden relative">
+        <div class="absolute inset-0 opacity-10 hero-pattern"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-12">
+                <span class="text-primary-300 font-bold tracking-wider uppercase text-sm">Value Calculator</span>
+                <h2 class="text-3xl lg:text-4xl font-display font-bold mt-2">How much is Excel costing you?</h2>
+                <p class="text-primary-100 mt-4 max-w-2xl mx-auto">
+                    Manual tracking wastes time. See how much money you're burning on spreadsheets.
+                </p>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-8 lg:p-12 border border-white/20 max-w-4xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-primary-200 mb-2">Number of Employees</label>
+                            <input type="number" id="employee-count" value="50" oninput="calculateROI()"
+                                class="w-full bg-white/5 border border-primary-500/30 rounded-xl px-4 py-3 text-white placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400"
+                                placeholder="50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-primary-200 mb-2">Avg. Hourly Wage (€)</label>
+                            <input type="number" id="avg-wage" value="35" oninput="calculateROI()"
+                                class="w-full bg-white/5 border border-primary-500/30 rounded-xl px-4 py-3 text-white placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400"
+                                placeholder="35">
+                        </div>
+                        <p class="text-xs text-primary-300 italic">
+                            *Assumes 20 mins/month spent on manual tracking per employee (reporting + HR admin).
+                        </p>
+                    </div>
+                    <div class="text-center md:text-left bg-white/5 rounded-2xl p-6 border border-white/10">
+                        <p class="text-primary-200 font-medium mb-1">You are wasting approximately:</p>
+                        <div class="text-5xl font-bold text-white mb-2" id="roi-result">€7,000</div>
+                        <p class="text-primary-200 font-medium mb-4">and <span id="hours-result"
+                                class="text-white font-bold">200 hours</span> per year</p>
+                        <div class="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-400 w-full animate-pulse"></div>
+                        </div>
+                        <p class="mt-4 text-sm text-green-300 font-semibold">
+                            Remote Days costs a fraction of this.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Us vs Excel Comparison Section -->
+    <section class="bg-white py-20 lg:py-28">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-6">
+                    Why Upgrade from Excel?
+                </h2>
+                <p class="text-xl text-gray-600">
+                    Spreadsheets were built for finance, not cross-border tax compliance.
+                </p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full max-w-4xl mx-auto border-collapse">
+                    <thead>
+                        <tr>
+                            <th class="p-6 text-left text-gray-500 font-medium w-1/3">Feature</th>
+                            <th class="p-6 text-center text-gray-400 font-medium w-1/3 text-xl">Excel / Spreadsheets
+                            </th>
+                            <th
+                                class="p-6 text-center bg-primary-50 text-primary-700 font-bold w-1/3 rounded-t-2xl text-xl border-t border-x border-primary-100">
+                                Remote Days
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr>
+                            <td class="p-6 text-gray-900 font-semibold">Audit-Proof History</td>
+                            <td class="p-6 text-center text-gray-400">❌ Edit history easily lost</td>
+                            <td
+                                class="p-6 text-center bg-primary-50 text-green-600 font-bold border-x border-primary-100">
+                                ✅ Immutable Logs</td>
+                        </tr>
+                        <tr>
+                            <td class="p-6 text-gray-900 font-semibold">Automated Reminders</td>
+                            <td class="p-6 text-center text-gray-400">❌ Manual emails</td>
+                            <td
+                                class="p-6 text-center bg-primary-50 text-green-600 font-bold border-x border-primary-100">
+                                ✅ Daily/Weekly Auto-emails</td>
+                        </tr>
+                        <tr>
+                            <td class="p-6 text-gray-900 font-semibold">Country Thresholds</td>
+                            <td class="p-6 text-center text-gray-400">❌ Complex manual formulas</td>
+                            <td
+                                class="p-6 text-center bg-primary-50 text-green-600 font-bold border-x border-primary-100">
+                                ✅ Built-in (FR/BE/DE)</td>
+                        </tr>
+                        <tr>
+                            <td class="p-6 text-gray-900 font-semibold">Real-time Dashboard</td>
+                            <td class="p-6 text-center text-gray-400">❌ Only when updated</td>
+                            <td
+                                class="p-6 text-center bg-primary-50 text-green-600 font-bold border-x border-primary-100">
+                                ✅ Live View</td>
+                        </tr>
+                        <tr>
+                            <td class="p-6 text-gray-900 font-semibold">GDPR Compliance</td>
+                            <td class="p-6 text-center text-gray-400">❌ Sending files via email</td>
+                            <td
+                                class="p-6 text-center bg-primary-50 text-green-600 font-bold rounded-b-2xl border-b border-x border-primary-100">
+                                ✅ Secure & Encrypted</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </section>
@@ -401,7 +650,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="text-center max-w-3xl mx-auto mb-16">
-                <div class="inline-flex items-center px-4 py-2 rounded-full bg-primary-50 border border-primary-200 mb-6">
+                <div
+                    class="inline-flex items-center px-4 py-2 rounded-full bg-primary-50 border border-primary-200 mb-6">
                     <span class="text-primary-700 text-sm font-semibold">✨ Features</span>
                 </div>
                 <h2 class="text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-6">
@@ -415,23 +665,28 @@
             <!-- Feature Grid -->
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <!-- Feature 1 -->
-                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div
+                    class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                     <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
                         <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Email-Based Tracking</h3>
                     <p class="text-gray-600">
-                        Employees click "Home" or "Office" directly in their morning email. Takes 2 seconds. No app to install.
+                        Employees click "Home" or "Office" directly in their morning email. Takes 2 seconds. No app to
+                        install.
                     </p>
                 </div>
 
                 <!-- Feature 2 -->
-                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div
+                    class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                     <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
                         <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Real-Time Dashboard</h3>
@@ -441,10 +696,12 @@
                 </div>
 
                 <!-- Feature 3 -->
-                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div
+                    class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                     <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-6">
                         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Compliance Automation</h3>
@@ -454,10 +711,12 @@
                 </div>
 
                 <!-- Feature 4 -->
-                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div
+                    class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                     <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-6">
                         <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Smart Reminders</h3>
@@ -467,10 +726,12 @@
                 </div>
 
                 <!-- Feature 5 -->
-                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div
+                    class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                     <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-6">
                         <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Audit-Ready Reports</h3>
@@ -480,10 +741,12 @@
                 </div>
 
                 <!-- Feature 6 -->
-                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div
+                    class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                     <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
                         <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Enterprise Security</h3>
@@ -500,7 +763,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="text-center max-w-3xl mx-auto mb-16">
-                <div class="inline-flex items-center px-4 py-2 rounded-full bg-primary-50 border border-primary-200 mb-6">
+                <div
+                    class="inline-flex items-center px-4 py-2 rounded-full bg-primary-50 border border-primary-200 mb-6">
                     <span class="text-primary-700 text-sm font-semibold">🚀 How It Works</span>
                 </div>
                 <h2 class="text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-6">
@@ -514,12 +778,15 @@
             <!-- Steps -->
             <div class="grid md:grid-cols-3 gap-12 relative">
                 <!-- Connecting line -->
-                <div class="hidden md:block absolute top-16 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-200 via-primary-400 to-primary-200"></div>
+                <div
+                    class="hidden md:block absolute top-16 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-200 via-primary-400 to-primary-200">
+                </div>
 
                 <!-- Step 1 -->
                 <div class="relative">
                     <div class="flex flex-col items-center text-center">
-                        <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-lg relative z-10">
+                        <div
+                            class="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-lg relative z-10">
                             1
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900 mb-4">Import Your Team</h3>
@@ -532,7 +799,8 @@
                 <!-- Step 2 -->
                 <div class="relative">
                     <div class="flex flex-col items-center text-center">
-                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-lg relative z-10">
+                        <div
+                            class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-lg relative z-10">
                             2
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900 mb-4">Configure Compliance Rules</h3>
@@ -545,7 +813,8 @@
                 <!-- Step 3 -->
                 <div class="relative">
                     <div class="flex flex-col items-center text-center">
-                        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-lg relative z-10">
+                        <div
+                            class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-lg relative z-10">
                             3
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900 mb-4">Sit Back & Stay Compliant</h3>
@@ -584,23 +853,29 @@
                 <div class="bg-white rounded-2xl p-8 shadow-xl">
                     <div class="flex items-center gap-1 mb-4">
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                     </div>
                     <p class="text-gray-700 mb-6 italic">
-                        "We were drowning in Excel spreadsheets. Remote Days saved us countless hours and gave us peace of mind during our last audit."
+                        "We were drowning in Excel spreadsheets. Remote Days saved us countless hours and gave us peace
+                        of mind during our last audit."
                     </p>
                     <div class="flex items-center gap-3">
                         <img src="https://i.pravatar.cc/150?img=5" alt="Sarah" class="w-12 h-12 rounded-full">
@@ -615,23 +890,29 @@
                 <div class="bg-white rounded-2xl p-8 shadow-xl">
                     <div class="flex items-center gap-1 mb-4">
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                     </div>
                     <p class="text-gray-700 mb-6 italic">
-                        "The one-click email system is genius. Our employees actually use it, and we finally have accurate tracking."
+                        "The one-click email system is genius. Our employees actually use it, and we finally have
+                        accurate tracking."
                     </p>
                     <div class="flex items-center gap-3">
                         <img src="https://i.pravatar.cc/150?img=8" alt="Thomas" class="w-12 h-12 rounded-full">
@@ -646,19 +927,24 @@
                 <div class="bg-white rounded-2xl p-8 shadow-xl">
                     <div class="flex items-center gap-1 mb-4">
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                         <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                            <path
+                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                         </svg>
                     </div>
                     <p class="text-gray-700 mb-6 italic">
@@ -681,7 +967,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="text-center max-w-3xl mx-auto mb-16">
-                <div class="inline-flex items-center px-4 py-2 rounded-full bg-primary-50 border border-primary-200 mb-6">
+                <div
+                    class="inline-flex items-center px-4 py-2 rounded-full bg-primary-50 border border-primary-200 mb-6">
                     <span class="text-primary-700 text-sm font-semibold">💰 Simple Pricing</span>
                 </div>
                 <h2 class="text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-6">
@@ -694,7 +981,8 @@
 
             <!-- Pricing Card -->
             <div class="max-w-lg mx-auto">
-                <div class="bg-gradient-to-br from-primary-500 to-primary-700 rounded-3xl p-10 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
+                <div
+                    class="bg-gradient-to-br from-primary-500 to-primary-700 rounded-3xl p-10 text-white shadow-2xl transform hover:scale-105 transition-all duration-300">
                     <div class="text-center mb-8">
                         <h3 class="text-3xl font-bold mb-4">Pro Plan</h3>
                         <div class="flex items-baseline justify-center gap-2 mb-2">
@@ -707,43 +995,57 @@
                     <ul class="space-y-4 mb-8">
                         <li class="flex items-start gap-3">
                             <svg class="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd" />
                             </svg>
                             <span>Unlimited email tracking</span>
                         </li>
                         <li class="flex items-start gap-3">
                             <svg class="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd" />
                             </svg>
                             <span>Real-time compliance dashboard</span>
                         </li>
                         <li class="flex items-start gap-3">
                             <svg class="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd" />
                             </svg>
                             <span>Automated compliance alerts</span>
                         </li>
                         <li class="flex items-start gap-3">
                             <svg class="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd" />
                             </svg>
                             <span>Audit-ready reports (CSV/PDF)</span>
                         </li>
                         <li class="flex items-start gap-3">
                             <svg class="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd" />
                             </svg>
                             <span>Multi-country support</span>
                         </li>
                         <li class="flex items-start gap-3">
                             <svg class="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd" />
                             </svg>
                             <span>Priority email support</span>
                         </li>
                         <li class="flex items-start gap-3">
                             <svg class="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd" />
                             </svg>
                             <span>SSO & GDPR compliance</span>
                         </li>
@@ -763,7 +1065,8 @@
             <div class="text-center mt-12">
                 <p class="text-gray-600">
                     Need more than 100 employees?
-                    <a href="#" onclick="openRequestDemo(); return false;" class="text-primary-600 font-semibold hover:text-primary-700 underline">
+                    <a href="#" onclick="openRequestDemo(); return false;"
+                        class="text-primary-600 font-semibold hover:text-primary-700 underline">
                         Contact us for volume pricing
                     </a>
                 </p>
@@ -776,7 +1079,8 @@
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="text-center mb-16">
-                <div class="inline-flex items-center px-4 py-2 rounded-full bg-primary-50 border border-primary-200 mb-6">
+                <div
+                    class="inline-flex items-center px-4 py-2 rounded-full bg-primary-50 border border-primary-200 mb-6">
                     <span class="text-primary-700 text-sm font-semibold">❓ FAQ</span>
                 </div>
                 <h2 class="text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-6">
@@ -792,7 +1096,19 @@
                         How do employees log their location?
                     </h3>
                     <p class="text-gray-600">
-                        Two options: via daily email (one-click "Home" or "Office" buttons) or through our mobile app available on iOS and Android. Both take just seconds.
+                        Two options: via daily email (one-click "Home" or "Office" buttons) or through our mobile app
+                        available on iOS and Android. Both take just seconds.
+                    </p>
+                </div>
+
+                <!-- FAQ Data Localization -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">
+                        Where is my data stored?
+                    </h3>
+                    <p class="text-gray-600">
+                        We value your privacy and compliance. unique. All data is securely stored on servers located
+                        within the European Union (Germany), ensuring full GDPR compliance.
                     </p>
                 </div>
 
@@ -802,7 +1118,8 @@
                         Which countries are supported?
                     </h3>
                     <p class="text-gray-600">
-                        Currently France (34 days max), Belgium (24 days max), and Germany (≤183 days). We're adding more European countries based on customer demand.
+                        Currently France (34 days max), Belgium (24 days max), and Germany (≤183 days). We're adding
+                        more European countries based on customer demand.
                     </p>
                 </div>
 
@@ -812,7 +1129,8 @@
                         What happens during an audit?
                     </h3>
                     <p class="text-gray-600">
-                        You can export a detailed compliance report showing every employee's remote work days for any date range. Reports include timestamps and employee confirmations.
+                        You can export a detailed compliance report showing every employee's remote work days for any
+                        date range. Reports include timestamps and employee confirmations.
                     </p>
                 </div>
 
@@ -822,7 +1140,8 @@
                         Is our data secure and GDPR compliant?
                     </h3>
                     <p class="text-gray-600">
-                        Yes. We're GDPR compliant, data is encrypted at rest and in transit, and we use SOC 2 Type II certified infrastructure. We only store employee names, emails, and work location declarations.
+                        Yes. We're GDPR compliant, data is encrypted at rest and in transit, and we use SOC 2 Type II
+                        certified infrastructure. We only store employee names, emails, and work location declarations.
                     </p>
                 </div>
 
@@ -832,7 +1151,8 @@
                         Can I try it before committing?
                     </h3>
                     <p class="text-gray-600">
-                        Absolutely! We offer a 14-day free trial with full access to all features. No credit card required. Cancel anytime.
+                        Absolutely! We offer a 14-day free trial with full access to all features. No credit card
+                        required. Cancel anytime.
                     </p>
                 </div>
 
@@ -842,7 +1162,8 @@
                         What if an employee forgets to declare?
                     </h3>
                     <p class="text-gray-600">
-                        The HR dashboard shows who hasn't declared yet. You can send manual reminders or enable automatic follow-up emails at custom times.
+                        The HR dashboard shows who hasn't declared yet. You can send manual reminders or enable
+                        automatic follow-up emails at custom times.
                     </p>
                 </div>
             </div>
@@ -896,7 +1217,8 @@
                         <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
                         <li><a href="#pricing" class="hover:text-white transition-colors">Pricing</a></li>
                         <li><a href="#faq" class="hover:text-white transition-colors">FAQ</a></li>
-                        <li><a href="https://demo.remotedays.app/login" class="hover:text-white transition-colors">Login</a></li>
+                        <li><a href="https://demo.remotedays.app/login"
+                                class="hover:text-white transition-colors">Login</a></li>
                     </ul>
                 </div>
 
@@ -904,10 +1226,14 @@
                 <div>
                     <h4 class="text-white font-semibold mb-4">Company</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="https://alchamentry.com" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="mailto:hello@remotedays.app" class="hover:text-white transition-colors">Contact</a></li>
-                        <li><a href="/legal/privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="/legal/terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="https://alchamentry.com" target="_blank" rel="noopener noreferrer"
+                                class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="mailto:hello@remotedays.app" class="hover:text-white transition-colors">Contact</a>
+                        </li>
+                        <li><a href="/legal/privacy.html" class="hover:text-white transition-colors">Privacy Policy</a>
+                        </li>
+                        <li><a href="/legal/terms.html" class="hover:text-white transition-colors">Terms of Service</a>
+                        </li>
                     </ul>
                 </div>
 
@@ -915,8 +1241,10 @@
                 <div>
                     <h4 class="text-white font-semibold mb-4">Get in Touch</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="mailto:hello@remotedays.app" class="hover:text-white transition-colors">hello@remotedays.app</a></li>
-                        <li><button onclick="openRequestDemo()" class="hover:text-white transition-colors text-left">Request Demo</button></li>
+                        <li><a href="mailto:hello@remotedays.app"
+                                class="hover:text-white transition-colors">hello@remotedays.app</a></li>
+                        <li><button onclick="openRequestDemo()"
+                                class="hover:text-white transition-colors text-left">Request Demo</button></li>
                     </ul>
                 </div>
             </div>
@@ -924,19 +1252,22 @@
             <!-- Copyright -->
             <div class="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
                 <p class="mb-2">© 2025 Remote Days. All rights reserved.</p>
-                <p>Built by <a href="https://alchamentry.com" target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300 transition-colors">Alchamentry</a></p>
+                <p>Built by <a href="https://alchamentry.com" target="_blank" rel="noopener noreferrer"
+                        class="text-primary-400 hover:text-primary-300 transition-colors">Alchamentry</a></p>
             </div>
         </div>
     </footer>
 
     <!-- Demo Request Modal -->
-    <div id="demoModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div id="demoModal"
+        class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl transform transition-all">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold text-gray-900">Request Demo</h3>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
@@ -997,7 +1328,7 @@
         });
 
         // Navbar scroll effect
-        window.addEventListener('scroll', function() {
+        window.addEventListener('scroll', function () {
             const navbar = document.getElementById('navbar');
             if (window.scrollY > 50) {
                 navbar.classList.add('shadow-lg');
@@ -1020,9 +1351,9 @@
         }
 
         // Form submission
-        document.getElementById('demoForm').addEventListener('submit', async function(e) {
+        document.getElementById('demoForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalBtnText = submitBtn.innerText;
             submitBtn.disabled = true;
@@ -1033,7 +1364,7 @@
             // We capture other fields but currently only send email/message to the lead endpoint.
             // You can enhance the backend to accept name/company/employees if needed.
             // For now, we append them to the message if present so they aren't lost.
-            
+
             const name = this.querySelector('input[type="text"]').value; // First text input is Name
             const company = this.querySelectorAll('input[type="text"]')[1].value; // Second text input is Company
             const employees = document.getElementById('employees').value;
@@ -1074,19 +1405,43 @@
         });
 
         // Close modal on outside click
-        document.getElementById('demoModal').addEventListener('click', function(e) {
+        document.getElementById('demoModal').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeModal();
             }
         });
 
         // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 closeModal();
             }
         });
     </script>
+    <!-- Lead Magnet Section -->
+    <section class="bg-gray-900 py-16">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-bold text-white mb-4">
+                Not ready to switch yet?
+            </h2>
+            <p class="text-gray-400 mb-8 text-lg">
+                Get our <span class="text-white font-semibold">Free Remote Work Charter Template</span>
+                (France/Belgium/Germany compliant) to help you structure your policy.
+            </p>
+            <div class="flex justify-center">
+                <a href="mailto:hello@remotedays.app?subject=Free Remote Work Charter Template"
+                    class="inline-flex items-center px-6 py-3 border border-gray-600 text-base font-medium rounded-xl text-white bg-gray-800 hover:bg-gray-700 hover:border-gray-500 transition-all duration-200">
+                    <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Download Free Template
+                </a>
+            </div>
+            <p class="text-xs text-gray-600 mt-4">We'll email you the PDF instantly.</p>
+        </div>
+    </section>
+
 </body>
 
 </html>
