@@ -61,7 +61,7 @@ export default function Login() {
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold">Login</CardTitle>
                     <CardDescription>
-                        Enter your email and password to access your account
+                        Sign in to declare today’s work location, review compliance, or manage your team depending on your role.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -129,7 +129,7 @@ export default function Login() {
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-blue-700 font-medium">Employee:</span>
                                 <div className="text-right">
-                                    <span className="text-blue-900 font-mono text-xs">employee@remotedays.app</span>
+                                    <span className="text-blue-900 font-mono text-xs">employee1@remotedays.app</span>
                                     <span className="text-blue-400 mx-1">/</span>
                                     <span className="text-blue-900 font-mono text-xs">password123</span>
                                 </div>
@@ -140,11 +140,11 @@ export default function Login() {
                         Need an account? Contact your HR administrator.
                     </div>
                     <div className="text-center text-xs text-gray-400 mt-2">
-                        <a href="https://remotedays.app/legal/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy Policy</a>
+                        <Link to="/legal/privacy" className="hover:underline">Privacy Policy</Link>
                         {' | '}
-                        <a href="https://remotedays.app/legal/terms.html" target="_blank" rel="noopener noreferrer" className="hover:underline">Terms of Service</a>
+                        <Link to="/legal/terms" className="hover:underline">Terms of Service</Link>
                         {' | '}
-                        <a href="https://remotedays.app/legal/cookies.html" target="_blank" rel="noopener noreferrer" className="hover:underline">Cookies</a>
+                        <Link to="/legal/cookies" className="hover:underline">Cookies</Link>
                     </div>
                 </CardFooter>
             </Card>

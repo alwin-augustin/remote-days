@@ -1,7 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { AdminController } from './admin.controller';
 import { CountryController } from './country.controller';
-import { emailJobManager } from '../worker/email-job.manager';
 
 async function adminRoutes(
   server: FastifyInstance,
@@ -12,79 +11,9 @@ async function adminRoutes(
 ) {
   const { adminController, countryController } = options;
 
-  // Trigger daily email worker manually (Admin/HR) - Asynchronous Job
+  // User Batch Import (replaces /admin/users/import)
   server.post(
-    '/admin/trigger-daily-emails',
-    {
-      preHandler: [server.authenticate, server.authorize('hr')],
-      schema: {
-        description: 'Manually trigger the daily email reminder worker. Returns a job ID immediately.',
-        tags: ['Admin'],
-        body: {
-          type: 'object',
-          properties: {
-            onlyPending: { type: 'boolean', default: false },
-          },
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'boolean' },
-              message: { type: 'string' },
-              jobId: { type: 'string' },
-            },
-          },
-        },
-      },
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const body = request.body as { onlyPending?: boolean } | undefined;
-      const { onlyPending = false } = body || {};
-
-      request.log.info(`Admin triggering daily email job (onlyPending: ${onlyPending})`);
-
-      const job = emailJobManager.startJob(server, { onlyPending });
-
-      reply.code(200).send({
-        success: true,
-        message: 'Email sending scheduled. Track progress using the job ID.',
-        jobId: job.id,
-      });
-    }
-  );
-
-  // Get Email Job Status
-  server.get<{ Params: { id: string } }>(
-    '/admin/email-jobs/:id',
-    {
-      preHandler: [server.authenticate, server.authorize('hr')],
-      schema: {
-        description: 'Get the status of an email sending job',
-        tags: ['Admin'],
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-          },
-        },
-      },
-    },
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const { id } = request.params;
-      const job = emailJobManager.getJob(id);
-
-      if (!job) {
-        return reply.code(404).send({ message: 'Job not found' });
-      }
-
-      reply.code(200).send(job);
-    }
-  );
-
-  // User Import
-  server.post(
-    '/admin/users/import',
+    '/admin/users/batch',
     {
       preHandler: [server.authenticate, server.authorize('hr')],
     },
@@ -108,7 +37,7 @@ async function adminRoutes(
     adminController.getUsersHandler as any
   );
 
-  server.put(
+  server.patch(
     '/admin/users/:id',
     {
       preHandler: [server.authenticate, server.authorize('hr')],
@@ -141,13 +70,22 @@ async function adminRoutes(
     countryController.createCountryHandler as any
   );
 
-  server.put(
+  server.patch(
     '/admin/countries/:code',
     {
       preHandler: [server.authenticate, server.authorize('hr')],
     },
     countryController.updateCountryHandler as any
   );
+
+  server.delete(
+    '/admin/countries/:code',
+    {
+      preHandler: [server.authenticate, server.authorize('admin')],
+    },
+    countryController.deleteCountryHandler as any
+  );
+
 }
 
 export default adminRoutes;

@@ -1,8 +1,6 @@
 /**
- * Schema Index - Export all validation schemas
+ * Schema Index - Export all validation schemas (TypeBox)
  */
 
-export * from './auth.schema';
-export * from './entries.schema';
-export * from './requests.schema';
-export * from './admin.schema';
+export * from './typebox';
+export * from './lead.schema';

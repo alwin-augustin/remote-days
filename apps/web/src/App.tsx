@@ -4,13 +4,13 @@ import DashboardLayout from './layouts/DashboardLayout';
 import Login from './pages/Login';
 import { Toaster } from '@/components/ui/sonner';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { FeatureErrorBoundary } from '@/components/ErrorBoundary';
 
 import EmployeeSummary from '@/pages/hr/EmployeeSummary';
 import EmployeeList from '@/pages/hr/EmployeeList';
 import EmployeeDetails from '@/pages/hr/EmployeeDetails';
 import UserManagement from '@/pages/admin/UserManagement';
 import CountryThresholds from '@/pages/admin/CountryThresholds';
-import NotificationHistory from '@/pages/admin/NotificationHistory';
 import AuditLogs from '@/pages/admin/AuditLogs';
 import UserImport from '@/pages/admin/UserImport';
 import Holidays from '@/pages/admin/Holidays';
@@ -49,32 +49,31 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/compliance" element={<ComplianceDetails />} />
-            <Route path="/requests" element={<MyRequests />} />
+            <Route path="/" element={<FeatureErrorBoundary featureName="Dashboard"><Home /></FeatureErrorBoundary>} />
+            <Route path="/calendar" element={<FeatureErrorBoundary featureName="Calendar"><CalendarPage /></FeatureErrorBoundary>} />
+            <Route path="/compliance" element={<FeatureErrorBoundary featureName="Compliance"><ComplianceDetails /></FeatureErrorBoundary>} />
+            <Route path="/requests" element={<FeatureErrorBoundary featureName="Requests"><MyRequests /></FeatureErrorBoundary>} />
           </Route>
         </Route>
 
         {/* HR Routes */}
         <Route element={<ProtectedRoute roles={['hr', 'admin']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/hr" element={<EmployeeSummary />} />
-            <Route path="/hr/employees" element={<EmployeeList />} />
-            <Route path="/hr/employees/:id" element={<EmployeeDetails />} />
-            <Route path="/admin/requests" element={<Requests />} />
-            <Route path="/admin/holidays" element={<Holidays />} />
+            <Route path="/hr" element={<FeatureErrorBoundary featureName="Compliance Hub"><EmployeeSummary /></FeatureErrorBoundary>} />
+            <Route path="/hr/employees" element={<FeatureErrorBoundary featureName="Employees"><EmployeeList /></FeatureErrorBoundary>} />
+            <Route path="/hr/employees/:id" element={<FeatureErrorBoundary featureName="Employee Details"><EmployeeDetails /></FeatureErrorBoundary>} />
+            <Route path="/admin/requests" element={<FeatureErrorBoundary featureName="Requests"><Requests /></FeatureErrorBoundary>} />
+            <Route path="/admin/holidays" element={<FeatureErrorBoundary featureName="Holidays"><Holidays /></FeatureErrorBoundary>} />
           </Route>
         </Route>
 
         {/* Admin Routes */}
         <Route element={<ProtectedRoute roles={['admin', 'hr']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/admin/users" element={<UserManagement />} />
-            <Route path="/admin/users/import" element={<UserImport />} />
-            <Route path="/admin/countries" element={<CountryThresholds />} />
-            <Route path="/admin/notifications/trigger" element={<NotificationHistory />} />
-            <Route path="/admin/audit" element={<AuditLogs />} />
+            <Route path="/admin/users" element={<FeatureErrorBoundary featureName="Users"><UserManagement /></FeatureErrorBoundary>} />
+            <Route path="/admin/users/import" element={<FeatureErrorBoundary featureName="User Import"><UserImport /></FeatureErrorBoundary>} />
+            <Route path="/admin/countries" element={<FeatureErrorBoundary featureName="Country Limits"><CountryThresholds /></FeatureErrorBoundary>} />
+            <Route path="/admin/audit" element={<FeatureErrorBoundary featureName="Audit Logs"><AuditLogs /></FeatureErrorBoundary>} />
           </Route>
         </Route>
 

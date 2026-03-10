@@ -1,6 +1,5 @@
 import { build } from './app';
 import { config } from './config/env';
-import { startWorker } from './worker/worker';
 
 const server = build({
   logger: {
@@ -17,7 +16,6 @@ const server = build({
 const start = async () => {
   try {
     await server.ready();
-    startWorker(server);
     await server.listen({ port: config.PORT, host: config.HOST });
   } catch (err) {
     server.log.error(err);

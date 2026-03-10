@@ -10,6 +10,7 @@ export interface ICountryRepository {
   findByCode(code: string): Promise<CountryThreshold | null>;
   create(country: CountryThreshold): Promise<CountryThreshold>;
   update(code: string, maxRemoteDays: number): Promise<CountryThreshold | null>;
+  delete(code: string): Promise<boolean>;
 }
 
 export class CountryRepository implements ICountryRepository {
@@ -44,5 +45,13 @@ export class CountryRepository implements ICountryRepository {
       [maxRemoteDays, code]
     );
     return rows[0] || null;
+  }
+
+  async delete(code: string): Promise<boolean> {
+    const { rowCount } = await this.pool.query(
+      'DELETE FROM country_thresholds WHERE country_code = $1',
+      [code]
+    );
+    return (rowCount ?? 0) > 0;
   }
 }

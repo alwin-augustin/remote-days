@@ -19,8 +19,8 @@ export class HolidayController {
     reply: FastifyReply
   ) {
     const { year, country_code } = request.query;
-    const holidays = await this.holidayService.getHolidays(year, country_code);
-    return reply.send(holidays);
+    const data = await this.holidayService.getHolidays(year, country_code);
+    return reply.send({ data, total: data.length });
   }
 
   async deleteHoliday(request: FastifyRequest<{ Params: { id: number } }>, reply: FastifyReply) {

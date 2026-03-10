@@ -36,7 +36,7 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
             // Force immediate refetch to update compliance stats
             await Promise.all([
                 queryClient.refetchQueries({ queryKey: ['entries'] }),
-                queryClient.refetchQueries({ queryKey: ['stats'] }),
+                queryClient.refetchQueries({ queryKey: ['compliance', 'me'] }),
             ]);
             toast.success("Status updated!");
         },
@@ -52,15 +52,18 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
     };
 
     const isSelectionLocked = !!currentStatus && currentStatus !== 'unknown' && isToday;
+    const isExistingSelection = currentStatus && currentStatus !== 'unknown';
 
     return (
-        <Card className="w-full">
+        <Card className="w-full border-border/70 shadow-sm">
             <CardHeader>
                 <CardTitle>Work Status for {isToday ? "Today" : format(selectedDate, 'EEEE, MMM d')}</CardTitle>
                 <CardDescription>
                     {isSelectionLocked
-                        ? "Status is locked for today. Submit a request to change it."
-                        : "Where are you working from?"}
+                        ? "Your declaration is locked for today. Use a correction request if it needs to change."
+                        : isExistingSelection
+                            ? "You can review the current selection below."
+                            : "Choose where you are working from to complete today's declaration."}
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
@@ -72,6 +75,7 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
                         <Button
                             key={status}
                             variant="outline"
+                            type="button"
                             className={cn(
                                 "h-24 flex-col gap-2 border-2 transition-all duration-200 active:scale-95",
                                 isActive
@@ -82,6 +86,7 @@ export default function StatusCard({ currentStatus, selectedDate = new Date() }:
                             )}
                             onClick={() => handleStatusChange(status)}
                             disabled={mutation.isPending || isSelectionLocked}
+                            aria-pressed={isActive}
                         >
                             {mutation.isPending && isActive ? <Loader2 className="h-6 w-6 animate-spin" /> : <Icon className="h-6 w-6" />}
                             <span className="font-medium">{config.label}</span>

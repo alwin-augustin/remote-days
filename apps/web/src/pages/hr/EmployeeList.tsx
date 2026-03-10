@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 import type { work_status } from '@remotedays/types';
@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, RefreshCcw, Pencil } from 'lucide-react';
+import { ArrowLeft, RefreshCcw, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
     Table,
@@ -28,28 +28,32 @@ import { TablePagination } from '@/components/TablePagination';
 import { OverrideEntryDialog } from '@/components/OverrideEntryDialog';
 import { ComplianceProgressBar } from '@/components/ComplianceProgressBar';
 import { format } from 'date-fns';
+import { PageHeader } from '@/components/PageHeader';
+import { InlineErrorState, TableEmptyState, TableLoadingState } from '@/components/DataStates';
+import { SectionCard } from '@/components/SectionCard';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type DailyEntry = {
-    user_id: string;
-    first_name: string;
-    last_name: string;
+    userId: string;
+    firstName: string;
+    lastName: string;
     email: string;
     status: work_status;
-    country_of_residence: string;
-    work_country?: string;
+    countryOfResidence: string;
+    workCountry?: string;
 }
 
 type EmployeeSummaryType = {
-    user_id: string;
-    first_name: string;
-    last_name: string;
-    country_of_residence: string;
-    work_country: string;
-    days_used_current_year: number;
-    max_remote_days: number;
-    days_remaining: number;
-    percent_used: number;
-    traffic_light: 'red' | 'orange' | 'green';
+    userId: string;
+    firstName: string;
+    lastName: string;
+    countryOfResidence: string;
+    workCountry: string;
+    daysUsedCurrentYear: number;
+    maxRemoteDays: number;
+    daysRemaining: number;
+    percentUsed: number;
+    trafficLight: 'red' | 'orange' | 'green';
 }
 
 export default function EmployeeList() {
@@ -66,22 +70,24 @@ export default function EmployeeList() {
     const [overrideOpen, setOverrideOpen] = useState(false);
     const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null);
 
+    const queryClient = useQueryClient();
+
     // --- Queries ---
 
     // Fetch daily entries for override functionality
-    const { data: dailyEntries } = useQuery({
-        queryKey: ['hr', 'daily', format(new Date(), 'yyyy-MM-dd')],
+    const { data: dailyEntries, isError: isDailyEntriesError } = useQuery({
+        queryKey: ['employees', 'daily', format(new Date(), 'yyyy-MM-dd')],
         queryFn: async () => {
-            const res = await api.get<DailyEntry[]>(`/hr/entries/daily?date=${format(new Date(), 'yyyy-MM-dd')}`);
+            const res = await api.get<DailyEntry[]>(`/employees/entries/daily?date=${format(new Date(), 'yyyy-MM-dd')}`);
             return res.data;
         },
     });
 
     // Annual Summary
-    const { data: annualSummaries, isLoading: isLoadingAnnual } = useQuery({
-        queryKey: ['hr', 'summary'],
+    const { data: annualSummaries, isLoading: isLoadingAnnual, isError: isAnnualError } = useQuery({
+        queryKey: ['employees', 'summary'],
         queryFn: async () => {
-            const res = await api.get<EmployeeSummaryType[]>('/hr/summary');
+            const res = await api.get<EmployeeSummaryType[]>('/employees/summary');
             return res.data;
         },
     });
@@ -119,14 +125,14 @@ export default function EmployeeList() {
         // Apply text filter
         if (textFilter) {
             employees = employees.filter(emp =>
-                `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(textFilter.toLowerCase())
+                `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(textFilter.toLowerCase())
             );
         }
 
         // Apply risk filter
         if (riskFilter !== 'all') {
             employees = employees.filter(emp => {
-                const pct = Number(emp.percent_used);
+                const pct = Number(emp.percentUsed);
                 switch (riskFilter) {
                     case 'exceeded':
                         return pct >= 100;
@@ -145,32 +151,44 @@ export default function EmployeeList() {
         return employees;
     }, [annualSummaries, textFilter, riskFilter]);
 
+    const todayEntryByUserId = useMemo(() => {
+        return new Map((dailyEntries || []).map((entry) => [entry.userId, entry]));
+    }, [dailyEntries]);
+
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center gap-4">
-                <Link to="/hr">
-                    <Button variant="outline" size="icon">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                </Link>
-                <div className="flex-1">
-                    <h1 className="text-3xl font-bold tracking-tight">Employee List</h1>
-                    <p className="text-muted-foreground">
-                        {riskFilter !== 'all'
-                            ? `Showing ${filteredEmployees.length} employees in ${riskFilter} status`
-                            : `Showing all ${filteredEmployees.length} employees`
-                        }
-                    </p>
-                </div>
-                <Button variant="outline" size="icon" onClick={handleResetFilters} title="Reset Filters">
-                    <RefreshCcw className="h-4 w-4" />
-                </Button>
-            </div>
+            <PageHeader
+                title="Employees"
+                description={
+                    riskFilter !== 'all'
+                        ? `Showing ${filteredEmployees.length} employees in the ${riskFilter} risk segment.`
+                        : `Review all ${filteredEmployees.length} employees and move directly into overrides when today's entry exists.`
+                }
+                actions={
+                    <>
+                        <Link to="/hr">
+                            <Button variant="outline">
+                                <ArrowLeft className="h-4 w-4" />
+                                Back to Hub
+                            </Button>
+                        </Link>
+                        <Button variant="outline" size="icon" onClick={handleResetFilters} title="Reset filters" aria-label="Reset filters">
+                            <RefreshCcw className="h-4 w-4" />
+                        </Button>
+                    </>
+                }
+            />
+
+            {(isAnnualError || isDailyEntriesError) ? (
+                <InlineErrorState description="Employee data is partially unavailable. Refresh to try again." />
+            ) : null}
 
             {/* Filters */}
-            <Card>
-                <div className="p-4">
+            <SectionCard
+                title="Filters"
+                description="Search by employee name and narrow the list by compliance risk."
+                contentClassName="pt-6"
+            >
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1">
                             <Input
@@ -192,22 +210,24 @@ export default function EmployeeList() {
                             </SelectContent>
                         </Select>
                     </div>
-                </div>
-            </Card>
+            </SectionCard>
 
             {/* Employee Table */}
-            <Card>
-                <div className="p-6">
+            <SectionCard
+                title="Employee Overview"
+                description="Desktop shows a dense table. Smaller screens switch to stacked cards with the same actions."
+                contentClassName="pt-6"
+            >
                     {isLoadingAnnual ? (
-                        <div className="flex justify-center p-8">
-                            <Loader2 className="h-8 w-8 animate-spin" />
-                        </div>
+                        <TableLoadingState rows={6} />
                     ) : filteredEmployees.length === 0 ? (
-                        <div className="text-center p-8 text-muted-foreground">
-                            No employees found matching your filters.
-                        </div>
+                        <TableEmptyState
+                            title="No matching employees"
+                            description="Adjust the search query or risk filter to broaden the result set."
+                        />
                     ) : (
                         <>
+                            <div className="hidden lg:block">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -222,7 +242,8 @@ export default function EmployeeList() {
                                 </TableHeader>
                                 <TableBody>
                                     {filteredEmployees.slice((page - 1) * pageSize, page * pageSize).map(summary => {
-                                        const percentUsed = Number(summary.percent_used || 0);
+                                        const percentUsed = Number(summary.percentUsed || 0);
+                                        const todayEntry = todayEntryByUserId.get(summary.userId);
                                         const getStatusColor = () => {
                                             if (percentUsed >= 100) return 'text-red-600';
                                             if (percentUsed >= 90) return 'text-red-500';
@@ -242,18 +263,18 @@ export default function EmployeeList() {
                                         const statusBadge = getStatusBadge();
 
                                         return (
-                                            <TableRow key={summary.user_id}>
+                                            <TableRow key={summary.userId}>
                                                 <TableCell className="font-medium">
                                                     <Link
-                                                        to={`/hr/employees/${summary.user_id}`}
+                                                        to={`/hr/employees/${summary.userId}`}
                                                         className="hover:underline"
                                                     >
-                                                        {summary.first_name} {summary.last_name}
+                                                        {summary.firstName} {summary.lastName}
                                                     </Link>
                                                 </TableCell>
-                                                <TableCell>{summary.work_country}</TableCell>
-                                                <TableCell>{summary.days_used_current_year}</TableCell>
-                                                <TableCell>{summary.max_remote_days}</TableCell>
+                                                <TableCell>{summary.workCountry}</TableCell>
+                                                <TableCell>{summary.daysUsedCurrentYear}</TableCell>
+                                                <TableCell>{summary.maxRemoteDays}</TableCell>
                                                 <TableCell>
                                                     <div className="space-y-1">
                                                         <div className="flex items-center gap-2">
@@ -262,8 +283,8 @@ export default function EmployeeList() {
                                                             </span>
                                                         </div>
                                                         <ComplianceProgressBar
-                                                            value={summary.days_used_current_year}
-                                                            max={summary.max_remote_days}
+                                                            value={summary.daysUsedCurrentYear}
+                                                            max={summary.maxRemoteDays}
                                                             showThresholds={false}
                                                             className="w-32"
                                                         />
@@ -275,27 +296,92 @@ export default function EmployeeList() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                        onClick={() => {
-                                                            // Find today's entry for this user
-                                                            const todayEntry = dailyEntries?.find(e => e.user_id === summary.user_id);
-                                                            if (todayEntry) {
-                                                                handleEditClick(todayEntry);
-                                                            }
-                                                        }}
-                                                        title="Override Entry"
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <span>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8"
+                                                                        onClick={() => todayEntry && handleEditClick(todayEntry)}
+                                                                        title="Override today's entry"
+                                                                        aria-label={`Override today's entry for ${summary.firstName} ${summary.lastName}`}
+                                                                        disabled={!todayEntry}
+                                                                    >
+                                                                        <Pencil className="h-4 w-4" />
+                                                                    </Button>
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                {todayEntry ? 'Override today’s entry' : 'No entry declared today'}
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 </TableCell>
                                             </TableRow>
                                         );
                                     })}
                                 </TableBody>
                             </Table>
+                            </div>
+
+                            <div className="grid gap-4 lg:hidden">
+                                {filteredEmployees.slice((page - 1) * pageSize, page * pageSize).map((summary) => {
+                                    const percentUsed = Number(summary.percentUsed || 0);
+                                    const todayEntry = todayEntryByUserId.get(summary.userId);
+                                    const badgeTone =
+                                        percentUsed >= 100 ? 'bg-red-500 hover:bg-red-600' :
+                                        percentUsed >= 90 ? 'bg-red-400 hover:bg-red-500' :
+                                        percentUsed >= 75 ? 'bg-orange-500 hover:bg-orange-600' :
+                                        percentUsed >= 50 ? 'bg-amber-500 hover:bg-amber-600' :
+                                        'bg-green-500 hover:bg-green-600';
+
+                                    return (
+                                        <Card key={summary.userId} className="border-border/70 p-4 shadow-sm">
+                                            <div className="space-y-4">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <Link to={`/hr/employees/${summary.userId}`} className="font-semibold hover:underline">
+                                                            {summary.firstName} {summary.lastName}
+                                                        </Link>
+                                                        <p className="text-sm text-muted-foreground">{summary.workCountry} resident threshold</p>
+                                                    </div>
+                                                    <Badge className={badgeTone}>
+                                                        {percentUsed >= 100 ? 'Exceeded' : percentUsed >= 90 ? 'Critical' : percentUsed >= 75 ? 'High' : percentUsed >= 50 ? 'Moderate' : 'Healthy'}
+                                                    </Badge>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span>{summary.daysUsedCurrentYear} / {summary.maxRemoteDays} remote days</span>
+                                                        <span className="font-semibold">{percentUsed.toFixed(1)}%</span>
+                                                    </div>
+                                                    <ComplianceProgressBar
+                                                        value={summary.daysUsedCurrentYear}
+                                                        max={summary.maxRemoteDays}
+                                                        showThresholds={false}
+                                                    />
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <Link to={`/hr/employees/${summary.userId}`}>
+                                                        <Button variant="outline" size="sm">View Details</Button>
+                                                    </Link>
+                                                    {todayEntry ? (
+                                                        <Button variant="outline" size="sm" onClick={() => handleEditClick(todayEntry)}>
+                                                            <Pencil className="h-4 w-4" />
+                                                            Override Today
+                                                        </Button>
+                                                    ) : (
+                                                        <Button variant="outline" size="sm" disabled>
+                                                            No entry today
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
 
                             <div className="mt-4">
                                 <TablePagination
@@ -306,15 +392,17 @@ export default function EmployeeList() {
                             </div>
                         </>
                     )}
-                </div>
-            </Card>
+            </SectionCard>
 
             <OverrideEntryDialog
                 open={overrideOpen}
                 onOpenChange={setOverrideOpen}
                 entry={selectedEntry}
                 date={format(new Date(), 'yyyy-MM-dd')}
-                onSuccess={() => setSelectedEntry(null)}
+                onSuccess={() => {
+                    setSelectedEntry(null);
+                    queryClient.invalidateQueries({ queryKey: ['employees', 'daily'] });
+                }}
             />
         </div>
     );

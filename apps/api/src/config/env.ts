@@ -52,6 +52,6 @@ export const config: Config = {
   APP_URL: process.env.APP_URL || 'http://localhost:5173',
   EMAIL_FROM: process.env.EMAIL_FROM || 'noreply@remotedays.app',
   MAX_HOME_DAYS: parseInt(process.env.MAX_HOME_DAYS || '34', 10),
-  JWT_EXPIRATION: process.env.JWT_EXPIRATION || '1d',
+  JWT_EXPIRATION: process.env.JWT_EXPIRATION || '8h',
   DAILY_EMAIL_LIMIT: process.env.DAILY_EMAIL_LIMIT ? parseInt(process.env.DAILY_EMAIL_LIMIT, 10) : undefined,
 };

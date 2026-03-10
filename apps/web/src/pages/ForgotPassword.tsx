@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -39,11 +39,10 @@ export default function ForgotPassword() {
     const onSubmit = async (values: ForgotPasswordFormValues) => {
         setIsLoading(true);
         try {
-            await api.post('/auth/password-reset-request', values);
+            await api.post('/auth/password-resets', values);
             setIsSubmitted(true);
         } catch (error) {
-            console.error('Password reset request failed:', error);
-            toast.error('Failed to send password reset email. Please try again.');
+            toast.error(getApiErrorMessage(error, 'Failed to send password reset email. Please try again.'));
         } finally {
             setIsLoading(false);
         }

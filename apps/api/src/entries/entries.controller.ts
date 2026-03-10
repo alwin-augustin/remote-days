@@ -1,7 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { work_status } from '@remotedays/types';
 import { EntryService } from '../services/entry.service';
-import { AppError } from '../errors/app-error';
 
 export class EntriesController {
   constructor(private readonly entryService: EntryService) {}
@@ -13,49 +12,47 @@ export class EntriesController {
     const { status, date } = request.body;
     const user = request.user;
 
-    if (!status || !date) {
-      throw new AppError('Status and date are required', 400);
-    }
-
-    const entry = await this.entryService.createOrUpdateEntry(user.user_id, date, status, user.role, user.user_id);
-    reply.code(201).send(entry);
+    const allowOverwrite = ['hr', 'admin'].includes(user.role);
+    const entry = await this.entryService.createOrUpdateEntry(user.user_id, date, status, allowOverwrite, user.user_id);
+    return reply.code(201).send(entry);
   };
 
+  // PATCH /entries/:userId/:date
   overrideEntryHandler = async (
-    request: FastifyRequest<{ Body: { targetUserId: string; date: string; status: work_status; reason: string } }>,
+    request: FastifyRequest<{
+      Params: { userId: string; date: string };
+      Body: { status: work_status; reason: string };
+    }>,
     reply: FastifyReply
   ) => {
-    const { targetUserId, date, status, reason } = request.body;
+    const { userId: targetUserId, date } = request.params;
+    const { status, reason } = request.body;
     const user = request.user;
 
-    if (!targetUserId || !date || !status || !reason) {
-      throw new AppError('Target user, date, status, and reason are required', 400);
-    }
-
-    const entry = await this.entryService.overrideEntry(targetUserId, date, status, reason, user.user_id, user.role);
-    reply.code(200).send(entry);
+    const entry = await this.entryService.overrideEntry(targetUserId, date, status, reason, user.user_id);
+    return reply.code(200).send(entry);
   };
 
   getEntriesHandler = async (
-    request: FastifyRequest<{ Querystring: { year?: string; month?: string; limit?: string; offset?: string } }>,
+    request: FastifyRequest<{ Querystring: { year?: string; month?: string; limit?: number; offset?: number } }>,
     reply: FastifyReply
   ) => {
     const { year, month, limit, offset } = request.query;
     const user = request.user;
 
     const entries = await this.entryService.getEntries(user.user_id, {
-      year,
-      month,
-      limit: limit ? parseInt(limit, 10) : 10,
-      offset: offset ? parseInt(offset, 10) : 0,
+      year: year?.toString(),
+      month: month?.toString(),
+      limit: limit ?? 10,
+      offset: offset ?? 0,
     });
 
-    reply.code(200).send(entries);
+    return reply.code(200).send(entries);
   };
 
   getStatsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user;
     const stats = await this.entryService.getUserStats(user.user_id);
-    reply.code(200).send(stats);
+    return reply.code(200).send(stats);
   };
 }

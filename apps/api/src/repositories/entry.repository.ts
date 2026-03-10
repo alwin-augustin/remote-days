@@ -12,10 +12,11 @@ export interface Entry {
 }
 
 export interface IEntryRepository {
-  upsert(userId: string, date: string, status: work_status, source: string, actorId?: string): Promise<Entry>;
+  upsert(userId: string, date: string, status: work_status, source: string, actorId?: string, reason?: string): Promise<Entry>;
+  updateById(id: string, status: work_status, actorId: string, reason: string): Promise<Entry | undefined>;
   findByUserAndDate(userId: string, date: string): Promise<Entry | undefined>;
   findByUserAndMonth(userId: string, year: number | string, month: number | string): Promise<Entry[]>;
-  findAllByUser(userId: string, limit: number, offset: number): Promise<Entry[]>;
+  findAllByUser(userId: string, limit: number, offset: number): Promise<{ entries: Entry[]; total: number }>;
   getStatsForYear(
     userId: string,
     year: number | string
@@ -25,20 +26,29 @@ export interface IEntryRepository {
 export class EntryRepository implements IEntryRepository {
   constructor(private pool: Pool) {}
 
-  async findAllByUser(userId: string, limit: number, offset: number): Promise<Entry[]> {
-    const { rows } = await this.pool.query<Entry>(
-      'SELECT * FROM entries WHERE user_id = $1 ORDER BY date DESC LIMIT $2 OFFSET $3',
-      [userId, limit, offset]
-    );
-    return rows;
+  async findAllByUser(userId: string, limit: number, offset: number): Promise<{ entries: Entry[]; total: number }> {
+    const [{ rows }, { rows: countRows }] = await Promise.all([
+      this.pool.query<Entry>(
+        'SELECT * FROM entries WHERE user_id = $1 ORDER BY date DESC LIMIT $2 OFFSET $3',
+        [userId, limit, offset]
+      ),
+      this.pool.query<{ count: string }>(
+        'SELECT COUNT(*) FROM entries WHERE user_id = $1',
+        [userId]
+      ),
+    ]);
+    return { entries: rows, total: parseInt(countRows[0].count, 10) };
   }
 
-  async upsert(userId: string, date: string, status: work_status, source: string, actorId?: string): Promise<Entry> {
+  async upsert(userId: string, date: string, status: work_status, source: string, actorId?: string, reason?: string): Promise<Entry> {
     const client = await this.pool.connect();
     try {
+      await client.query('BEGIN');
       if (actorId) {
-        await client.query('BEGIN');
         await client.query("SELECT set_config('app.actor_user_id', $1, true)", [actorId]);
+      }
+      if (reason) {
+        await client.query("SELECT set_config('app.actor_reason', $1, true)", [reason]);
       }
 
       const { rows } = await client.query<Entry>(
@@ -49,14 +59,30 @@ export class EntryRepository implements IEntryRepository {
         [userId, date, status, source]
       );
 
-      if (actorId) {
-        await client.query('COMMIT');
-      }
+      await client.query('COMMIT');
       return rows[0];
     } catch (err) {
-      if (actorId) {
-        await client.query('ROLLBACK');
-      }
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateById(id: string, status: work_status, actorId: string, reason: string): Promise<Entry | undefined> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query("SELECT set_config('app.actor_user_id', $1, true)", [actorId]);
+      await client.query("SELECT set_config('app.actor_reason', $1, true)", [reason]);
+      const { rows } = await client.query<Entry>(
+        "UPDATE entries SET status = $1, source = 'hr_correction' WHERE id = $2 RETURNING *",
+        [status, id]
+      );
+      await client.query('COMMIT');
+      return rows[0];
+    } catch (err) {
+      await client.query('ROLLBACK');
       throw err;
     } finally {
       client.release();

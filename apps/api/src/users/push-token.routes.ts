@@ -7,8 +7,8 @@ interface RegisterTokenBody {
   deviceName?: string;
 }
 
-async function pushTokenRoutes(server: FastifyInstance) {
-  const pushService = new PushService(server);
+async function pushTokenRoutes(server: FastifyInstance, options: { pushService: PushService }) {
+  const { pushService } = options;
 
   // Register push token
   server.post<{ Body: RegisterTokenBody }>(
@@ -41,7 +41,7 @@ async function pushTokenRoutes(server: FastifyInstance) {
 
       await pushService.registerToken(userId, token, platform, deviceName);
 
-      reply.send({ message: 'Push token registered successfully' });
+      return reply.send({ message: 'Push token registered successfully' });
     }
   );
 
@@ -63,7 +63,7 @@ async function pushTokenRoutes(server: FastifyInstance) {
 
       await pushService.unregisterToken(userId);
 
-      reply.code(204).send();
+      return reply.code(204).send();
     }
   );
 
@@ -96,7 +96,7 @@ async function pushTokenRoutes(server: FastifyInstance) {
           { test: true }
         );
 
-        reply.send(result);
+        return reply.send(result);
       }
     );
   }

@@ -26,4 +26,8 @@ export class CountryService {
     }
     return this.countryRepo.update(code, maxRemoteDays);
   }
+
+  async deleteCountry(code: string): Promise<boolean> {
+    return this.countryRepo.delete(code);
+  }
 }

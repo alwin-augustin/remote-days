@@ -26,6 +26,6 @@ export class CtaController {
     }
 
     const result = await this.ctaService.recordStatusFromToken(token, decryptedEmail);
-    reply.code(200).send({ message: 'Status recorded', ...result });
+    return reply.code(200).send({ message: 'Status recorded', ...result });
   };
 }
