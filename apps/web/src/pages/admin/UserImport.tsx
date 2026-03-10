@@ -1,13 +1,15 @@
 import { useState, useRef } from 'react';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertCircle, CheckCircle, Upload, ArrowLeft } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/PageHeader';
+import { SectionCard } from '@/components/SectionCard';
 
 interface ImportError {
     row: number;
@@ -43,7 +45,7 @@ export default function UserImport() {
 
         setIsLoading(true);
         try {
-            const res = await api.post<ImportResult>('/admin/users/import', formData, {
+            const res = await api.post<ImportResult>('/admin/users/batch', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -54,9 +56,8 @@ export default function UserImport() {
             } else if (res.data.errors.length > 0) {
                 toast.warning('Import completed with errors');
             }
-        } catch (error: any) {
-            console.error(error);
-            toast.error(error.response?.data?.message || 'Failed to upload CSV');
+        } catch (error: unknown) {
+            toast.error(getApiErrorMessage(error, 'Failed to upload CSV'));
         } finally {
             setIsLoading(false);
         }
@@ -64,21 +65,22 @@ export default function UserImport() {
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate('/admin/users')}>
-                    <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <h1 className="text-3xl font-bold tracking-tight">Import Users</h1>
-            </div>
+            <PageHeader
+                title="User Import"
+                actions={
+                    <Button variant="outline" onClick={() => navigate('/admin/users')}>
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Users
+                    </Button>
+                }
+            />
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Upload CSV</CardTitle>
-                    <CardDescription>
-                        Upload a CSV file with the following headers: <code>email, first_name, last_name, country_of_residence, work_country</code>
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
+            <SectionCard
+                title="Upload CSV"
+                description="Use a CSV with the headers email, first_name, last_name, country_of_residence, and work_country."
+                contentClassName="pt-6"
+            >
+                <CardContent className="space-y-4 px-0 pb-0">
                     <div className="grid w-full max-w-sm items-center gap-1.5">
                         <Input
                             ref={fileInputRef}
@@ -97,7 +99,7 @@ export default function UserImport() {
                         )}
                     </Button>
                 </CardContent>
-            </Card>
+            </SectionCard>
 
             {result && (
                 <div className="space-y-6">

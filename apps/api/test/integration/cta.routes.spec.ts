@@ -24,7 +24,7 @@ describe('CTA Integration', () => {
       work_country: 'FR',
       role: 'employee',
       password_hash: hashedPassword,
-      is_active: true
+      is_active: true,
     });
     userId = user.user_id;
 
@@ -34,7 +34,7 @@ describe('CTA Integration', () => {
 
     // Insert token directly
     await app.pg.query(
-      "INSERT INTO email_cta_tokens (token, user_id, action, target_date, expires_at) VALUES ($1, $2, $3, $4, $5)",
+      'INSERT INTO email_cta_tokens (token, user_id, action, target_date, expires_at) VALUES ($1, $2, $3, $4, $5)',
       [token, userId, 'home', new Date().toISOString().split('T')[0], expiresAt]
     );
   });
@@ -47,14 +47,16 @@ describe('CTA Integration', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/cta/process',
-      payload: { token }
+      payload: { token },
     });
 
     expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.payload)).toEqual(expect.objectContaining({
-      message: 'Status recorded',
-      status: 'home'
-    })); // date might be present, ignoring exact match for now
+    expect(JSON.parse(res.payload)).toEqual(
+      expect.objectContaining({
+        message: 'Status recorded',
+        status: 'home',
+      })
+    ); // date might be present, ignoring exact match for now
 
     // Verify entry
     const { rows } = await app.pg.query('SELECT * FROM entries WHERE user_id = $1', [userId]);
@@ -67,10 +69,12 @@ describe('CTA Integration', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/cta/process',
-      payload: { token: randomUUID() }
+      payload: { token: randomUUID() },
     });
 
     expect(res.statusCode).toBe(400);
-    expect(JSON.parse(res.payload)).toEqual({ status: 'error', message: 'Invalid token' });
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(false);
+    expect(body.error.message).toBe('Invalid token');
   });
 });

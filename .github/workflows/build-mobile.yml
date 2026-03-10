@@ -1,0 +1,101 @@
+name: Build Mobile App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/types/**'
+      - 'packages/shared/**'
+      - '.github/workflows/build-mobile.yml'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+
+concurrency:
+  group: build-mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ===========================================
+  # EAS Build
+  # ===========================================
+  build:
+    name: EAS Build
+    runs-on: ubuntu-latest
+    env:
+      BUILD_PLATFORM: ${{ github.event.inputs.platform || 'all' }}
+      BUILD_PROFILE: ${{ github.event.inputs.profile || 'preview' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create mobile .env file
+        run: |
+          echo "EXPO_PUBLIC_API_URL=$API_URL" > apps/mobile/.env
+        env:
+          API_URL: ${{ vars.API_URL || 'https://api.remotedays.app' }}
+
+      - name: Build iOS
+        if: env.BUILD_PLATFORM == 'all' || env.BUILD_PLATFORM == 'ios'
+        run: |
+          if [ "$BUILD_PROFILE" = "production" ]; then
+            eas build --platform ios --profile production --non-interactive --auto-submit
+          else
+            eas build --platform ios --profile "$BUILD_PROFILE" --non-interactive
+          fi
+        working-directory: apps/mobile
+
+      - name: Build Android
+        if: env.BUILD_PLATFORM == 'all' || env.BUILD_PLATFORM == 'android'
+        run: |
+          if [ "$BUILD_PROFILE" = "production" ]; then
+            eas build --platform android --profile production --non-interactive --auto-submit
+          else
+            eas build --platform android --profile "$BUILD_PROFILE" --non-interactive
+          fi
+        working-directory: apps/mobile
+
+      - name: Build summary
+        run: |
+          echo "## Mobile Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Platform:** $BUILD_PLATFORM" >> $GITHUB_STEP_SUMMARY
+          echo "**Profile:** $BUILD_PROFILE" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View builds at: https://expo.dev" >> $GITHUB_STEP_SUMMARY

@@ -8,46 +8,55 @@ import { ArrowLeft, Mail, MapPin } from 'lucide-react';
 import { ComplianceStatusCard } from '@/components/ComplianceStatusCard';
 import { WeekCalendar } from '@/components/WeekCalendar';
 import type { work_status } from '@remotedays/types';
+import { PageHeader } from '@/components/PageHeader';
 
-interface EmployeeData {
-  user_id: string;
-  first_name: string;
-  last_name: string;
+type EmployeeSummary = {
+  userId: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  role: string;
-  country_of_residence: string;
-  work_country: string;
-  days_used_current_year: number;
-  max_remote_days: number;
-  percent_used: number;
-}
+  countryOfResidence: string;
+  workCountry: string;
+  daysUsedCurrentYear: number;
+  maxRemoteDays: number;
+  percentUsed: number;
+  trafficLight: string;
+};
+
+type EmployeeEntry = {
+  userId: string;
+  date: string;
+  status: work_status;
+};
 
 export default function EmployeeDetails() {
   const { id } = useParams<{ id: string }>();
+  const year = String(new Date().getFullYear());
+  const month = String(new Date().getMonth() + 1).padStart(2, '0');
 
-  // Fetch employee summary data
-  const { data: employee, isLoading } = useQuery({
-    queryKey: ['employee', id],
+  const { data: summaries, isLoading } = useQuery({
+    queryKey: ['employees', 'summary'],
     queryFn: async () => {
-      const res = await api.get<EmployeeData>(`/admin/users/${id}`);
+      const res = await api.get<EmployeeSummary[]>('/employees/summary');
       return res.data;
     },
     enabled: !!id,
   });
 
-  // Fetch employee entries
-  const { data: entries } = useQuery({
-    queryKey: ['employee-entries', id],
+  const employee = summaries?.find((e) => e.userId === id);
+
+  const { data: allEntries } = useQuery({
+    queryKey: ['employees', 'entries', year, month],
     queryFn: async () => {
-      const year = new Date().getFullYear();
-      const month = String(new Date().getMonth() + 1).padStart(2, '0');
-      const res = await api.get<{ date: string; status: work_status }[]>(
-        `/entries?year=${year}&month=${month}&userId=${id}`
+      const res = await api.get<EmployeeEntry[]>(
+        `/employees/entries?year=${year}&month=${month}`
       );
       return res.data;
     },
     enabled: !!id,
   });
+
+  const entries = allEntries?.filter((e) => e.userId === id) ?? [];
 
   if (isLoading) {
     return (
@@ -68,20 +77,23 @@ export default function EmployeeDetails() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/hr">
-          <Button variant="outline" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {employee.first_name} {employee.last_name}
-          </h1>
-          <p className="text-muted-foreground">{employee.role}</p>
-        </div>
-      </div>
+      <PageHeader
+        title={`${employee.firstName} ${employee.lastName}`}
+        description={employee.email}
+        actions={
+          <>
+            <Link to="/hr/employees">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Employees
+              </Button>
+            </Link>
+            <Button variant="outline" onClick={() => window.open(`mailto:${employee.email}`)}>
+              Send Email
+            </Button>
+          </>
+        }
+      />
 
       {/* Employee Info Card */}
       <Card>
@@ -98,7 +110,7 @@ export default function EmployeeDetails() {
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" />
             <span>
-              Country of Residence: {employee.country_of_residence} | Work Country: {employee.work_country}
+              Country of Residence: {employee.countryOfResidence} | Work Country: {employee.workCountry}
             </span>
           </div>
         </CardContent>
@@ -106,16 +118,16 @@ export default function EmployeeDetails() {
 
       {/* Compliance Status */}
       <ComplianceStatusCard
-        daysUsed={employee.days_used_current_year}
-        maxDays={employee.max_remote_days}
-        countryCode={employee.work_country}
+        daysUsed={employee.daysUsedCurrentYear}
+        maxDays={employee.maxRemoteDays}
+        countryCode={employee.workCountry}
       />
 
       {/* Recent Activity */}
       <div className="grid gap-4 md:grid-cols-2">
-        <WeekCalendar entries={entries || []} title="This Week" />
+        <WeekCalendar entries={entries} title="This Week" />
         <WeekCalendar
-          entries={entries || []}
+          entries={entries}
           startDate={new Date(new Date().setDate(new Date().getDate() + 7))}
           title="Next Week"
         />
@@ -124,18 +136,12 @@ export default function EmployeeDetails() {
       {/* Action Buttons */}
       <Card>
         <CardHeader>
-          <CardTitle>Actions</CardTitle>
+          <CardTitle>Next Step</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-2">
-          <Button variant="outline" onClick={() => window.open(`mailto:${employee.email}`)}>
-            Send Email
-          </Button>
-          <Button variant="outline" disabled>
-            View Full History
-          </Button>
-          <Button variant="outline" disabled>
-            Add Note
-          </Button>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Use the calendar above to review recent declarations. Additional history and note-taking are not exposed in the current API, so this page focuses on verified compliance and recent activity.
+          </p>
         </CardContent>
       </Card>
     </div>

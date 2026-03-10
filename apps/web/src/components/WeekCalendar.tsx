@@ -31,12 +31,12 @@ export function WeekCalendar({ entries, startDate = new Date(), title = 'This We
   };
 
   return (
-    <Card className={className}>
+    <Card className={cn('h-full', className)}>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-7 gap-2">
+      <CardContent className="h-full">
+        <div className="grid h-full grid-cols-7 gap-2">
           {days.map((day) => {
             const entry = getEntryForDate(day);
             const status = entry?.status || 'unknown';

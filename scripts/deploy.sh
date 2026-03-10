@@ -24,7 +24,7 @@ fi
 
 # 3. Create Remote Directories
 echo "📂 Creating remote directories..."
-ssh $EC2_USER@$EC2_HOST "mkdir -p $REMOTE_APP_DIR"
+ssh $EC2_USER@$EC2_HOST "mkdir -p $REMOTE_APP_DIR $REMOTE_ROOT/logs"
 
 # 4. Transfer Files
 echo "📤 Uploading application files..."

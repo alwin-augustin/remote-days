@@ -6,8 +6,8 @@ export class CountryController {
   constructor(private readonly countryService: CountryService) {}
 
   getCountriesHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-    const countries = await this.countryService.getAllCountries();
-    reply.code(200).send(countries);
+    const data = await this.countryService.getAllCountries();
+    return reply.code(200).send({ data, total: data.length });
   };
 
   createCountryHandler = async (
@@ -22,7 +22,7 @@ export class CountryController {
 
     try {
       const country = await this.countryService.addCountry(country_code, max_remote_days);
-      reply.code(201).send(country);
+      return reply.code(201).send(country);
     } catch (err: any) {
       if (err.code === '23505') {
         throw new AppError('Country already exists', 409);
@@ -46,6 +46,18 @@ export class CountryController {
     if (!updatedCountry) {
       throw new AppError('Country not found', 404);
     }
-    reply.code(200).send(updatedCountry);
+    return reply.code(200).send(updatedCountry);
+  };
+
+  deleteCountryHandler = async (
+    request: FastifyRequest<{ Params: { code: string } }>,
+    reply: FastifyReply
+  ) => {
+    const { code } = request.params;
+    const deleted = await this.countryService.deleteCountry(code);
+    if (!deleted) {
+      throw new AppError('Country not found', 404);
+    }
+    return reply.code(204).send();
   };
 }

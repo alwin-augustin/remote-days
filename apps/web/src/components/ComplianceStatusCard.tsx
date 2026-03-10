@@ -24,12 +24,19 @@ const iconMap = {
   XCircle,
 };
 
-export function ComplianceStatusCard({ daysUsed, maxDays }: ComplianceStatusCardProps) {
+const COUNTRY_LABELS: Record<string, { name: string; limit: number }> = {
+  FR: { name: 'France', limit: 34 },
+  BE: { name: 'Belgium', limit: 34 },
+  DE: { name: 'Germany', limit: 183 },
+};
+
+export function ComplianceStatusCard({ daysUsed, maxDays, countryCode }: ComplianceStatusCardProps) {
   const percentUsed = maxDays > 0 ? (daysUsed / maxDays) * 100 : 0;
   const daysRemaining = maxDays - daysUsed;
   const threshold = getComplianceLevel(percentUsed);
   const projected = calculateProjection(daysUsed, maxDays);
   const nextMilestone = getNextMilestone(daysUsed, maxDays);
+  const countryMeta = countryCode ? COUNTRY_LABELS[countryCode] : undefined;
 
   const Icon = iconMap[threshold.icon];
   const currentYear = new Date().getFullYear();
@@ -42,19 +49,33 @@ export function ComplianceStatusCard({ daysUsed, maxDays }: ComplianceStatusCard
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button className="text-muted-foreground hover:text-foreground">
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="View remote work compliance guidance"
+                >
                   <Info className="h-4 w-4" />
                 </button>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <div className="space-y-2 text-sm">
                   <p className="font-semibold">Remote Work Limits</p>
-                  <p>Your annual remote work limit is based on your country:</p>
-                  <ul className="list-disc list-inside space-y-1 text-xs">
-                    <li>France: 34 days/year</li>
-                    <li>Belgium: 34 days/year</li>
-                    <li>Germany: 34 days/year</li>
-                  </ul>
+                  {countryMeta ? (
+                    <p>
+                      Your current allowance is based on <span className="font-medium">{countryMeta.name}</span>:
+                      {' '}
+                      {countryMeta.limit} remote days per calendar year.
+                    </p>
+                  ) : (
+                    <>
+                      <p>Your annual remote work limit is based on your country of residence:</p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>France: 34 days/year</li>
+                        <li>Belgium: 34 days/year</li>
+                        <li>Germany: 183 days/year</li>
+                      </ul>
+                    </>
+                  )}
                   <p className="text-xs text-muted-foreground pt-2">
                     These limits ensure tax compliance and avoid permanent establishment risks.
                   </p>
@@ -71,6 +92,7 @@ export function ComplianceStatusCard({ daysUsed, maxDays }: ComplianceStatusCard
             <div className={cn('font-semibold', threshold.color.text)}>{threshold.label}</div>
             <div className="text-sm text-muted-foreground">
               {daysUsed} / {maxDays} remote days ({percentUsed.toFixed(1)}%)
+              {countryMeta ? ` for ${countryMeta.name}` : ''}
             </div>
           </div>
         </div>

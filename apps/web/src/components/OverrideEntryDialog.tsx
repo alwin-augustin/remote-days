@@ -1,17 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { toast } from 'sonner';
 import type { work_status } from '@remotedays/types';
 
-// Fallback if Textarea component doesn't exist (I didn't find it in search)
-// I will assume I can use a simple textarea with tailwind classes
-const TextareaFallback = ({ value, onChange, placeholder, className, required }: any) => (
+const TextareaFallback = ({ id, value, onChange, placeholder, className, required }: {
+    id?: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    placeholder?: string;
+    className?: string;
+    required?: boolean;
+}) => (
     <textarea
+        id={id}
         className={`flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
         value={value}
         onChange={onChange}
@@ -20,55 +26,51 @@ const TextareaFallback = ({ value, onChange, placeholder, className, required }:
     />
 );
 
+// camelCase as returned by the API
 type DailyEntry = {
-    user_id: string;
-    first_name: string;
-    last_name: string;
+    userId: string;
+    firstName: string;
+    lastName: string;
     email: string;
     status: work_status;
-    country_of_residence: string;
+    countryOfResidence: string;
 }
 
 interface OverrideEntryDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     entry: DailyEntry | null;
-    date: string; // yyyy-mm-dd
+    date: string; // yyyy-MM-dd
     onSuccess: () => void;
 }
 
 export function OverrideEntryDialog({ open, onOpenChange, entry, date, onSuccess }: OverrideEntryDialogProps) {
-    const [status, setStatus] = useState<work_status>('unknown');
+    const [status, setStatus] = useState<work_status>(entry?.status ?? 'unknown');
     const [reason, setReason] = useState('');
     const queryClient = useQueryClient();
 
-    useEffect(() => {
-        if (entry) {
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (nextOpen && entry) {
             setStatus(entry.status);
             setReason('');
         }
-    }, [entry, open]);
+        onOpenChange(nextOpen);
+    };
 
     const mutation = useMutation({
         mutationFn: async () => {
             if (!entry) return;
-            await api.post('/entries/override', {
-                targetUserId: entry.user_id,
-                date,
-                status,
-                reason
-            });
+            // FE-013: PATCH /entries/{userId}/{date} with { status, reason } in body
+            await api.patch(`/entries/${entry.userId}/${date}`, { status, reason });
         },
         onSuccess: async () => {
-            // Force immediate refetch to update data
-            await queryClient.refetchQueries({ queryKey: ['hr'] });
+            await queryClient.refetchQueries({ queryKey: ['employees'] });
             toast.success('Entry updated successfully');
             onSuccess();
             onOpenChange(false);
         },
         onError: (error: unknown) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            toast.error((error as any).response?.data?.message || 'Failed to update entry');
+            toast.error(getApiErrorMessage(error, 'Failed to update entry'));
         }
     });
 
@@ -84,12 +86,12 @@ export function OverrideEntryDialog({ open, onOpenChange, entry, date, onSuccess
     if (!entry) return null;
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Override Entry</DialogTitle>
                     <DialogDescription>
-                        Modify status for {entry.first_name} {entry.last_name} on {date}.
+                        Modify status for {entry.firstName} {entry.lastName} on {date}.
                         Reason is mandatory for audit purposes.
                     </DialogDescription>
                 </DialogHeader>
@@ -114,7 +116,7 @@ export function OverrideEntryDialog({ open, onOpenChange, entry, date, onSuccess
                         <TextareaFallback
                             id="reason"
                             value={reason}
-                            onChange={(e: any) => setReason(e.target.value)}
+                            onChange={(e) => setReason(e.target.value)}
                             placeholder="e.g. Employee forgot to declare, Manager request..."
                             required
                         />

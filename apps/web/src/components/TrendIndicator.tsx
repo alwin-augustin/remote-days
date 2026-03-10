@@ -73,6 +73,7 @@ export function TrendIndicator({ trend, tooltipText, className }: TrendIndicator
 /**
  * Calculate trend based on current monthly usage vs average
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function calculateTrend(
   currentMonthUsage: number,
   averageMonthUsage: number

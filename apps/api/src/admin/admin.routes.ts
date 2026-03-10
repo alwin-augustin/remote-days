@@ -11,9 +11,9 @@ async function adminRoutes(
 ) {
   const { adminController, countryController } = options;
 
-  // User Import
+  // User Batch Import (replaces /admin/users/import)
   server.post(
-    '/admin/users/import',
+    '/admin/users/batch',
     {
       preHandler: [server.authenticate, server.authorize('hr')],
     },
@@ -37,7 +37,7 @@ async function adminRoutes(
     adminController.getUsersHandler as any
   );
 
-  server.put(
+  server.patch(
     '/admin/users/:id',
     {
       preHandler: [server.authenticate, server.authorize('hr')],
@@ -70,13 +70,22 @@ async function adminRoutes(
     countryController.createCountryHandler as any
   );
 
-  server.put(
+  server.patch(
     '/admin/countries/:code',
     {
       preHandler: [server.authenticate, server.authorize('hr')],
     },
     countryController.updateCountryHandler as any
   );
+
+  server.delete(
+    '/admin/countries/:code',
+    {
+      preHandler: [server.authenticate, server.authorize('admin')],
+    },
+    countryController.deleteCountryHandler as any
+  );
+
 }
 
 export default adminRoutes;

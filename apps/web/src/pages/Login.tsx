@@ -61,7 +61,7 @@ export default function Login() {
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold">Login</CardTitle>
                     <CardDescription>
-                        Enter your email and password to access your account
+                        Sign in to declare today’s work location, review compliance, or manage your team depending on your role.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -113,9 +113,38 @@ export default function Login() {
                         </form>
                     </Form>
                 </CardContent>
-                <CardFooter className="flex flex-col gap-2">
+                <CardFooter className="flex flex-col gap-4">
+                    {/* Demo Credentials */}
+                    <div className="w-full rounded-lg bg-blue-50 border border-blue-200 p-4">
+                        <p className="text-sm font-medium text-blue-800 mb-3 text-center">Demo Credentials</p>
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-blue-700 font-medium">Admin:</span>
+                                <div className="text-right">
+                                    <span className="text-blue-900 font-mono text-xs">admin@remotedays.app</span>
+                                    <span className="text-blue-400 mx-1">/</span>
+                                    <span className="text-blue-900 font-mono text-xs">password123</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-blue-700 font-medium">Employee:</span>
+                                <div className="text-right">
+                                    <span className="text-blue-900 font-mono text-xs">employee1@remotedays.app</span>
+                                    <span className="text-blue-400 mx-1">/</span>
+                                    <span className="text-blue-900 font-mono text-xs">password123</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div className="text-center text-sm text-gray-500">
                         Need an account? Contact your HR administrator.
+                    </div>
+                    <div className="text-center text-xs text-gray-400 mt-2">
+                        <Link to="/legal/privacy" className="hover:underline">Privacy Policy</Link>
+                        {' | '}
+                        <Link to="/legal/terms" className="hover:underline">Terms of Service</Link>
+                        {' | '}
+                        <Link to="/legal/cookies" className="hover:underline">Cookies</Link>
                     </div>
                 </CardFooter>
             </Card>

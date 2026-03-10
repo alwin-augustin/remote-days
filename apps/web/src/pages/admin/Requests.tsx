@@ -1,16 +1,10 @@
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import type { EntryRequest } from '@remotedays/types';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { format } from 'date-fns';
 import { Check, X, Clock } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import {
     Table,
     TableBody,
@@ -21,31 +15,57 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/PageHeader';
+import { SectionCard } from '@/components/SectionCard';
+import { InlineErrorState, TableEmptyState, TableLoadingState } from '@/components/DataStates';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+
+type RequestItem = {
+    id: string;
+    date: string;
+    requestedStatus: string;
+    reason: string;
+    status: 'pending' | 'approved' | 'rejected';
+    userFirstName?: string;
+    userLastName?: string;
+    userEmail?: string;
+};
 
 export default function Requests() {
     const queryClient = useQueryClient();
+    const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
+    const [decision, setDecision] = useState<'approved' | 'rejected'>('approved');
+    const [adminNote, setAdminNote] = useState('');
 
-    // Fetch only pending requests for now, or all? 
-    // Let's fetch all but sort by pending first in backend. 
-    // Current backend 'getAllRequests' fetches all ordered by date DESC.
-    const { data: requests, isLoading } = useQuery({
-        queryKey: ['requests'],
+    const { data: requests, isLoading, isError } = useQuery({
+        queryKey: ['requests', 'all'],
         queryFn: async () => {
-            const res = await api.get<EntryRequest[]>('/admin/requests');
-            return res.data;
+            const res = await api.get<{ data: RequestItem[]; total: number }>('/requests');
+            return res.data.data;
         },
     });
 
     const processMutation = useMutation({
-        mutationFn: async ({ id, action, note }: { id: string; action: 'approve' | 'reject'; note?: string }) => {
-            await api.post(`/admin/requests/${id}/process`, { action, note });
+        mutationFn: async ({ id, status, note }: { id: string; status: 'approved' | 'rejected'; note?: string }) => {
+            await api.patch(`/requests/${id}`, { status, adminNote: note });
         },
         onSuccess: (_, variables) => {
-            toast.success(`Request ${variables.action}d`);
+            toast.success(`Request ${variables.status}`);
             queryClient.invalidateQueries({ queryKey: ['requests'] });
+            setSelectedRequest(null);
+            setAdminNote('');
         },
-        onError: (err: any) => {
-            toast.error(err.response?.data?.message || 'Failed to process request');
+        onError: (err: unknown) => {
+            toast.error(getApiErrorMessage(err, 'Failed to process request'));
         },
     });
 
@@ -58,15 +78,53 @@ export default function Requests() {
         }
     };
 
+    const pendingRequests = useMemo(
+        () => (requests || []).filter((request) => request.status === 'pending'),
+        [requests]
+    );
+
+    const openDecisionDialog = (request: RequestItem, nextDecision: 'approved' | 'rejected') => {
+        setSelectedRequest(request);
+        setDecision(nextDecision);
+        setAdminNote('');
+    };
+
+    const handleProcessRequest = () => {
+        if (!selectedRequest) return;
+        if (decision === 'rejected' && !adminNote.trim()) {
+            toast.error('A note is required when rejecting a request.');
+            return;
+        }
+
+        processMutation.mutate({
+            id: selectedRequest.id,
+            status: decision,
+            note: adminNote.trim() || undefined,
+        });
+    };
+
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight">Data Correction Requests</h1>
+            <PageHeader
+                title="Requests"
+                description="Review pending correction requests with enough context to approve confidently or reject with a clear note."
+            />
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>User Requests</CardTitle>
-                </CardHeader>
-                <CardContent>
+            <SectionCard
+                title="Pending Queue"
+                description={`${pendingRequests.length} request${pendingRequests.length === 1 ? '' : 's'} currently need a decision.`}
+                contentClassName="pt-6"
+            >
+                {isError ? (
+                    <InlineErrorState description="We couldn't load the request queue right now." />
+                ) : isLoading ? (
+                    <TableLoadingState rows={5} />
+                ) : requests?.length === 0 ? (
+                    <TableEmptyState
+                        title="No requests found"
+                        description="There are no employee correction requests to review right now."
+                    />
+                ) : (
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -79,54 +137,102 @@ export default function Requests() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading ? (
-                                <TableRow><TableCell colSpan={6} className="text-center">Loading...</TableCell></TableRow>
-                            ) : requests?.length === 0 ? (
-                                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No requests found.</TableCell></TableRow>
-                            ) : (
-                                requests?.map((req) => (
-                                    <TableRow key={req.id}>
-                                        <TableCell className="font-medium">
-                                            {typeof req.date === 'string' ? req.date.substring(0, 10) : format(new Date(req.date), 'yyyy-MM-dd')}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium">{req.user_first_name} {req.user_last_name}</span>
-                                                <span className="text-xs text-muted-foreground">{req.user_email}</span>
+                            {requests?.map((req) => (
+                                <TableRow key={req.id}>
+                                    <TableCell className="font-medium">
+                                        {typeof req.date === 'string' ? req.date.substring(0, 10) : format(new Date(req.date), 'yyyy-MM-dd')}
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">{req.userFirstName} {req.userLastName}</span>
+                                            <span className="text-xs text-muted-foreground">{req.userEmail}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="capitalize">{req.requestedStatus}</TableCell>
+                                    <TableCell className="max-w-sm whitespace-normal break-words">{req.reason}</TableCell>
+                                    <TableCell>{getStatusBadge(req.status)}</TableCell>
+                                    <TableCell className="text-right">
+                                        {req.status === 'pending' ? (
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                    onClick={() => openDecisionDialog(req, 'approved')}
+                                                >
+                                                    Approve
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                    onClick={() => openDecisionDialog(req, 'rejected')}
+                                                >
+                                                    Reject
+                                                </Button>
                                             </div>
-                                        </TableCell>
-                                        <TableCell className="capitalize">{req.requested_status}</TableCell>
-                                        <TableCell className="max-w-xs truncate" title={req.reason}>{req.reason}</TableCell>
-                                        <TableCell>{getStatusBadge(req.status)}</TableCell>
-                                        <TableCell className="text-right">
-                                            {req.status === 'pending' && (
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                        onClick={() => processMutation.mutate({ id: req.id, action: 'approve' })}
-                                                    >
-                                                        Approve
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                        onClick={() => processMutation.mutate({ id: req.id, action: 'reject' })}
-                                                    >
-                                                        Reject
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
+                                        ) : (
+                                            <span className="text-sm text-muted-foreground">Decision recorded</span>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+                )}
+            </SectionCard>
+
+            <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
+                <DialogContent className="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {decision === 'approved' ? 'Approve request' : 'Reject request'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Review the request details below before you confirm the decision.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedRequest ? (
+                        <div className="space-y-4">
+                            <div className="rounded-lg border bg-muted/30 p-4 text-sm">
+                                <p><span className="font-medium">Employee:</span> {selectedRequest.userFirstName} {selectedRequest.userLastName}</p>
+                                <p><span className="font-medium">Email:</span> {selectedRequest.userEmail}</p>
+                                <p><span className="font-medium">Date:</span> {selectedRequest.date.substring(0, 10)}</p>
+                                <p><span className="font-medium">Requested status:</span> <span className="capitalize">{selectedRequest.requestedStatus}</span></p>
+                                <p className="mt-3"><span className="font-medium">Reason:</span></p>
+                                <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{selectedRequest.reason}</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="admin-note">
+                                    {decision === 'approved' ? 'Decision note (optional)' : 'Decision note (required)'}
+                                </Label>
+                                <Textarea
+                                    id="admin-note"
+                                    value={adminNote}
+                                    onChange={(event) => setAdminNote(event.target.value)}
+                                    placeholder={
+                                        decision === 'approved'
+                                            ? 'Add optional context for the employee.'
+                                            : 'Explain why the request is being rejected.'
+                                    }
+                                />
+                            </div>
+                        </div>
+                    ) : null}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setSelectedRequest(null)} disabled={processMutation.isPending}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant={decision === 'approved' ? 'default' : 'destructive'}
+                            onClick={handleProcessRequest}
+                            disabled={processMutation.isPending}
+                        >
+                            {decision === 'approved' ? 'Confirm approval' : 'Confirm rejection'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

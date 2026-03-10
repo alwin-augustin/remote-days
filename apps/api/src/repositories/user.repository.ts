@@ -106,11 +106,9 @@ export class UserRepository implements IUserRepository {
       'work_country',
       'role',
       'is_active',
-      'slack_user_id',
-      'notification_method',
     ];
-    
-    const fields = (Object.keys(updates) as (keyof User)[]).filter((key) => allowedFields.includes(key));
+
+    const fields = (Object.keys(updates) as (keyof User)[]).filter((key) => allowedFields.includes(key) && updates[key] !== undefined);
 
     if (fields.length === 0) return null;
 

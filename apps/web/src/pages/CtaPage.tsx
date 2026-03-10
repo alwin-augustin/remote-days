@@ -4,12 +4,13 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 
 export default function CtaPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const token = searchParams.get('token');
+    const email = searchParams.get('email');
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>(token ? 'loading' : 'error');
     const [message, setMessage] = useState(token ? '' : 'Invalid link: Missing token.');
     const [details, setDetails] = useState<{ status: string; date: string } | null>(null);
@@ -19,20 +20,19 @@ export default function CtaPage() {
 
         const processToken = async () => {
             try {
-                const res = await api.post<{ message: string; status: string; date: string }>('/cta/process', { token });
+                const res = await api.post<{ message: string; status: string; date: string }>('/cta/redemptions', { token, email });
                 setStatus('success');
                 setMessage(res.data.message);
                 setDetails({ status: res.data.status, date: res.data.date });
             } catch (err: unknown) {
                 setStatus('error');
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const errorMsg = (err as any).response?.data?.message || 'Failed to process request.';
+                const errorMsg = getApiErrorMessage(err, 'Failed to process request.');
                 setMessage(errorMsg);
             }
         };
 
         processToken();
-    }, [token]);
+    }, [token, email]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">

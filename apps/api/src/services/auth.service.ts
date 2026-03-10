@@ -24,6 +24,10 @@ export class AuthService {
       throw new AppError('Invalid email or password', 401);
     }
 
+    if (!user.password_hash) {
+      throw new AppError('Invalid email or password', 401);
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!isValidPassword) {

@@ -15,16 +15,17 @@ import { config } from '../config/env';
  */
 export const logger = pino({
   level: config.NODE_ENV === 'production' ? 'info' : 'debug',
-  transport: config.NODE_ENV === 'development'
-    ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname',
-        },
-      }
-    : undefined,
+  transport:
+    config.NODE_ENV === 'development'
+      ? {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'SYS:standard',
+            ignore: 'pid,hostname',
+          },
+        }
+      : undefined,
   // In production, logs are JSON for log aggregation tools
   formatters: {
     level: (label) => {

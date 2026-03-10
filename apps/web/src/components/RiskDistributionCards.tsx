@@ -92,7 +92,7 @@ export function RiskDistributionCards({
           <Card
             key={card.key}
             className={cn(
-              'cursor-pointer transition-all duration-200 border-l-4',
+              'h-full cursor-pointer transition-all duration-200 border-l-4',
               card.colors.border,
               isActive ? 'ring-2 ring-primary shadow-lg scale-[1.02]' : 'hover:shadow-md hover:scale-[1.01]',
               card.count === 0 && 'opacity-60'
@@ -105,11 +105,11 @@ export function RiskDistributionCards({
                 <Icon className={cn('h-4 w-4', card.colors.iconText)} />
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex h-full flex-col">
               <div className="text-2xl font-bold">{card.count}</div>
               <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
               {card.count > 0 && (
-                <p className={cn('text-xs font-medium mt-2', card.colors.text)}>
+                <p className={cn('mt-auto pt-2 text-xs font-medium', card.colors.text)}>
                   {card.action}
                 </p>
               )}

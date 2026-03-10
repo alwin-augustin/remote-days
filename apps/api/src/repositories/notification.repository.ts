@@ -46,11 +46,20 @@ export interface INotificationRepository {
     token: string
   ): Promise<EmailCTAToken>;
   createNotification(userId: string, channel: string, notificationType: string, payload: object): Promise<Notification>;
-  findNotificationsByDate(date: string): Promise<{ id: string, sent_at: Date, user_first_name: string, user_last_name: string, user_email: string, notification_type: string }[]>;
+  findNotificationsByDate(date: string): Promise<
+    {
+      id: string;
+      sent_at: Date;
+      user_first_name: string;
+      user_last_name: string;
+      user_email: string;
+      notification_type: string;
+    }[]
+  >;
 }
 
 export class NotificationRepository implements INotificationRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
   async getDailyNotificationStats(date: string): Promise<NotificationStats> {
     const { rows } = await this.pool.query<NotificationStats>(
@@ -111,8 +120,24 @@ export class NotificationRepository implements INotificationRepository {
     return rows[0];
   }
 
-  async findNotificationsByDate(date: string): Promise<{ id: string, sent_at: Date, user_first_name: string, user_last_name: string, user_email: string, notification_type: string }[]> {
-    const { rows } = await this.pool.query<{ id: string, sent_at: Date, user_first_name: string, user_last_name: string, user_email: string, notification_type: string }>(
+  async findNotificationsByDate(date: string): Promise<
+    {
+      id: string;
+      sent_at: Date;
+      user_first_name: string;
+      user_last_name: string;
+      user_email: string;
+      notification_type: string;
+    }[]
+  > {
+    const { rows } = await this.pool.query<{
+      id: string;
+      sent_at: Date;
+      user_first_name: string;
+      user_last_name: string;
+      user_email: string;
+      notification_type: string;
+    }>(
       `SELECT n.id, n.sent_at, u.first_name as user_first_name, u.last_name as user_last_name, u.email as user_email, n.notification_type
        FROM notifications n
        JOIN users u ON n.user_id = u.user_id

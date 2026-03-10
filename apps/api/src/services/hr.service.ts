@@ -1,5 +1,4 @@
 import { IHRRepository } from '../repositories/hr.repository';
-import { work_status } from '@remotedays/types';
 
 export class HRService {
   constructor(private hrRepo: IHRRepository) {}
@@ -10,10 +9,6 @@ export class HRService {
 
   async getEmployeeEntries(year: string, month: string) {
     return this.hrRepo.getEmployeeEntries(year, month);
-  }
-
-  async updateEntry(id: string, status: work_status, reason: string, actorId: string) {
-    return this.hrRepo.updateEntry(id, status, reason, actorId);
   }
 
   async getDailyStats(date: string) {
