@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { AuthController } from './auth.controller';
-import { loginJsonSchema, passwordResetRequestJsonSchema, passwordResetJsonSchema } from '../schemas';
+import { LoginBody, PasswordResetRequestBody, PasswordResetBody } from '../schemas';
 
 // Rate limit configurations for auth endpoints
 const authRateLimitConfig = {
@@ -52,7 +52,7 @@ async function authRoutes(server: FastifyInstance, options: { controller: AuthCo
   server.post(
     '/auth/login',
     {
-      schema: loginJsonSchema,
+      schema: { body: LoginBody },
       config: {
         rateLimit: authRateLimitConfig.login,
       },
@@ -60,17 +60,17 @@ async function authRoutes(server: FastifyInstance, options: { controller: AuthCo
     controller.loginHandler
   );
 
-  server.post('/auth/logout', controller.logoutHandler);
+  server.post('/auth/logout', { preHandler: [server.authenticate] }, controller.logoutHandler);
 
   server.get('/auth/me', { preHandler: [server.authenticate] }, controller.getMeHandler);
   server.get('/auth/me/export', { preHandler: [server.authenticate] }, controller.exportDataHandler);
   server.delete('/auth/me', { preHandler: [server.authenticate] }, controller.deleteAccountHandler);
 
-  // Password reset request with rate limiting
+  // POST /auth/password-resets — request a reset link (replaces /auth/password-reset-request)
   server.post(
-    '/auth/password-reset-request',
+    '/auth/password-resets',
     {
-      schema: passwordResetRequestJsonSchema,
+      schema: { body: PasswordResetRequestBody },
       config: {
         rateLimit: authRateLimitConfig.passwordResetRequest,
       },
@@ -78,11 +78,11 @@ async function authRoutes(server: FastifyInstance, options: { controller: AuthCo
     controller.passwordResetRequestHandler
   );
 
-  // Password reset with rate limiting and stronger validation
-  server.post(
-    '/auth/password-reset',
+  // PATCH /auth/password-resets — complete the reset with token+password (replaces /auth/password-reset)
+  server.patch(
+    '/auth/password-resets',
     {
-      schema: passwordResetJsonSchema,
+      schema: { body: PasswordResetBody },
       config: {
         rateLimit: authRateLimitConfig.passwordReset,
       },

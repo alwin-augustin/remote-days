@@ -30,7 +30,7 @@ export class AdminController {
         temp_password,
         role: role || 'employee',
       });
-      reply.code(201).send({ user_id: newUser.user_id });
+      return reply.code(201).send({ user_id: newUser.user_id });
     } catch (err: any) {
       if (err.code === '23505') {
         // unique_violation
@@ -46,29 +46,34 @@ export class AdminController {
     }>,
     reply: FastifyReply
   ) => {
-    const { limit = 10, offset = 0, search, role, country } = request.query;
-    const result = await this.userService.getUsers(Number(limit), Number(offset), search, { role, country });
-    reply.code(200).send(result);
+    const { limit = 20, offset = 0, search, role, country } = request.query;
+    const limitNum = Math.min(Number(limit), 100);
+    const result = await this.userService.getUsers(limitNum, Number(offset), search, { role, country });
+    return reply.code(200).send({ data: result.users, total: result.total, limit: limitNum, offset: Number(offset) });
   };
 
   updateUserHandler = async (
-    request: FastifyRequest<{ Params: { id: string }; Body: Partial<User> }>,
+    request: FastifyRequest<{
+      Params: { id: string };
+      Body: Partial<Pick<User, 'email' | 'first_name' | 'last_name' | 'country_of_residence' | 'work_country' | 'role' | 'is_active'>>;
+    }>,
     reply: FastifyReply
   ) => {
     const { id } = request.params;
-    const updates = request.body;
+    const { email, first_name, last_name, country_of_residence, work_country, role, is_active } = request.body;
+    const updates = { email, first_name, last_name, country_of_residence, work_country, role, is_active };
 
     const updatedUser = await this.userService.updateUser(id, updates);
     if (!updatedUser) {
       throw new AppError('User not found', 404);
     }
-    reply.code(200).send(updatedUser);
+    return reply.code(200).send(updatedUser);
   };
 
   deleteUserHandler = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     const { id } = request.params;
     await this.userService.deleteUser(id);
-    reply.code(204).send();
+    return reply.code(204).send();
   };
 
   importUsersHandler = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -78,14 +83,15 @@ export class AdminController {
       throw new AppError('No file uploaded', 400);
     }
 
-    // Basic type check
-    // if (data.mimetype !== 'text/csv' && ...)
+    if (data.mimetype !== 'text/csv' && data.mimetype !== 'application/vnd.ms-excel') {
+      throw new AppError('Invalid file type. Only CSV files are allowed.', 415);
+    }
 
     const buffer = await data.toBuffer();
 
     try {
       const result = await this.userService.importUsers(buffer);
-      reply.code(200).send(result);
+      return reply.code(200).send(result);
     } catch (err: any) {
       request.log.error(err);
       throw new AppError('Failed to process CSV', 500);

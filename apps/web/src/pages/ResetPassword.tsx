@@ -7,7 +7,7 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import {
     Form,
@@ -51,15 +51,14 @@ export default function ResetPassword() {
 
         setIsLoading(true);
         try {
-            await api.post('/auth/password-reset', {
+            await api.patch('/auth/password-resets', {
                 token,
                 newPassword: values.password,
             });
             toast.success('Password reset successfully. You can now login with your new password.');
             navigate('/login');
         } catch (error) {
-            console.error('Password reset failed:', error);
-            toast.error('Failed to reset password. The link may have expired.');
+            toast.error(getApiErrorMessage(error, 'Failed to reset password. The link may have expired.'));
         } finally {
             setIsLoading(false);
         }

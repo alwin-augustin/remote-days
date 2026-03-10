@@ -12,9 +12,14 @@ import authPlugin from './plugins/auth';
 import apiRoutes from './api-routes';
 
 import { globalErrorHandler } from './errors/global-error-handler';
+import { keysToCamelCase } from './utils/camel-case';
 
 export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionString?: string } = {}): FastifyInstance {
-  const server = fastify(opts);
+  const server = fastify({
+    connectionTimeout: 30000,
+    requestTimeout: 30000,
+    ...opts,
+  }).withTypeProvider<TypeBoxTypeProvider>();
 
   // Security Headers with Content Security Policy
   server.register(helmet, {
@@ -70,7 +75,11 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
   server.register(cors, {
     origin: [
       'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
       'http://127.0.0.1:5173',
+      'http://127.0.0.1:5174',
+      'http://127.0.0.1:5175',
       'https://remotedays.app',
       'https://www.remotedays.app',
       'https://demo.remotedays.app',
@@ -85,7 +94,7 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     addToBody: true, // simplified handling for small files
     limits: {
       fieldNameSize: 100, // Max field name size in bytes
-      fieldSize: 100, // Max field value size in bytes
+      fieldSize: 1048576, // Max field value size in bytes (1MB)
       fields: 10, // Max number of non-file fields
       fileSize: 5000000, // For multipart forms, the max file size in bytes
       files: 1, // Max number of file fields
@@ -104,7 +113,55 @@ export function build(opts: FastifyServerOptions = {}, dbOptions: { connectionSt
     timeWindow: '1 minute',
   });
 
-  server.register(apiRoutes);
+  server.register(apiRoutes, { prefix: '/v1' });
+
+  // Default Cache-Control for all API GET responses: no caching of sensitive data
+  server.addHook('onSend', async (request, reply) => {
+    if (request.method === 'GET' && !reply.hasHeader('Cache-Control')) {
+      // Countries and thresholds are stable — allow 5-min shared cache
+      if (request.url.includes('/admin/countries')) {
+        reply.header('Cache-Control', 'private, max-age=300');
+      } else {
+        reply.header('Cache-Control', 'private, no-cache');
+      }
+    }
+  });
+
+  // T-024: Normalize all JSON responses to camelCase keys
+  server.addHook('onSend', async (request, reply, payload) => {
+    const contentType = reply.getHeader('content-type');
+    if (typeof payload === 'string' && typeof contentType === 'string' && contentType.includes('application/json')) {
+      try {
+        return JSON.stringify(keysToCamelCase(JSON.parse(payload)));
+      } catch {
+        return payload;
+      }
+    }
+    return payload;
+  });
+
+  // T-033: Request/response lifecycle logging
+  server.addHook('onResponse', (request, reply, done) => {
+    request.log.info({
+      method: request.method,
+      url: request.url,
+      statusCode: reply.statusCode,
+      responseTime: reply.elapsedTime,
+      userId: (request as any).user?.user_id ?? null,
+      requestId: request.id,
+    }, 'request completed');
+    done();
+  });
+
+  // T-032: Health check — outside /v1 prefix (infrastructure, not API resource)
+  server.get('/health', async (request, reply) => {
+    try {
+      await server.pg.query('SELECT 1');
+      return reply.send({ status: 'ok', db: 'ok', uptime: process.uptime() });
+    } catch {
+      return reply.code(503).send({ status: 'error', db: 'unreachable', uptime: process.uptime() });
+    }
+  });
 
   server.get('/', async () => {
     return { hello: 'world' };

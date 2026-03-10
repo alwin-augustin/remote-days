@@ -1,0 +1,1779 @@
+openapi: 3.0.3
+info:
+  title: Remote Days API
+  description: >
+    API for Remote Days - Cross-Border Remote Work Compliance Tracking.
+    Tracks employee work locations to ensure compliance with country-specific
+    tax thresholds (France: 34 days, Belgium: 34 days, Germany: 183 days).
+  version: 2.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://api.remotedays.app
+    description: Production
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ---
+    WorkStatus:
+      type: string
+      enum: [home, office, travel, sick, unknown]
+
+    UserRole:
+      type: string
+      enum: [employee, hr, admin]
+
+    CountryCode:
+      type: string
+      minLength: 2
+      maxLength: 2
+      example: FR
+
+    DateString:
+      type: string
+      pattern: '^\d{4}-\d{2}-\d{2}$'
+      example: '2025-01-15'
+
+    # ---
+    UserInfo:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        countryOfResidence:
+          $ref: '#/components/schemas/CountryCode'
+        workCountry:
+          $ref: '#/components/schemas/CountryCode'
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ---
+    Entry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        date:
+          $ref: '#/components/schemas/DateString'
+        status:
+          $ref: '#/components/schemas/WorkStatus'
+        source:
+          type: string
+          enum: [web, email_link, hr_correction, api]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ---
+    ComplianceStats:
+      type: object
+      properties:
+        remoteDaysCount:
+          type: integer
+          description: Number of home/remote days in the current year
+        remoteDaysLimit:
+          type: integer
+          description: Maximum allowed remote days for the user's country
+        complianceStatus:
+          type: string
+          enum: [safe, warning, critical, exceeded]
+        daysRemaining:
+          type: integer
+        percentageUsed:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    # ---
+    EntryRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        date:
+          $ref: '#/components/schemas/DateString'
+        requestedStatus:
+          $ref: '#/components/schemas/WorkStatus'
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        adminNote:
+          type: string
+          nullable: true
+        processedBy:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ---
+    Holiday:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          $ref: '#/components/schemas/DateString'
+        description:
+          type: string
+        countryCode:
+          $ref: '#/components/schemas/CountryCode'
+          nullable: true
+
+    # ---
+    Country:
+      type: object
+      properties:
+        countryCode:
+          $ref: '#/components/schemas/CountryCode'
+        maxRemoteDays:
+          type: integer
+          description: Maximum remote-work days before compliance threshold is triggered
+
+    # ---
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          enum: [INSERT, UPDATE, DELETE]
+        actorUserId:
+          type: string
+          format: uuid
+          nullable: true
+        targetUserId:
+          type: string
+          format: uuid
+          nullable: true
+        oldStatus:
+          $ref: '#/components/schemas/WorkStatus'
+          nullable: true
+        newStatus:
+          $ref: '#/components/schemas/WorkStatus'
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+        changedAt:
+          type: string
+          format: date-time
+
+    # ---
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, statusCode, requestId, timestamp]
+          properties:
+            code:
+              type: string
+              example: ERR_AUTH_001
+            message:
+              type: string
+            statusCode:
+              type: integer
+            requestId:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+            details:
+              type: array
+              description: Field-level validation errors (validation failures only)
+              items:
+                type: object
+
+    # ---
+    # Pagination envelope schemas
+    # ---
+    PaginatedEntries:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Entry'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    PaginatedUsers:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserInfo'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    PaginatedRequests:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntryRequest'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    PaginatedAuditLogs:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    PaginatedHolidays:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Holiday'
+        total:
+          type: integer
+
+    PaginatedCountries:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Country'
+        total:
+          type: integer
+
+security:
+  - cookieAuth: []
+  - bearerAuth: []
+
+tags:
+  - name: Health
+    description: Infrastructure health check
+  - name: Auth
+    description: Authentication and account management
+  - name: Entries
+    description: Work location entries for the authenticated user
+  - name: Compliance
+    description: Compliance statistics for the authenticated user
+  - name: CTA
+    description: One-click call-to-action token redemption (from email links)
+  - name: Employees
+    description: HR/admin views of employee data and entry management (role — hr/admin)
+  - name: Requests
+    description: Status-change requests (employees create; HR/admin approve or reject)
+  - name: Admin Users
+    description: User management (role — hr/admin)
+  - name: Admin Countries
+    description: Country and compliance threshold management (role — hr/admin)
+  - name: Admin Holidays
+    description: Holiday calendar management (role — hr/admin)
+  - name: Admin Audit
+    description: Audit trail (role — hr/admin)
+  - name: Push Tokens
+    description: Mobile push notification token registration
+  - name: Leads
+    description: Public lead capture (no authentication required)
+
+paths:
+  # ---
+  # HEALTH
+  # ---
+  /health:
+    get:
+      summary: Health check
+      description: >
+        Returns server status and database connectivity.
+        Not prefixed with /v1 — intended for load balancers and uptime monitors.
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  db:
+                    type: string
+                    enum: [ok]
+                  uptime:
+                    type: number
+                    description: Process uptime in seconds
+        '503':
+          description: Service unavailable — database unreachable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [error]
+                  db:
+                    type: string
+                    enum: [unreachable]
+                  uptime:
+                    type: number
+
+  # ---
+  # AUTH
+  # ---
+  /v1/auth/login:
+    post:
+      summary: Login
+      description: >
+        Authenticates with email + password. On success, sets an httpOnly
+        cookie `token` (JWT, 8h TTL) and returns the user profile.
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+      responses:
+        '200':
+          description: Login successful. Sets httpOnly cookie `token`.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Login successful
+                  user:
+                    $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '423':
+          description: Account locked after too many failed attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded (5 attempts/minute)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/auth/logout:
+    post:
+      summary: Logout
+      description: Clears the httpOnly session cookie.
+      tags: [Auth]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logged out — cookie cleared
+
+  /v1/auth/me:
+    get:
+      summary: Get current user profile
+      description: Returns the full user profile from the database for the authenticated user.
+      tags: [Auth]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: Unauthorized
+    delete:
+      summary: Delete own account (GDPR right to erasure)
+      tags: [Auth]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Account deleted and cookie cleared
+        '401':
+          description: Unauthorized
+
+  /v1/auth/me/export:
+    get:
+      summary: Export own data (GDPR right to portability)
+      tags: [Auth]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User data export as JSON attachment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile:
+                    $ref: '#/components/schemas/UserInfo'
+                  exportedAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Unauthorized
+
+  /v1/auth/password-resets:
+    post:
+      summary: Request a password reset link
+      description: >
+        Sends a reset link to the given email if a matching active account exists.
+        Always returns success to prevent email enumeration.
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+      responses:
+        '200':
+          description: Always succeeds (prevents enumeration)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '429':
+          description: Rate limit exceeded (3 requests/15 minutes)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      summary: Complete a password reset
+      description: Validates the reset token and sets a new password.
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token:
+                  type: string
+                  format: uuid
+                password:
+                  type: string
+                  minLength: 12
+                  maxLength: 128
+                  description: >
+                    Must contain at least one uppercase letter, one lowercase letter,
+                    one digit, and one special character.
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded (5 attempts/15 minutes)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ---
+  # ENTRIES
+  # ---
+  /v1/entries:
+    get:
+      summary: List own entries
+      description: >
+        Returns a paginated list of the authenticated user's work location entries.
+        Filter by year+month for a specific month, or use limit/offset for general pagination.
+      tags: [Entries]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2100
+        - name: month
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Paginated list of entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEntries'
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create or update today's entry
+      description: >
+        Employees can only create entries (no overwrite of existing entries).
+        HR/admin roles can overwrite existing entries.
+      tags: [Entries]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date, status]
+              properties:
+                date:
+                  $ref: '#/components/schemas/DateString'
+                status:
+                  $ref: '#/components/schemas/WorkStatus'
+      responses:
+        '201':
+          description: Entry created or updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '409':
+          description: Entry already exists for this date (employees cannot overwrite)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/entries/{userId}/{date}:
+    patch:
+      summary: Override a user's entry (HR/Admin)
+      description: >
+        Overwrites an existing (or creates a new) entry for any user.
+        Requires HR or admin role. Reason is mandatory and recorded in the audit log.
+      tags: [Entries]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/DateString'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, reason]
+              properties:
+                status:
+                  $ref: '#/components/schemas/WorkStatus'
+                reason:
+                  type: string
+                  minLength: 10
+                  maxLength: 500
+      responses:
+        '200':
+          description: Entry overridden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — HR/Admin role required
+
+  # ---
+  # COMPLIANCE
+  # ---
+  /v1/users/me/compliance:
+    get:
+      summary: Get compliance statistics for the current user
+      description: >
+        Returns the authenticated user's remote day count, limit, days remaining,
+        and compliance status for the current calendar year.
+      tags: [Compliance]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Compliance statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceStats'
+        '401':
+          description: Unauthorized
+
+  # ---
+  # CTA (ONE-CLICK EMAIL LINK REDEMPTION)
+  # ---
+  /v1/cta/redemptions:
+    post:
+      summary: Redeem a CTA token from an email link
+      description: >
+        Validates the one-click token sent in daily reminder emails and records
+        the user's work location (home or office) for the target date.
+        Tokens expire after 24 hours.
+      tags: [CTA]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Status recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  entry:
+                    $ref: '#/components/schemas/Entry'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ---
+  # EMPLOYEES (HR/Admin views)
+  # ---
+  /v1/employees/summary:
+    get:
+      summary: Employee compliance summary
+      description: Returns all active employees with their compliance traffic-light status.
+      tags: [Employees]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Summary of all employees with compliance status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      type: string
+                      format: uuid
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+                    countryOfResidence:
+                      $ref: '#/components/schemas/CountryCode'
+                    workCountry:
+                      $ref: '#/components/schemas/CountryCode'
+                    daysUsedCurrentYear:
+                      type: integer
+                    maxRemoteDays:
+                      type: integer
+                    daysRemaining:
+                      type: integer
+                    percentUsed:
+                      type: number
+                    trafficLight:
+                      type: string
+                      enum: [green, orange, red]
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — HR/Admin role required
+
+  /v1/employees/entries:
+    get:
+      summary: List all employee entries for a given month
+      tags: [Employees]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: All employee entries for the given month
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    userId:
+                      type: string
+                      format: uuid
+                    date:
+                      $ref: '#/components/schemas/DateString'
+                    status:
+                      $ref: '#/components/schemas/WorkStatus'
+                    source:
+                      type: string
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+                    email:
+                      type: string
+                    role:
+                      $ref: '#/components/schemas/UserRole'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /v1/employees/entries/{id}:
+    patch:
+      summary: Update an entry by ID (HR/Admin)
+      description: >
+        Updates a specific entry by its ID. Requires HR or admin role.
+        Reason is mandatory and recorded in the audit log via DB trigger.
+      tags: [Employees]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, reason]
+              properties:
+                status:
+                  $ref: '#/components/schemas/WorkStatus'
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+      responses:
+        '200':
+          description: Entry updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Entry not found
+
+  /v1/employees/stats/daily:
+    get:
+      summary: Daily entry statistics
+      description: Returns counts of each work status for a given date, plus total active users.
+      tags: [Employees]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          schema:
+            $ref: '#/components/schemas/DateString'
+          description: Defaults to today if omitted
+      responses:
+        '200':
+          description: Daily stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalUsers:
+                    type: integer
+                  home:
+                    type: integer
+                  office:
+                    type: integer
+                  travel:
+                    type: integer
+                  sick:
+                    type: integer
+                  unknown:
+                    type: integer
+                    description: Active users who have not submitted an entry
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /v1/employees/entries/daily:
+    get:
+      summary: All entries for a specific day
+      description: >
+        Returns all active employees with their entry for the given date.
+        Employees without an entry are included with status "unknown".
+      tags: [Employees]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          schema:
+            $ref: '#/components/schemas/DateString'
+          description: Defaults to today if omitted
+      responses:
+        '200':
+          description: Entries for the day
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      type: string
+                      format: uuid
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+                    email:
+                      type: string
+                    countryOfResidence:
+                      $ref: '#/components/schemas/CountryCode'
+                    status:
+                      $ref: '#/components/schemas/WorkStatus'
+                    source:
+                      type: string
+                      nullable: true
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      nullable: true
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /v1/employees/stats/risk:
+    get:
+      summary: Compliance risk statistics
+      description: Returns counts of employees in each compliance risk tier.
+      tags: [Employees]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Risk breakdown by tier
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exceededCount:
+                    type: integer
+                    description: Employees who have exceeded the threshold (>= 100%)
+                  criticalCount:
+                    type: integer
+                    description: Employees at 90–99% of threshold
+                  highCount:
+                    type: integer
+                    description: Employees at 75–89% of threshold
+                  moderateCount:
+                    type: integer
+                    description: Employees at 50–74% of threshold
+                  missingCount:
+                    type: integer
+                    description: Active employees with no entry for today
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  # ---
+  # REQUESTS (role-scoped)
+  # ---
+  /v1/requests:
+    get:
+      summary: List status-change requests
+      description: >
+        Role-scoped: employees see only their own requests; HR/admin see all requests.
+      tags: [Requests]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+      responses:
+        '200':
+          description: Paginated list of requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRequests'
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create a status-change request
+      description: >
+        Employees submit a request to change their work status for a past date.
+        HR/admin approve or reject via PATCH /v1/requests/{id}.
+      tags: [Requests]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date, requestedStatus, reason]
+              properties:
+                date:
+                  $ref: '#/components/schemas/DateString'
+                requestedStatus:
+                  $ref: '#/components/schemas/WorkStatus'
+                reason:
+                  type: string
+                  minLength: 10
+                  maxLength: 1000
+      responses:
+        '201':
+          description: Request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryRequest'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+
+  /v1/requests/{id}:
+    patch:
+      summary: Approve or reject a status-change request (HR/Admin)
+      description: >
+        Processes a pending request. Approving automatically updates the entry
+        and sends a notification to the employee.
+      tags: [Requests]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [approved, rejected]
+                adminNote:
+                  type: string
+                  maxLength: 1000
+      responses:
+        '200':
+          description: Request processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryRequest'
+        '400':
+          description: Request already processed or invalid status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — HR/Admin role required
+        '404':
+          description: Request not found
+
+  # ---
+  # ADMIN - USERS
+  # ---
+  /v1/admin/users:
+    get:
+      summary: List all users
+      tags: [Admin Users]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by name or email
+        - name: role
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: country
+          in: query
+          schema:
+            $ref: '#/components/schemas/CountryCode'
+      responses:
+        '200':
+          description: Paginated user list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUsers'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — HR/Admin role required
+
+    post:
+      summary: Create a user
+      tags: [Admin Users]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, firstName, lastName, countryOfResidence, workCountry, tempPassword]
+              properties:
+                email:
+                  type: string
+                  format: email
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                countryOfResidence:
+                  $ref: '#/components/schemas/CountryCode'
+                workCountry:
+                  $ref: '#/components/schemas/CountryCode'
+                tempPassword:
+                  type: string
+                role:
+                  $ref: '#/components/schemas/UserRole'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                    format: uuid
+        '400':
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/admin/users/{id}:
+    patch:
+      summary: Update a user
+      tags: [Admin Users]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                countryOfResidence:
+                  $ref: '#/components/schemas/CountryCode'
+                workCountry:
+                  $ref: '#/components/schemas/CountryCode'
+                role:
+                  $ref: '#/components/schemas/UserRole'
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+
+    delete:
+      summary: Soft-delete a user
+      tags: [Admin Users]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: User deactivated
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /v1/admin/users/batch:
+    post:
+      summary: Bulk import users from a CSV file
+      description: >
+        Accepts a CSV file with columns: email, first_name, last_name,
+        country_of_residence, work_country. Optional column: role (defaults to employee).
+        Existing emails are skipped (no update, no error).
+      tags: [Admin Users]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Import result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  inserted:
+                    type: integer
+                  skipped:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        row:
+                          type: integer
+                        email:
+                          type: string
+                        error:
+                          type: string
+        '400':
+          description: No file uploaded or invalid CSV
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '415':
+          description: Invalid file type — only CSV accepted
+
+  # ---
+  # ADMIN - COUNTRIES
+  # ---
+  /v1/admin/countries:
+    get:
+      summary: List countries and their compliance thresholds
+      tags: [Admin Countries]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Country list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCountries'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+    post:
+      summary: Create a country threshold
+      tags: [Admin Countries]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [countryCode, maxRemoteDays]
+              properties:
+                countryCode:
+                  $ref: '#/components/schemas/CountryCode'
+                maxRemoteDays:
+                  type: integer
+                  minimum: 1
+      responses:
+        '201':
+          description: Country created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Country'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '409':
+          description: Country already exists
+
+  /v1/admin/countries/{code}:
+    patch:
+      summary: Update a country's remote day threshold
+      tags: [Admin Countries]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/CountryCode'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [maxRemoteDays]
+              properties:
+                maxRemoteDays:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Country updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Country'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Country not found
+
+  # ---
+  # ADMIN - HOLIDAYS
+  # ---
+  /v1/admin/holidays:
+    get:
+      summary: List holidays
+      tags: [Admin Holidays]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+        - name: country_code
+          in: query
+          schema:
+            $ref: '#/components/schemas/CountryCode'
+      responses:
+        '200':
+          description: Holiday list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHolidays'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+    post:
+      summary: Add a holiday
+      tags: [Admin Holidays]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date, description]
+              properties:
+                date:
+                  $ref: '#/components/schemas/DateString'
+                description:
+                  type: string
+                countryCode:
+                  $ref: '#/components/schemas/CountryCode'
+                  nullable: true
+                  description: null for global holidays; country code for country-specific
+      responses:
+        '201':
+          description: Holiday added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holiday'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /v1/admin/holidays/{id}:
+    delete:
+      summary: Delete a holiday
+      tags: [Admin Holidays]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Holiday deleted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Holiday not found
+
+  # ---
+  # ADMIN - AUDIT
+  # ---
+  /v1/admin/audit:
+    get:
+      summary: Get audit trail
+      description: >
+        Returns the audit log of all entry changes. Supports Excel export via
+        the `format=excel` query parameter.
+      tags: [Admin Audit]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            $ref: '#/components/schemas/DateString'
+        - name: endDate
+          in: query
+          schema:
+            $ref: '#/components/schemas/DateString'
+        - name: action
+          in: query
+          schema:
+            type: string
+            enum: [INSERT, UPDATE, DELETE]
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, excel]
+            default: json
+      responses:
+        '200':
+          description: Audit log entries (JSON) or Excel file (binary)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogs'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  # ---
+  # PUSH TOKENS
+  # ---
+  /v1/users/push-token:
+    post:
+      summary: Register a push notification token
+      tags: [Push Tokens]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token:
+                  type: string
+                  minLength: 1
+                platform:
+                  type: string
+                  enum: [ios, android]
+                deviceName:
+                  type: string
+      responses:
+        '201':
+          description: Token registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+
+    delete:
+      summary: Unregister push notification token
+      tags: [Push Tokens]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Token unregistered
+        '401':
+          description: Unauthorized
+
+  /v1/users/push-token/test:
+    post:
+      summary: Send a test push notification (non-production only)
+      tags: [Push Tokens]
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Test notification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sent:
+                    type: integer
+                  failed:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  # ---
+  # LEADS (Public)
+  # ---
+  /v1/leads:
+    post:
+      summary: Submit a lead (public — no auth required)
+      tags: [Leads]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                message:
+                  type: string
+      responses:
+        '201':
+          description: Lead captured
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { toast } from 'sonner';
 // import { work_status } from '@remotedays/types'; // Not used in component logic directly, handled by string literal in schema
 
@@ -62,21 +62,24 @@ export function RequestChangeDialog({ defaultDate, onSuccess }: RequestChangeDia
 
     const onSubmit = async (data: RequestFormValues) => {
         try {
-            await api.post('/requests', data);
+            await api.post('/requests', {
+                date: data.date,
+                requestedStatus: data.status,
+                reason: data.reason,
+            });
             toast.success('Request submitted successfully');
             setOpen(false);
             form.reset();
             if (onSuccess) onSuccess();
         } catch (error: unknown) {
-            const err = error as { response?: { data?: { message?: string } } };
-            toast.error(err.response?.data?.message || 'Failed to submit request');
+            toast.error(getApiErrorMessage(error, 'Failed to submit request'));
         }
     };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline">Request Change</Button>
+                <Button variant="outline" type="button">Request Change</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>

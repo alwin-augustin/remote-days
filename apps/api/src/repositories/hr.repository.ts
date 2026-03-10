@@ -1,5 +1,4 @@
 import { Pool } from 'pg';
-import { work_status } from '@remotedays/types';
 
 export interface EmployeeSummary {
   user_id: string;
@@ -57,7 +56,6 @@ export interface RiskStats {
 export interface IHRRepository {
   getEmployeeSummaries(): Promise<EmployeeSummary[]>;
   getEmployeeEntries(year: string, month: string): Promise<EmployeeEntry[]>;
-  updateEntry(id: string, status: work_status, reason: string, actorId: string): Promise<unknown>;
   getDailyStats(date: string): Promise<DailyStats>;
   getDailyEntries(date: string): Promise<DailyEntry[]>;
   getRiskStats(date: string): Promise<RiskStats>;
@@ -114,28 +112,6 @@ export class HRRepository implements IHRRepository {
       [year, month]
     );
     return rows;
-  }
-
-  async updateEntry(id: string, status: work_status, reason: string, actorId: string): Promise<any> {
-    const client = await this.pool.connect();
-    try {
-      await client.query('BEGIN');
-      await client.query("SELECT set_config('app.actor_user_id', $1, true)", [actorId]);
-      await client.query("SELECT set_config('app.actor_reason', $1, true)", [reason]);
-
-      const { rows } = await client.query(
-        "UPDATE entries SET status = $1, source = 'hr_correction' WHERE id = $2 RETURNING *",
-        [status, id]
-      );
-
-      await client.query('COMMIT');
-      return rows[0];
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
   }
 
   async getDailyStats(date: string): Promise<DailyStats> {
