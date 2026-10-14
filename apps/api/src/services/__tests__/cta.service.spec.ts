@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CtaService } from '../cta.service';
 import { ITokenRepository } from '../../repositories/token.repository';
 import { IEntryRepository } from '../../repositories/entry.repository';
+import { IUserRepository } from '../../repositories/user.repository';
 import { AppError } from '../../errors/app-error';
 
 describe('CtaService', () => {
   let ctaService: CtaService;
   let mockTokenRepo: ITokenRepository;
   let mockEntryRepo: IEntryRepository;
+  let mockUserRepo: IUserRepository;
 
   beforeEach(() => {
     mockTokenRepo = {
@@ -17,7 +19,10 @@ describe('CtaService', () => {
     mockEntryRepo = {
       upsert: vi.fn(),
     } as any;
-    ctaService = new CtaService(mockTokenRepo, mockEntryRepo);
+    mockUserRepo = {
+      findById: vi.fn(),
+    } as any;
+    ctaService = new CtaService(mockTokenRepo, mockEntryRepo, mockUserRepo);
   });
 
   it('should record status from valid token', async () => {

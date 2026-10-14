@@ -57,7 +57,6 @@ export interface RiskStats {
 export interface IHRRepository {
   getEmployeeSummaries(): Promise<EmployeeSummary[]>;
   getEmployeeEntries(year: string, month: string): Promise<EmployeeEntry[]>;
-  updateEntry(id: string, status: work_status, reason: string, actorId: string): Promise<unknown>;
   getDailyStats(date: string): Promise<DailyStats>;
   getDailyEntries(date: string): Promise<DailyEntry[]>;
   getRiskStats(date: string): Promise<RiskStats>;
@@ -94,7 +93,10 @@ export class HRRepository implements IHRRepository {
           ELSE 'green'
         END AS traffic_light
       FROM user_days_used udu
-      JOIN country_thresholds ct ON udu.work_country = ct.country_code
+      -- The allowance applies to the country the employee works *from* (their
+      -- country of residence), not the office country. Kept in sync with
+      -- EntryRepository.getStatsForYear, which uses country_of_residence.
+      JOIN country_thresholds ct ON udu.country_of_residence = ct.country_code
       ORDER BY udu.last_name, udu.first_name;
       `
     );
@@ -114,28 +116,6 @@ export class HRRepository implements IHRRepository {
       [year, month]
     );
     return rows;
-  }
-
-  async updateEntry(id: string, status: work_status, reason: string, actorId: string): Promise<any> {
-    const client = await this.pool.connect();
-    try {
-      await client.query('BEGIN');
-      await client.query("SELECT set_config('app.actor_user_id', $1, true)", [actorId]);
-      await client.query("SELECT set_config('app.actor_reason', $1, true)", [reason]);
-
-      const { rows } = await client.query(
-        "UPDATE entries SET status = $1, source = 'hr_correction' WHERE id = $2 RETURNING *",
-        [status, id]
-      );
-
-      await client.query('COMMIT');
-      return rows[0];
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
   }
 
   async getDailyStats(date: string): Promise<DailyStats> {
@@ -181,13 +161,19 @@ export class HRRepository implements IHRRepository {
     return rows;
   }
 
-  async getRiskStats(date: string): Promise<{ exceeded_count: number; critical_count: number; high_count: number; moderate_count: number; missing_count: number }> {
+  async getRiskStats(date: string): Promise<{
+    exceeded_count: number;
+    critical_count: number;
+    high_count: number;
+    moderate_count: number;
+    missing_count: number;
+  }> {
     // 1. Calculate Annual Risk with 4 tiers
     const riskQuery = `
       WITH user_days_used AS (
         SELECT
           u.user_id,
-          u.work_country,
+          u.country_of_residence,
           COALESCE(COUNT(e.id) FILTER (WHERE e.status = 'home' AND date_part('year', e.date) = date_part('year', CURRENT_DATE)), 0) AS days_used_current_year
         FROM users u
         LEFT JOIN entries e ON u.user_id = e.user_id
@@ -198,7 +184,8 @@ export class HRRepository implements IHRRepository {
         SELECT
           (udu.days_used_current_year * 100.0 / ct.max_remote_days) as percent_used
         FROM user_days_used udu
-        JOIN country_thresholds ct ON udu.work_country = ct.country_code
+        -- Threshold of the residence country (see getEmployeeSummaries).
+        JOIN country_thresholds ct ON udu.country_of_residence = ct.country_code
       )
       SELECT
         COUNT(*) FILTER (WHERE percent_used >= 100) as exceeded_count,

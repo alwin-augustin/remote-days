@@ -3,7 +3,6 @@ import fp from 'fastify-plugin';
 import { User } from '@remotedays/types';
 import * as jwt from 'jsonwebtoken';
 
-// Extend the FastifyRequest interface to include the user property
 declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -30,19 +29,10 @@ async function authPlugin(fastify: FastifyInstance) {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
-      const { rows } = await fastify.pg.query<User>(
-        'SELECT user_id, email, first_name, last_name, country_of_residence, work_country, role, is_active, created_at FROM users WHERE user_id = $1 AND is_active = true',
-        [decoded.userId]
-      );
-      const user = rows[0];
-
-      if (!user) {
-        return reply.code(401).send({ message: 'Invalid token or user not found' });
-      }
-      request.user = user;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; email: string; role: User['role'] };
+      request.user = { user_id: decoded.userId, email: decoded.email, role: decoded.role } as User;
     } catch (err) {
-      reply.code(401).send({ message: 'Invalid token' });
+      return reply.code(401).send({ message: 'Invalid token' });
     }
   });
 

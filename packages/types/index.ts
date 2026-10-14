@@ -312,3 +312,60 @@ export interface UserInfo {
  * Audit log details - flexible JSON structure
  */
 export type AuditDetails = Record<string, unknown>;
+
+// ===========================================
+// Enterprise SSO Types
+// ===========================================
+
+/** Public SSO status, used by the login page to decide whether to show the button. */
+export interface SsoPublicConfig {
+  enabled: boolean;
+  displayName: string;
+}
+
+/**
+ * Admin-facing SSO configuration. Deliberately never carries the client secret —
+ * only whether one is stored (`hasClientSecret`).
+ */
+export interface SsoSettings {
+  displayName: string;
+  issuer: string;
+  tenantId: string | null;
+  clientId: string;
+  scopes: string;
+  allowedEmailDomains: string[];
+  autoLinkByEmail: boolean;
+  isEnabled: boolean;
+  hasClientSecret: boolean;
+  updatedAt: string | null;
+}
+
+/** An external identity bound to a pre-provisioned account. */
+export interface SsoLinkedIdentity {
+  id: string;
+  userId: string;
+  provider: string;
+  tenantId: string;
+  subjectId: string;
+  emailAtLink: string | null;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
+export interface SsoConnectionTestResult {
+  ok: boolean;
+  message: string;
+  metadata?: {
+    issuer: string;
+    authorizationEndpoint: string;
+    tokenEndpoint: string;
+    jwksUri: string;
+    signingAlgorithms: string[];
+    keyCount: number;
+  };
+}

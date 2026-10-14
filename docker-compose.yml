@@ -6,9 +6,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: ${DB_USER:-admin}
-      POSTGRES_PASSWORD: ${DB_PASS:-password}
-      POSTGRES_DB: ${DB_NAME:-tracker}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: remote_days
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Optional: Auto-run SQL scripts on first boot
@@ -29,7 +29,7 @@ services:
       - ./packages:/app/packages
       - /app/node_modules
     environment:
-      DATABASE_URL: postgres://${DB_USER:-admin}:${DB_PASS:-password}@db:5432/${DB_NAME:-tracker}
+      DATABASE_URL: postgres://postgres:postgres@db:5432/remote_days
       PORT: 3000
       JWT_SECRET: "dev-secret-do-not-use-in-prod"
       SMTP_HOST: mailpit
@@ -71,20 +71,40 @@ services:
     networks:
       - remotedays-network
 
-  # 5. Seeding (Run once on startup)
+  # 5. pgAdmin (Database GUI)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: remotedays-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@remotedays.app
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./docker/pgadmin/pgpass:/pgadmin4/pgpass:ro
+    depends_on:
+      - db
+    networks:
+      - remotedays-network
+
+  # 6. Seeding (Run once on startup)
   seed:
     build:
       context: .
       dockerfile: apps/api/Dockerfile.dev
     container_name: remotedays-seed
-    # Override the default command to run the seed script
-    command: [ "npm", "run", "db:seed", "--workspace=apps/api" ]
+    # Override the default command to run the demo seed script (100 users)
+    command: [ "npm", "run", "db:seed:demo", "--workspace=apps/api" ]
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages
       - /app/node_modules
     environment:
-      DATABASE_URL: postgres://${DB_USER:-admin}:${DB_PASS:-password}@db:5432/${DB_NAME:-tracker}
+      DATABASE_URL: postgres://postgres:postgres@db:5432/remote_days
       JWT_SECRET: "dev-secret-do-not-use-in-prod"
     depends_on:
       db:
@@ -99,6 +119,7 @@ services:
 
 volumes:
   postgres_data:
+  pgadmin_data:
 
 
 networks:

@@ -1,0 +1,351 @@
+name: CI & Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_backend:
+        description: 'Force deploy the API + SPA to Fly'
+        type: boolean
+        default: false
+      deploy_frontend:
+        description: 'Alias for deploy_backend — the SPA ships inside the API image'
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  FLY_APP: remotedays
+
+jobs:
+  # ===========================================
+  # CI: Lint & Type Check (runs on all pushes and PRs)
+  # ===========================================
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check API
+        run: npx tsc --project apps/api/tsconfig.json --noEmit
+
+      - name: Type check Web
+        run: npx tsc --project apps/web/tsconfig.json --noEmit
+
+      - name: Lint Web
+        run: npm run lint --workspace=@remotedays/web --if-present
+
+  # ===========================================
+  # Detect what changed (only on push to main)
+  # ===========================================
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+      landing: ${{ steps.filter.outputs.landing }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            app:
+              - 'apps/api/**'
+              - 'apps/web/**'
+              - 'packages/**'
+              - 'fly.toml'
+              - '.github/workflows/ci-deploy.yml'
+            landing:
+              - 'landing/**'
+
+  # ===========================================
+  # Apply database migrations
+  #
+  # Runs *before* the deploy so the schema is never behind the code that expects
+  # it. `flyctl deploy` deliberately does not do this: the migration runner is
+  # not part of the image, because tsup bundles only server.ts and the runtime
+  # prunes the dev dependencies ts-node needs.
+  #
+  # This is the only path that applies migrations — nothing is run by hand.
+  # ===========================================
+  migrate:
+    name: Apply Database Migrations
+    runs-on: ubuntu-latest
+    needs: [ci, changes]
+    if: |
+      always() &&
+      needs.ci.result == 'success' &&
+      (needs.changes.outputs.app == 'true' || github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_frontend == 'true')
+    environment:
+      name: production
+    concurrency:
+      # Shares the deploy's group, so migrations from two pushes cannot overlap
+      # even though each deploy is itself serialised.
+      group: fly-deploy-remotedays
+      cancel-in-progress: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Show migration status
+        # The runner imports `db`, which imports `config/env`, and that module
+        # validates its required variables when it is imported. Only DATABASE_URL
+        # and JWT_SECRET have no default, so both must be present here —
+        # JWT_SECRET is never used to sign anything in a migration, it only has
+        # to exist. Scoped per step rather than job-wide so `npm ci` cannot read
+        # them.
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in DATABASE_URL JWT_SECRET; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is not set for this repository"
+              missing=1
+            fi
+          done
+          [ "$missing" = "0" ] || exit 1
+          npm run db:migrate:status --workspace=apps/api
+
+      - name: Apply pending migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: npm run db:migrate --workspace=apps/api
+
+  # ===========================================
+  # Deploy the API and the SPA to Fly.io
+  #
+  # Both halves live in one app on purpose: the SPA is served by the API itself,
+  # so the browser is same-origin and the session cookie stays first-party.
+  # ===========================================
+  deploy-app:
+    name: Deploy App to Fly
+    runs-on: ubuntu-latest
+    needs: [ci, changes, migrate]
+    if: |
+      always() &&
+      needs.ci.result == 'success' &&
+      needs.migrate.result == 'success' &&
+      (needs.changes.outputs.app == 'true' || github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_frontend == 'true')
+    environment:
+      name: production
+      url: https://app.remotedays.app
+    concurrency:
+      # Literal, not env.FLY_APP: the env context is not available in a
+      # concurrency group. Serialises deploys so two pushes cannot race for the
+      # same Fly machine.
+      group: fly-deploy-remotedays
+      cancel-in-progress: false
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@1.5
+        with:
+          # Pinned to the version this configuration was validated against.
+          # Bump deliberately, then re-check `flyctl config validate`.
+          version: '0.4.117'
+
+      - name: Stage runtime secrets on Fly
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          LEAD_NOTIFICATION_EMAIL: ${{ secrets.LEAD_NOTIFICATION_EMAIL }}
+          DAILY_EMAIL_LIMIT: ${{ secrets.DAILY_EMAIL_LIMIT }}
+        run: |
+          set -euo pipefail
+
+          # `--stage` stores the secrets without rolling the machines, so the
+          # deploy below applies them in a single rollout instead of two.
+          #
+          # Values are passed through printf and never re-parsed by the shell,
+          # so a password containing $ " \ or a quote survives intact.
+          {
+            printf 'APP_URL=%s\n' 'https://app.remotedays.app'
+            printf 'API_PUBLIC_URL=%s\n' 'https://api.remotedays.app'
+
+            for name in DATABASE_URL JWT_SECRET EMAIL_FROM SMTP_HOST SMTP_PORT \
+                        SMTP_USER SMTP_PASS SMTP_FROM LEAD_NOTIFICATION_EMAIL \
+                        DAILY_EMAIL_LIMIT; do
+              value="$(printenv "$name" || true)"
+              if [ -n "$value" ]; then
+                printf '%s=%s\n' "$name" "$value"
+              else
+                echo "::warning::$name is not set for this repository — skipping"
+              fi
+            done
+          } | flyctl secrets import --stage
+
+      - name: Deploy
+        # `--depot=false` selects Fly's own remote builder instead of Depot,
+        # which flyctl uses by default.
+        #
+        # Depot is not the problem here in the sense of being our fault: it hangs
+        # on this organisation ("Waiting for depot builder..." then a five-minute
+        # `context deadline exceeded`, exit 126) while the identical Dockerfile
+        # builds cleanly through the legacy builder. Verified against this
+        # repository's own deploy token, not just a personal login.
+        #
+        # Drop the flag to return to Depot once it builds here again.
+        run: flyctl deploy --remote-only --depot=false
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          BASE="https://${FLY_APP}.fly.dev"
+
+          # The SPA: the proxy returns 200 once a machine is running and passing
+          # its health check, which after an autostop means a cold start.
+          code=""
+          for attempt in $(seq 1 12); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE/" || true)"
+            if [ "$code" = "200" ]; then break; fi
+            echo "attempt ${attempt}/12: GET / -> ${code}"
+            sleep 5
+          done
+          if [ "$code" != "200" ]; then
+            echo "The SPA did not come up (last status: ${code})"
+            flyctl logs --app "$FLY_APP" --no-tail | tail -50
+            exit 1
+          fi
+
+          if ! curl -fsS "$BASE/" | grep -q '<div id="root">'; then
+            echo "GET / answered 200 but did not look like the SPA shell"
+            exit 1
+          fi
+          echo "SPA shell served from the API's origin."
+
+          health="$(curl -fsS "$BASE/health")"
+          echo "health: ${health}"
+          case "$health" in
+            *'"db":"ok"'*) echo "Database reachable." ;;
+            *) echo "The API is up but cannot reach its database."; exit 1 ;;
+          esac
+
+  # ===========================================
+  # Deploy Landing Page to Vercel
+  # ===========================================
+  deploy-landing:
+    name: Deploy Landing
+    runs-on: ubuntu-latest
+    needs: [ci, changes]
+    if: |
+      always() &&
+      needs.ci.result == 'success' &&
+      needs.changes.outputs.landing == 'true'
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_LANDING }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+  # ===========================================
+  # Summary
+  # ===========================================
+  summary:
+    name: Summary
+    runs-on: ubuntu-latest
+    needs: [ci, changes, migrate, deploy-app, deploy-landing]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Generate Summary
+        env:
+          CI_RESULT: ${{ needs.ci.result }}
+          MIGRATE_RESULT: ${{ needs.migrate.result }}
+          APP_RESULT: ${{ needs.deploy-app.result }}
+          LANDING_RESULT: ${{ needs.deploy-landing.result }}
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$CI_RESULT" = "success" ]; then
+            echo "| CI | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| CI | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$MIGRATE_RESULT" = "success" ]; then
+            echo "| Migrations | ✅ Applied |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$MIGRATE_RESULT" = "skipped" ]; then
+            echo "| Migrations | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Migrations | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$APP_RESULT" = "success" ]; then
+            echo "| App (API + SPA on Fly) | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$APP_RESULT" = "skipped" ]; then
+            echo "| App (API + SPA on Fly) | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| App (API + SPA on Fly) | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$LANDING_RESULT" = "success" ]; then
+            echo "| Landing | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$LANDING_RESULT" = "skipped" ]; then
+            echo "| Landing | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Landing | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi

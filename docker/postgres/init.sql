@@ -129,6 +129,69 @@ CREATE TABLE schema_migrations (
   applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 8b. login_attempts (for account lockout and security monitoring)
+CREATE TABLE login_attempts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) NOT NULL,
+  ip_address VARCHAR(45) NOT NULL, -- IPv6 can be up to 45 chars
+  user_agent TEXT,
+  success BOOLEAN NOT NULL DEFAULT false,
+  failure_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_login_attempts_email_time ON login_attempts (email, created_at DESC);
+CREATE INDEX idx_login_attempts_ip ON login_attempts (ip_address, created_at DESC);
+
+-- 8c. security_events (audit log for security-related events)
+CREATE TABLE security_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type VARCHAR(50) NOT NULL,
+  user_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+  email VARCHAR(255),
+  ip_address VARCHAR(45) NOT NULL,
+  user_agent TEXT,
+  details JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_security_events_type ON security_events (event_type, created_at DESC);
+CREATE INDEX idx_security_events_user ON security_events (user_id, created_at DESC);
+CREATE INDEX idx_security_events_ip ON security_events (ip_address, created_at DESC);
+
+-- 8d. push_tokens (for mobile push notifications)
+CREATE TABLE push_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  token TEXT NOT NULL,
+  platform VARCHAR(20) NOT NULL CHECK (platform IN ('ios', 'android', 'web')),
+  device_name VARCHAR(255),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, token)
+);
+
+CREATE INDEX idx_push_tokens_user ON push_tokens(user_id);
+CREATE INDEX idx_push_tokens_active ON push_tokens(is_active) WHERE is_active = true;
+
+-- 8e. push_notification_logs (tracking sent push notifications)
+CREATE TABLE push_notification_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  notification_type VARCHAR(50) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  body TEXT,
+  data JSONB,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed', 'delivered')),
+  error_message TEXT,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_push_logs_user ON push_notification_logs(user_id);
+CREATE INDEX idx_push_logs_type ON push_notification_logs(notification_type);
+
 -- 9. helpful indexes
 CREATE INDEX idx_entries_user_date ON entries (user_id, date);
 CREATE INDEX idx_entries_date ON entries (date);
@@ -176,5 +239,43 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_audit_entries
 AFTER INSERT OR UPDATE OR DELETE ON entries
 FOR EACH ROW EXECUTE FUNCTION audit_entries_change();
+
+-- 9. Enterprise SSO (OIDC) configuration and identity links
+-- Mirrors migrations/004_enterprise_sso.sql for fresh installs.
+-- Accounts stay pre-provisioned (HR import); the IdP only authenticates.
+CREATE TABLE IF NOT EXISTS sso_settings (
+  id BOOLEAN PRIMARY KEY DEFAULT true,
+  CONSTRAINT sso_settings_singleton CHECK (id),
+  display_name TEXT NOT NULL DEFAULT 'Microsoft',
+  issuer TEXT NOT NULL,
+  tenant_id TEXT,
+  client_id TEXT NOT NULL,
+  client_secret_encrypted TEXT,
+  scopes TEXT NOT NULL DEFAULT 'openid profile email',
+  allowed_email_domains TEXT[] NOT NULL DEFAULT '{}',
+  auto_link_by_email BOOLEAN NOT NULL DEFAULT true,
+  is_enabled BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TRIGGER trg_sso_settings_updated_at
+BEFORE UPDATE ON sso_settings
+FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at();
+
+CREATE TABLE IF NOT EXISTS user_identities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  tenant_id TEXT NOT NULL,
+  subject_id TEXT NOT NULL,
+  email_at_link TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_login_at TIMESTAMPTZ,
+  CONSTRAINT uq_user_identities_subject UNIQUE (provider, tenant_id, subject_id),
+  CONSTRAINT uq_user_identities_user_provider UNIQUE (user_id, provider)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_identities_user ON user_identities (user_id);
 
 -- Done

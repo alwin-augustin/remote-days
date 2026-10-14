@@ -1,7 +1,9 @@
 import { format, addDays, startOfWeek, isSameDay, isWeekend } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { Home, Building2, Plane, Stethoscope, Minus } from 'lucide-react';
 import type { work_status } from '@remotedays/types';
+import { TONE_CLASSES, WORK_STATUS_LABEL, WORK_STATUS_TONE, type StatusTone } from '@/lib/status';
+import { cn } from '@/lib/utils';
 
 interface WeekCalendarProps {
   entries: { date: string; status: work_status }[];
@@ -10,13 +12,13 @@ interface WeekCalendarProps {
   className?: string;
 }
 
-const STATUS_CONFIG: Record<work_status, { icon: string; label: string; color: string }> = {
-  home: { icon: '🏠', label: 'Home', color: 'bg-green-100 text-green-800' },
-  office: { icon: '🏢', label: 'Office', color: 'bg-blue-100 text-blue-800' },
-  travel: { icon: '✈️', label: 'Travel', color: 'bg-yellow-100 text-yellow-800' },
-  sick: { icon: '🏥', label: 'Sick', color: 'bg-red-100 text-red-800' },
-  unknown: { icon: '❓', label: 'Not set', color: 'bg-gray-100 text-gray-600' },
-};
+const STATUS_ICON = {
+  home: Home,
+  office: Building2,
+  travel: Plane,
+  sick: Stethoscope,
+  unknown: Minus,
+} as const;
 
 export function WeekCalendar({ entries, startDate = new Date(), title = 'This Week', className }: WeekCalendarProps) {
   const weekStart = startOfWeek(startDate, { weekStartsOn: 1 }); // Monday
@@ -36,39 +38,44 @@ export function WeekCalendar({ entries, startDate = new Date(), title = 'This We
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1.5">
           {days.map((day) => {
             const entry = getEntryForDate(day);
-            const status = entry?.status || 'unknown';
-            const config = STATUS_CONFIG[status];
+            const hasEntry = Boolean(entry);
+            const status: work_status = entry?.status || 'unknown';
+            const tone: StatusTone = WORK_STATUS_TONE[status];
+            const Icon = STATUS_ICON[status];
             const isToday = isSameDay(day, new Date());
             const isWeekendDay = isWeekend(day);
+            const classes = TONE_CLASSES[tone];
+
+            const label = `${format(day, 'EEEE d MMMM')}: ${WORK_STATUS_LABEL[status]}`;
 
             return (
               <div
                 key={day.toISOString()}
                 className={cn(
-                  'flex flex-col items-center p-2 rounded-lg border',
-                  isToday && 'ring-2 ring-primary',
-                  isWeekendDay && 'bg-muted/30'
+                  'flex min-h-[68px] flex-col items-center justify-center gap-1 rounded-lg border p-1.5 text-center',
+                  hasEntry ? classes.muted : 'border-border',
+                  isWeekendDay && !hasEntry && 'bg-muted/40',
+                  isToday && 'border-primary bg-primary/5'
                 )}
+                title={label}
+                aria-label={label}
+                aria-current={isToday ? 'date' : undefined}
               >
-                <div className="text-xs font-medium text-muted-foreground">
+                <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                   {format(day, 'EEE')}
                 </div>
-                <div className={cn('text-sm font-semibold', isToday && 'text-primary')}>
+                <div className={cn('text-sm font-semibold tabular-nums', isToday && 'text-primary')}>
                   {format(day, 'd')}
                 </div>
-                {!isWeekendDay && (
-                  <div className={cn('mt-2 text-lg', !entry && 'opacity-30')}>
-                    {config.icon}
-                  </div>
-                )}
-                {!isWeekendDay && entry && (
-                  <div className="mt-1 text-[10px] text-center text-muted-foreground">
-                    {config.label}
-                  </div>
-                )}
+                {hasEntry || !isWeekendDay ? (
+                  <Icon
+                    className={cn('h-4 w-4', hasEntry ? classes.icon : 'text-muted-foreground/40')}
+                    aria-hidden
+                  />
+                ) : null}
               </div>
             );
           })}

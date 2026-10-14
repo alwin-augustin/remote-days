@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -39,11 +39,10 @@ export default function ForgotPassword() {
     const onSubmit = async (values: ForgotPasswordFormValues) => {
         setIsLoading(true);
         try {
-            await api.post('/auth/password-reset-request', values);
+            await api.post('/auth/password-resets', values);
             setIsSubmitted(true);
         } catch (error) {
-            console.error('Password reset request failed:', error);
-            toast.error('Failed to send password reset email. Please try again.');
+            toast.error(getApiErrorMessage(error, 'Failed to send password reset email. Please try again.'));
         } finally {
             setIsLoading(false);
         }
@@ -51,7 +50,7 @@ export default function ForgotPassword() {
 
     if (isSubmitted) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+            <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
                 <Card className="w-full max-w-md">
                     <CardHeader>
                         <CardTitle>Check your email</CardTitle>
@@ -60,7 +59,7 @@ export default function ForgotPassword() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-gray-500 mb-4">
+                        <p className="text-sm text-muted-foreground mb-4">
                             Please check your inbox and follow the instructions to reset your password.
                             If you don't receive an email within a few minutes, please check your spam folder.
                         </p>
@@ -78,7 +77,7 @@ export default function ForgotPassword() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle>Forgot Password</CardTitle>

@@ -1,4 +1,3 @@
-
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -28,28 +27,28 @@ import fastifyPostgres from '@fastify/postgres';
 import { sendEmailPrompts } from '../src/worker/worker';
 
 async function main() {
-    console.log('--- Triggering Daily Prompt Worker ---');
-    console.log(`SMTP Config: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}`);
+  console.log('--- Triggering Daily Prompt Worker ---');
+  console.log(`SMTP Config: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}`);
 
-    const fastify = Fastify({ logger: true });
+  const fastify = Fastify({ logger: true });
 
-    // Register Postgres
-    fastify.register(fastifyPostgres, {
-        connectionString: config.DATABASE_URL,
-    });
+  // Register Postgres
+  fastify.register(fastifyPostgres, {
+    connectionString: config.DATABASE_URL,
+  });
 
-    await fastify.ready();
-    console.log('Database connected.');
+  await fastify.ready();
+  console.log('Database connected.');
 
-    try {
-        await sendEmailPrompts(fastify);
-        console.log('--- Worker Completed Successfully ---');
-    } catch (err) {
-        console.error('Worker failed:', err);
-    } finally {
-        await fastify.close();
-        process.exit(0);
-    }
+  try {
+    await sendEmailPrompts(fastify);
+    console.log('--- Worker Completed Successfully ---');
+  } catch (err) {
+    console.error('Worker failed:', err);
+  } finally {
+    await fastify.close();
+    process.exit(0);
+  }
 }
 
 main().catch(console.error);

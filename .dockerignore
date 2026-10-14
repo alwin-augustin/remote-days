@@ -1,11 +1,41 @@
 node_modules
+**/node_modules
+
 npm-debug.log
+yarn-error.log
+
+# Docker metadata
 Dockerfile
+Dockerfile.*
 .dockerignore
+docker-compose*.yml
+
+# VCS and CI
 .git
 .gitignore
-README.md
+.github
+
+# Build output is produced inside the image
 dist
+**/dist
 build
-.env
+**/build
+coverage
+
+# Secrets and local environment.
+#
+# The `**/` prefix matters. Vite reads apps/web/.env at build time, so a bare
+# `.env` pattern that only reached the context root would let a developer's local
+# file quietly bake an absolute API URL into the SPA and pull apps/api/.env,
+# which holds the database credentials, into the build stage.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Not part of the image
+landing
+infra
+docs
+*.pdf
+
 .DS_Store

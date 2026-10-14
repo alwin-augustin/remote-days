@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { format, subDays } from 'date-fns';
 import { api } from '@/lib/api';
 import { logger } from '@/lib/logger';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Table,
     TableBody,
@@ -13,30 +12,33 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Loader2, FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet } from 'lucide-react';
 import type { DateRange } from "react-day-picker";
-import { DateRangePicker } from '@/components/ui/date-range-picker'; // Need to create this or assume simple inputs
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { TablePagination } from '@/components/TablePagination';
+import { PageHeader } from '@/components/PageHeader';
+import { SectionCard } from '@/components/SectionCard';
+import { InlineErrorState, TableEmptyState, TableLoadingState } from '@/components/DataStates';
 
+// camelCase as returned by API
 type AuditLog = {
     id: string;
     action: string;
-    actor_id: string;
-    target_id?: string;
-    details: any;
-    created_at: string;
-    actor_email?: string;
-    actor_first_name?: string;
-    actor_last_name?: string;
-    target_email?: string;
-    target_first_name?: string;
-    target_last_name?: string;
+    actorId: string;
+    targetId?: string;
+    details: Record<string, unknown>;
+    createdAt: string;
+    actorEmail?: string;
+    actorFirstName?: string;
+    actorLastName?: string;
+    targetEmail?: string;
+    targetFirstName?: string;
+    targetLastName?: string;
     reason?: string;
-    entry_date?: string;
-    previous_status?: string;
-    new_status?: string;
+    entryDate?: string;
+    previousStatus?: string;
+    newStatus?: string;
 };
-
-import { TablePagination } from '@/components/TablePagination';
 
 export default function AuditLogs() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -46,13 +48,13 @@ export default function AuditLogs() {
     const [page, setPage] = useState(1);
     const pageSize = 10;
 
-    const { data: logs, isLoading } = useQuery({
+    const { data: logs, isLoading, isError } = useQuery({
         queryKey: ['admin', 'audit', dateRange],
         queryFn: async () => {
             const from = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '';
             const to = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : '';
-            const res = await api.get<AuditLog[]>(`/admin/audit?startDate=${from}&endDate=${to}`);
-            return res.data;
+            const res = await api.get<{ data: AuditLog[]; total: number }>(`/admin/audit?startDate=${from}&endDate=${to}`);
+            return res.data.data;
         },
         enabled: !!dateRange?.from,
     });
@@ -87,25 +89,26 @@ export default function AuditLogs() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <h1 className="text-3xl font-bold tracking-tight">Audit Logs</h1>
-                <div className="flex items-center gap-2">
+            <PageHeader
+                title="Audit Logs"
+                description="Review system activity across the selected date range and export reports when needed."
+                actions={
+                    <div className="flex items-center gap-2">
                     <DateRangePicker date={dateRange} setDate={setDateRange} />
                     <Button variant="outline" onClick={handleDownloadExcel}>
                         <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
                     </Button>
-                </div>
-            </div>
+                    </div>
+                }
+            />
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>System Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
+            {isError ? <InlineErrorState description="Audit log data could not be loaded." /> : null}
+
+            <SectionCard title="System Activity" description="Inspect recent actions taken across the platform." contentClassName="pt-6">
                     {isLoading ? (
-                        <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                        <TableLoadingState rows={6} />
                     ) : !logs || logs.length === 0 ? (
-                        <div className="text-center p-8 text-muted-foreground">No logs found for this period.</div>
+                        <TableEmptyState title="No audit entries" description="No activity was recorded for the selected time window." />
                     ) : (
                         <>
                             <Table>
@@ -123,17 +126,17 @@ export default function AuditLogs() {
                                     {paginatedLogs.map(log => (
                                         <TableRow key={log.id}>
                                             <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                                                {format(new Date(log.created_at), 'yyyy-MM-dd HH:mm')}
+                                                {format(new Date(log.createdAt), 'yyyy-MM-dd HH:mm')}
                                             </TableCell>
                                             <TableCell>
                                                 <span className="font-medium">{log.action}</span>
                                             </TableCell>
                                             <TableCell>
-                                                {formatUser(log.actor_first_name, log.actor_last_name, log.actor_email)}
+                                                {formatUser(log.actorFirstName, log.actorLastName, log.actorEmail)}
                                             </TableCell>
                                             <TableCell>
-                                                {log.target_email && log.target_email !== 'N/A'
-                                                    ? formatUser(log.target_first_name, log.target_last_name, log.target_email)
+                                                {log.targetEmail && log.targetEmail !== 'N/A'
+                                                    ? formatUser(log.targetFirstName, log.targetLastName, log.targetEmail)
                                                     : '-'
                                                 }
                                             </TableCell>
@@ -157,8 +160,7 @@ export default function AuditLogs() {
                             </div>
                         </>
                     )}
-                </CardContent>
-            </Card>
+            </SectionCard>
         </div>
     );
 }

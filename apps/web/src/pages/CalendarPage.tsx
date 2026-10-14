@@ -2,20 +2,24 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { startOfMonth, startOfToday, format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { api } from '@/lib/api';
 import type { work_status } from '@remotedays/types';
 import { Loader2, Home, Building, Plane, Stethoscope, HelpCircle, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TONE_CLASSES, type StatusTone } from '@/lib/status';
+import { StatusDot } from '@/components/ui/status-badge';
+import { SectionCard } from '@/components/SectionCard';
+import { InlineErrorState } from '@/components/DataStates';
 
 type Entry = { date: string; status: work_status; id: string };
 
-const STATUS_CONFIG: Record<work_status, { label: string; icon: LucideIcon; color: string; bg: string }> = {
-    home: { label: 'Home', icon: Home, color: 'text-green-700', bg: 'bg-green-100' },
-    office: { label: 'Office', icon: Building, color: 'text-blue-700', bg: 'bg-blue-100' },
-    travel: { label: 'Travel', icon: Plane, color: 'text-yellow-700', bg: 'bg-yellow-100' },
-    sick: { label: 'Sick', icon: Stethoscope, color: 'text-red-700', bg: 'bg-red-100' },
-    unknown: { label: '?', icon: HelpCircle, color: 'text-gray-700', bg: 'bg-gray-100' },
+const STATUS_CONFIG: Record<work_status, { label: string; icon: LucideIcon; tone: StatusTone }> = {
+    home: { label: 'Home', icon: Home, tone: 'success' },
+    office: { label: 'Office', icon: Building, tone: 'info' },
+    travel: { label: 'Travel', icon: Plane, tone: 'warning' },
+    sick: { label: 'Sick', icon: Stethoscope, tone: 'danger' },
+    unknown: { label: 'Not set', icon: HelpCircle, tone: 'neutral' },
 };
 
 export default function CalendarPage() {
@@ -24,13 +28,13 @@ export default function CalendarPage() {
     // Track displayed month to fetch appropriate data
     const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
 
-    const { data: entries, isLoading } = useQuery({
+    const { data: entries, isLoading, isError } = useQuery({
         queryKey: ['entries', format(currentMonth, 'yyyy'), format(currentMonth, 'MM')],
         queryFn: async () => {
             const year = format(currentMonth, 'yyyy');
             const month = format(currentMonth, 'MM');
-            const res = await api.get<Entry[]>(`/entries?year=${year}&month=${month}`);
-            return res.data;
+            const res = await api.get<{ data: Entry[]; total: number }>(`/entries?year=${year}&month=${month}`);
+            return res.data.data;
         },
     });
 
@@ -60,18 +64,17 @@ export default function CalendarPage() {
     };
 
     return (
-        <div className="space-y-4 h-[calc(100vh-8rem)] flex flex-col">
-            <div className="flex items-center justify-between shrink-0">
-                <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
-            </div>
+        <div className="space-y-4">
+            {isError ? (
+                <InlineErrorState description="Calendar data could not be loaded." />
+            ) : null}
 
-            <Card className="flex-1 flex flex-col overflow-hidden shadow-md">
-                <CardHeader className="py-3 px-4 shrink-0 border-b">
-                    <CardTitle className="text-base text-center w-full">
-                        Monthly Overview
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex justify-center p-0 overflow-auto">
+            <SectionCard
+                title="Monthly Overview"
+                description="Scan the month at a glance and review each declared work location without leaving the calendar."
+                contentClassName="p-0"
+            >
+                <CardContent className="flex min-h-[calc(100vh-15rem)] justify-center overflow-auto p-0">
                     {isLoading ? (
                         <div className="flex h-full items-center justify-center">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -102,6 +105,7 @@ export default function CalendarPage() {
                                     const dayDate = day.date;
                                     const status = getStatusForDate(dayDate);
                                     const config = status ? STATUS_CONFIG[status] : null;
+                                    const classes = config ? TONE_CLASSES[config.tone] : null;
 
                                     return (
                                         <button
@@ -120,10 +124,10 @@ export default function CalendarPage() {
                                             </span>
 
                                             {/* STATIC TEST TEXT AS REQUESTED + Dynamic Status */}
-                                            {config ? (
-                                                <div className={cn("flex flex-col items-center w-[90%] rounded p-1 shadow-sm", config.bg)}>
-                                                    <config.icon className={cn("h-4 w-4", config.color)} />
-                                                    <span className={cn("text-[9px] font-bold uppercase", config.color)}>{config.label}</span>
+                                            {config && classes ? (
+                                                <div className={cn("flex w-[90%] flex-col items-center rounded border p-1", classes.muted)}>
+                                                    <config.icon className={cn("h-4 w-4", classes.icon)} />
+                                                    <span className={cn("text-[9px] font-bold uppercase", classes.text)}>{config.label}</span>
                                                 </div>
                                             ) : (
                                                 <div className="flex-1" />
@@ -136,14 +140,16 @@ export default function CalendarPage() {
                         />
                     )}
                 </CardContent>
-            </Card>
+            </SectionCard>
 
-            <div className="flex flex-wrap gap-6 items-center justify-center text-xs font-medium text-muted-foreground py-2 shrink-0">
-                <span className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm" /> Home</span>
-                <span className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" /> Office</span>
-                <span className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-sm" /> Travel</span>
-                <span className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" /> Sick</span>
-            </div>
+            <Card className="border-border/70 shadow-sm">
+                <CardContent className="flex flex-wrap items-center justify-center gap-5 py-4 text-xs font-medium text-muted-foreground sm:justify-start">
+                    <span className="flex items-center gap-2"><StatusDot tone="success" /> Home</span>
+                    <span className="flex items-center gap-2"><StatusDot tone="info" /> Office</span>
+                    <span className="flex items-center gap-2"><StatusDot tone="warning" /> Travel</span>
+                    <span className="flex items-center gap-2"><StatusDot tone="danger" /> Sick</span>
+                </CardContent>
+            </Card>
         </div>
     );
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { toast } from 'sonner';
 // import { work_status } from '@remotedays/types'; // Not used in component logic directly, handled by string literal in schema
 
@@ -34,9 +34,11 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
+// Employees can only request home or office status
+// Travel and sick can only be set by HR/Admin via override
 const requestSchema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date'),
-    status: z.enum(['home', 'office', 'travel', 'sick']),
+    status: z.enum(['home', 'office']),
     reason: z.string().min(5, 'Reason must be at least 5 characters'),
 });
 
@@ -60,20 +62,24 @@ export function RequestChangeDialog({ defaultDate, onSuccess }: RequestChangeDia
 
     const onSubmit = async (data: RequestFormValues) => {
         try {
-            await api.post('/requests', data);
+            await api.post('/requests', {
+                date: data.date,
+                requestedStatus: data.status,
+                reason: data.reason,
+            });
             toast.success('Request submitted successfully');
             setOpen(false);
             form.reset();
             if (onSuccess) onSuccess();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to submit request');
+        } catch (error: unknown) {
+            toast.error(getApiErrorMessage(error, 'Failed to submit request'));
         }
     };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline">Request Change</Button>
+                <Button variant="outline" type="button">Request Change</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
@@ -112,8 +118,6 @@ export function RequestChangeDialog({ defaultDate, onSuccess }: RequestChangeDia
                                         <SelectContent>
                                             <SelectItem value="home">Home</SelectItem>
                                             <SelectItem value="office">Office</SelectItem>
-                                            <SelectItem value="travel">Travel</SelectItem>
-                                            <SelectItem value="sick">Sick</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />

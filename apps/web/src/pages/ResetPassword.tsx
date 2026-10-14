@@ -7,7 +7,7 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import {
     Form,
@@ -51,15 +51,14 @@ export default function ResetPassword() {
 
         setIsLoading(true);
         try {
-            await api.post('/auth/password-reset', {
+            await api.patch('/auth/password-resets', {
                 token,
                 newPassword: values.password,
             });
             toast.success('Password reset successfully. You can now login with your new password.');
             navigate('/login');
         } catch (error) {
-            console.error('Password reset failed:', error);
-            toast.error('Failed to reset password. The link may have expired.');
+            toast.error(getApiErrorMessage(error, 'Failed to reset password. The link may have expired.'));
         } finally {
             setIsLoading(false);
         }
@@ -67,10 +66,10 @@ export default function ResetPassword() {
 
     if (!token) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+            <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
                 <Card className="w-full max-w-md">
                     <CardHeader>
-                        <CardTitle className="text-red-500">Invalid Link</CardTitle>
+                        <CardTitle className="text-destructive">Invalid Link</CardTitle>
                         <CardDescription>
                             This password reset link is invalid or missing a token.
                         </CardDescription>
@@ -88,7 +87,7 @@ export default function ResetPassword() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle>Reset Password</CardTitle>

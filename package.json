@@ -9,7 +9,6 @@
   "scripts": {
     "dev:api": "npm run dev --workspace=@remotedays/api",
     "dev:web": "npm run dev --workspace=@remotedays/web",
-    "dev:mobile": "npm run start --workspace=@remotedays/mobile",
     "build": "npm run build --workspaces --if-present",
     "build:api": "npm run build --workspace=@remotedays/api",
     "build:web": "npm run build --workspace=@remotedays/web",

@@ -13,7 +13,7 @@ export default defineConfig({
       exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts', 'src/types/**'],
     },
     // Increase timeout for integration tests involving DB
-    testTimeout: 20000, 
+    testTimeout: 20000,
     hookTimeout: 30000,
     env: {
       NODE_ENV: 'test',
@@ -25,6 +25,9 @@ export default defineConfig({
       SMTP_USER: 'test@example.com',
       SMTP_PASS: 'password',
       SMTP_FROM: 'test@example.com',
+      // Kept in step with SMTP_FROM so the lead path can never resolve to the real
+      // production inbox when it runs under test.
+      LEAD_NOTIFICATION_EMAIL: 'test@example.com',
     },
   },
 });

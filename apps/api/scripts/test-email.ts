@@ -1,4 +1,3 @@
-
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -25,34 +24,34 @@ import { emailService } from '../src/services/email.service';
 import { generateEmailHtml } from '../src/services/email-templates';
 
 async function sendTest() {
-    console.log('--- Sending Test Email ---');
+  console.log('--- Sending Test Email ---');
 
-    const testEmail = 'alwin.augustin@example.com'; // You can change this or read from env
-    const html = generateEmailHtml(
-        'Welcome to Teletravail Tracker',
-        'Alwin Augustin',
-        'This is a test email to verify the new design system. We have updated our look with a cleaner interface, better typography (Inter), and a vibrant blue primary color. <br><br> We hope you like it!',
-        [
-            { label: 'Go to Dashboard', url: 'http://localhost:5173', color: 'primary' },
-            { label: 'Read Documentation', url: 'http://localhost:5173/docs', color: 'secondary' }
-        ]
-    );
+  const testEmail = 'alwin.augustin@example.com'; // You can change this or read from env
+  const html = generateEmailHtml(
+    'Welcome to Teletravail Tracker',
+    'Alwin Augustin',
+    'This is a test email to verify the new design system. We have updated our look with a cleaner interface, better typography (Inter), and a vibrant blue primary color. <br><br> We hope you like it!',
+    [
+      { label: 'Go to Dashboard', url: 'http://localhost:5173', color: 'primary' },
+      { label: 'Read Documentation', url: 'http://localhost:5173/docs', color: 'secondary' },
+    ]
+  );
 
-    // Save preview
-    const previewPath = path.join(__dirname, 'email-preview.html');
-    fs.writeFileSync(previewPath, html);
-    console.log(`Preview saved to: ${previewPath}`);
+  // Save preview
+  const previewPath = path.join(__dirname, 'email-preview.html');
+  fs.writeFileSync(previewPath, html);
+  console.log(`Preview saved to: ${previewPath}`);
 
-    await emailService.sendEmail(
-        testEmail,
-        'Test Email - Teletravail Tracker Design Update',
-        'HTML content not displayed.',
-        html
-    );
+  await emailService.sendEmail(
+    testEmail,
+    'Test Email - Teletravail Tracker Design Update',
+    'HTML content not displayed.',
+    html
+  );
 
-    console.log('--- Test Email Sent ---');
-    console.log(`To: ${testEmail}`);
-    console.log('Check Ethereal URL (if using Ethereal) or your SMTP inbox.');
+  console.log('--- Test Email Sent ---');
+  console.log(`To: ${testEmail}`);
+  console.log('Check Ethereal URL (if using Ethereal) or your SMTP inbox.');
 }
 
 sendTest().catch(console.error);

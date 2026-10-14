@@ -1,0 +1,51 @@
+# Remote Days — one Fly app serving the Fastify API under /v1 and the built SPA
+# at every other path.
+#
+# Deployed by .github/workflows/ci-deploy.yml with `flyctl deploy --remote-only`
+# from the repository root, because apps/api/Dockerfile builds the whole
+# workspace. Always run flyctl from the repository root so that `fly.toml` and
+# the build context agree.
+
+app = "remotedays"
+primary_region = "ams"
+
+[build]
+  dockerfile = "apps/api/Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+  HOST = "0.0.0.0"
+  # The nightly demo reset is a node-cron job running inside this process, so it
+  # must stay off against the shared database.
+  DEMO_SEED_ENABLED = "false"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Scale to zero. An idle demo then costs only rootfs storage, and the first
+  # request after a quiet spell pays a one-off cold start of a second or two.
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 200
+    soft_limit = 150
+
+  # Liveness deliberately targets the SPA shell, which is served without touching
+  # the database. `/health` runs SELECT 1 and is known to hang on the connection
+  # timeout rather than fail fast when the database is unreachable, which would
+  # turn a brief database blip into a failing check and a restart loop. Use
+  # /health for monitoring; do not point this check at it.
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

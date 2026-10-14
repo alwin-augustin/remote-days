@@ -1,0 +1,9 @@
+-- Rollback: Drop security tables
+DROP INDEX IF EXISTS idx_security_events_timestamp;
+DROP INDEX IF EXISTS idx_security_events_user;
+DROP INDEX IF EXISTS idx_security_events_type;
+DROP INDEX IF EXISTS idx_login_attempts_email_created;
+DROP INDEX IF EXISTS idx_login_attempts_ip;
+DROP INDEX IF EXISTS idx_login_attempts_email;
+DROP TABLE IF EXISTS security_events;
+DROP TABLE IF EXISTS login_attempts;

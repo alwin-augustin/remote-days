@@ -1,14 +1,27 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { XCircle, AlertOctagon, AlertTriangle, AlertCircle } from 'lucide-react';
+import { TONE_CLASSES, type StatusTone } from '@/lib/status';
 import { cn } from '@/lib/utils';
+
+type RiskKey = 'exceeded' | 'critical' | 'high' | 'moderate';
 
 interface RiskDistributionCardsProps {
   exceededCount: number;
   criticalCount: number;
   highCount: number;
   moderateCount: number;
-  onFilterChange: (filter: 'exceeded' | 'critical' | 'high' | 'moderate' | null) => void;
-  activeFilter: 'exceeded' | 'critical' | 'high' | 'moderate' | null;
+  onFilterChange: (filter: RiskKey | null) => void;
+  activeFilter: RiskKey | null;
+}
+
+interface RiskCard {
+  key: RiskKey;
+  title: string;
+  count: number;
+  description: string;
+  action: string;
+  icon: typeof XCircle;
+  tone: StatusTone;
 }
 
 export function RiskDistributionCards({
@@ -19,99 +32,81 @@ export function RiskDistributionCards({
   onFilterChange,
   activeFilter,
 }: RiskDistributionCardsProps) {
-  const cards = [
+  const cards: RiskCard[] = [
     {
-      key: 'exceeded' as const,
-      title: 'Exceeded Limit',
+      key: 'exceeded',
+      title: 'Exceeded limit',
       count: exceededCount,
-      description: '100%+ of allowance used',
+      description: 'Over 100% of allowance',
       action: 'Review immediately',
       icon: XCircle,
-      colors: {
-        bg: 'bg-red-50',
-        border: 'border-l-red-500',
-        text: 'text-red-700',
-        iconBg: 'bg-red-100',
-        iconText: 'text-red-600',
-      },
+      tone: 'danger',
     },
     {
-      key: 'critical' as const,
-      title: 'Critical Risk',
+      key: 'critical',
+      title: 'Critical risk',
       count: criticalCount,
-      description: '90-100% used',
-      action: 'Proactive guidance needed',
+      description: '90–100% used',
+      action: 'Proactive guidance',
       icon: AlertOctagon,
-      colors: {
-        bg: 'bg-red-50',
-        border: 'border-l-red-400',
-        text: 'text-red-600',
-        iconBg: 'bg-red-100',
-        iconText: 'text-red-500',
-      },
+      tone: 'danger',
     },
     {
-      key: 'high' as const,
-      title: 'High Risk',
+      key: 'high',
+      title: 'High risk',
       count: highCount,
-      description: '75-90% used',
+      description: '75–90% used',
       action: 'Monitor closely',
       icon: AlertTriangle,
-      colors: {
-        bg: 'bg-orange-50',
-        border: 'border-l-orange-500',
-        text: 'text-orange-700',
-        iconBg: 'bg-orange-100',
-        iconText: 'text-orange-600',
-      },
+      tone: 'warning',
     },
     {
-      key: 'moderate' as const,
-      title: 'Moderate Risk',
+      key: 'moderate',
+      title: 'Moderate risk',
       count: moderateCount,
-      description: '50-75% used',
+      description: '50–75% used',
       action: 'Plan ahead',
       icon: AlertCircle,
-      colors: {
-        bg: 'bg-amber-50',
-        border: 'border-l-amber-500',
-        text: 'text-amber-700',
-        iconBg: 'bg-amber-100',
-        iconText: 'text-amber-600',
-      },
+      tone: 'info',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4" role="group" aria-label="Filter employees by compliance risk">
       {cards.map((card) => {
         const Icon = card.icon;
         const isActive = activeFilter === card.key;
+        const tone = TONE_CLASSES[card.tone];
 
         return (
           <Card
             key={card.key}
+            role="button"
+            tabIndex={0}
+            aria-pressed={isActive}
+            onClick={() => onFilterChange(isActive ? null : card.key)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onFilterChange(isActive ? null : card.key);
+              }
+            }}
             className={cn(
-              'cursor-pointer transition-all duration-200 border-l-4',
-              card.colors.border,
-              isActive ? 'ring-2 ring-primary shadow-lg scale-[1.02]' : 'hover:shadow-md hover:scale-[1.01]',
+              'h-full cursor-pointer border-l-4 transition-all duration-200 hover:shadow-md',
+              tone.borderAccent,
+              isActive ? cn('ring-2', tone.ring) : 'hover:border-l-4',
               card.count === 0 && 'opacity-60'
             )}
-            onClick={() => onFilterChange(isActive ? null : card.key)}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-              <div className={cn('rounded-full p-2', card.colors.iconBg)}>
-                <Icon className={cn('h-4 w-4', card.colors.iconText)} />
-              </div>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
+              <Icon className={cn('h-4 w-4', tone.icon)} aria-hidden />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{card.count}</div>
-              <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
+            <CardContent className="flex h-full flex-col">
+              <div className="text-2xl font-bold tabular">{card.count}</div>
+              <p className="mt-1 text-xs text-muted-foreground">{card.description}</p>
               {card.count > 0 && (
-                <p className={cn('text-xs font-medium mt-2', card.colors.text)}>
-                  {card.action}
-                </p>
+                <p className={cn('mt-auto pt-2 text-xs font-medium', tone.text)}>{card.action}</p>
               )}
             </CardContent>
           </Card>
