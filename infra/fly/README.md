@@ -90,18 +90,32 @@ Vercel-web deployments and can be deleted.
 ### 2. Create the DNS records in Cloudflare
 
 `remotedays.app` is registered with Cloudflare, so these go in the Cloudflare
-dashboard. Both `app.` and `api.` point at the **same** Fly app, which is why
-they share one ownership token.
+dashboard. `app.`, `api.` and `demo.` all point at the **same** Fly app, which
+is why they share one ownership token.
 
 | Type | Name | Target | Notes |
 |---|---|---|---|
 | CNAME | `app` | `3plw35g.remotedays.fly.dev` | new record — `app.remotedays.app` did not resolve to anything before |
 | CNAME | `api` | `3plw35g.remotedays.fly.dev` | **replace** the existing record to `56.228.9.58`, which is the retired EC2 instance and currently times out |
+| CNAME | `demo` | `3plw35g.remotedays.fly.dev` | the public demo. **replace** the old target `dacc8263d41a14d9.vercel-dns-017.com` — Vercel hosts the landing page only, and that project no longer answers (it returns 404) |
 | TXT | `_fly-ownership.app` | `app-3plw35g` | proves domain ownership while Cloudflare's proxy is on |
-| TXT | `_fly-ownership.api` | `app-3plw35g` | same value for both hostnames |
+| TXT | `_fly-ownership.api` | `app-3plw35g` | same value for all three hostnames |
 
 A and AAAA records work too (`66.241.124.162` and `2a09:8280:1::1b6:37ef:0`), but
 the CNAME is what Fly recommends so the addresses can change without a DNS edit.
+
+All three hostnames are the same deployment: one image serves the Fastify API
+under `/v1` and the SPA everywhere else, so the app works on any hostname it is
+pointed at (the SPA is built with no `VITE_API_URL` and calls `/v1` relatively).
+That is why `demo.remotedays.app/login` — the target of the landing page's
+*Explore the live demo* button — is the production app rather than a separate
+build. There is no separate demo environment or database: signing in there uses
+the seeded accounts the login screen already advertises
+(`admin@remotedays.app` / `employee@remotedays.app`, password `password123`).
+
+`portal.remotedays.app` is still a `CNAME` to the retired Vercel project and
+returns 404. It is in the API's CORS allow-list, so if it is meant to serve the
+app it needs the same treatment as `demo`.
 
 Three things that will otherwise cost you an hour:
 
