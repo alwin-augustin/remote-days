@@ -194,6 +194,7 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          LEAD_NOTIFICATION_EMAIL: ${{ secrets.LEAD_NOTIFICATION_EMAIL }}
           DAILY_EMAIL_LIMIT: ${{ secrets.DAILY_EMAIL_LIMIT }}
         run: |
           set -euo pipefail
@@ -208,7 +209,8 @@ jobs:
             printf 'API_PUBLIC_URL=%s\n' 'https://api.remotedays.app'
 
             for name in DATABASE_URL JWT_SECRET EMAIL_FROM SMTP_HOST SMTP_PORT \
-                        SMTP_USER SMTP_PASS SMTP_FROM DAILY_EMAIL_LIMIT; do
+                        SMTP_USER SMTP_PASS SMTP_FROM LEAD_NOTIFICATION_EMAIL \
+                        DAILY_EMAIL_LIMIT; do
               value="$(printenv "$name" || true)"
               if [ -n "$value" ]; then
                 printf '%s=%s\n' "$name" "$value"
@@ -219,7 +221,17 @@ jobs:
           } | flyctl secrets import --stage
 
       - name: Deploy
-        run: flyctl deploy --remote-only
+        # `--depot=false` selects Fly's own remote builder instead of Depot,
+        # which flyctl uses by default.
+        #
+        # Depot is not the problem here in the sense of being our fault: it hangs
+        # on this organisation ("Waiting for depot builder..." then a five-minute
+        # `context deadline exceeded`, exit 126) while the identical Dockerfile
+        # builds cleanly through the legacy builder. Verified against this
+        # repository's own deploy token, not just a personal login.
+        #
+        # Drop the flag to return to Depot once it builds here again.
+        run: flyctl deploy --remote-only --depot=false
 
       - name: Smoke test
         run: |

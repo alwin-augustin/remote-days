@@ -21,6 +21,10 @@ interface Config {
   SMTP_PASS?: string;
   SMTP_FROM?: string;
   SMTP_SECURE: boolean;
+  // Where a landing-page request is delivered. Kept separate from SMTP_FROM,
+  // which is the *From* header and therefore has to be an address the relay has
+  // verified — typically a no-reply mailbox nobody reads.
+  LEAD_NOTIFICATION_EMAIL: string;
   APP_URL: string;
   // Public base URL of *this API*. Used to build OIDC redirect_uri values, which
   // must match the identity provider's app registration exactly and must point
@@ -58,6 +62,7 @@ export const config: Config = {
   SMTP_PASS: process.env.SMTP_PASS,
   SMTP_FROM: process.env.SMTP_FROM,
   SMTP_SECURE: process.env.SMTP_SECURE === 'true',
+  LEAD_NOTIFICATION_EMAIL: process.env.LEAD_NOTIFICATION_EMAIL || 'hello@remotedays.app',
   APP_URL: process.env.APP_URL || 'http://localhost:5173',
   API_PUBLIC_URL: (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || '3000'}`).replace(/\/$/, ''),
   EMAIL_FROM: process.env.EMAIL_FROM || 'noreply@remotedays.app',

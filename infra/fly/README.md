@@ -71,9 +71,9 @@ your hands:
 | `FLY_API_TOKEN` | `fly tokens create deploy -a remotedays` — copy the whole output including the `FlyV1` prefix |
 
 That is the only new secret. `DATABASE_URL`, `JWT_SECRET`, `EMAIL_FROM`,
-`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` and
-`DAILY_EMAIL_LIMIT` are already set on the repository and the workflow forwards
-them to Fly on every deploy.
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`,
+`LEAD_NOTIFICATION_EMAIL` and `DAILY_EMAIL_LIMIT` are already set on the
+repository and the workflow forwards them to Fly on every deploy.
 
 Prefer a **deploy token** over a personal token: it is scoped to this app and can
 be revoked on its own. See
@@ -198,6 +198,39 @@ connection string if you need to fetch it — treat that output as a credential.
   shared cache — but the rule is now dead weight and could be removed.
 - **`fly.toml` is authoritative.** `flyctl deploy` applies it, so editing a
   machine by hand without editing the file will be reverted on the next deploy.
+
+## Email
+
+Both the app's outbound mail and the landing-page contact form go through one SMTP
+relay: Brevo, `smtp-relay.brevo.com` port `587` with STARTTLS — which is why
+`SMTP_SECURE` is left unset (`false`). The relay only accepts a sender it has
+verified, so the *sender* and the *destination of a lead* are separate variables:
+
+| Variable | Value | Why |
+|---|---|---|
+| `SMTP_HOST` | `smtp-relay.brevo.com` | |
+| `SMTP_PORT` | `587` | STARTTLS; `SMTP_SECURE=false` is correct for this port |
+| `SMTP_USER` | the account's **SMTP login**, not its email address | Brevo shows it under SMTP & API → SMTP |
+| `SMTP_PASS` | the `xsmtpsib-…` SMTP key | an API key (`xkeysib-…`) will not authenticate here |
+| `SMTP_FROM` | `"Remote Days" <noreply@remotedays.app>` | the *From* header; must be a verified sender |
+| `LEAD_NOTIFICATION_EMAIL` | `hello@remotedays.app` | where a landing-page request is delivered |
+
+`LEAD_NOTIFICATION_EMAIL` is deliberately **not** `SMTP_FROM`. It used to be, so
+contact requests were addressed to the no-reply sender that `SMTP_FROM` is
+required to be. Neither address is a mailbox: the zone has Cloudflare Email
+Routing with a catch-all `*@remotedays.app → alwinaugustin@gmail.com`, so every
+address on the domain reaches the same Gmail inbox.
+
+### Deliverability caveat
+
+`remotedays.app` is not authenticated in Brevo, so mail sent through the relay is
+accepted but does not align with the domain: the zone's SPF is
+`v=spf1 include:_spf.mx.cloudflare.net ~all` (Email Routing only), there is no
+Brevo DKIM record, and DMARC is `p=none` — so nothing is rejected, but nothing is
+signed either. Adding the **Brevo code (TXT)** and **DKIM** records from
+Brevo → Senders, Domains, IPs → Domains is what would make mail from
+`noreply@remotedays.app` properly aligned. Prefer Brevo's manual setup: its
+automatic flow offers to *replace* the existing DMARC record.
 
 ## The API type check
 

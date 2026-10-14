@@ -25,6 +25,9 @@ export default defineConfig({
       SMTP_USER: 'test@example.com',
       SMTP_PASS: 'password',
       SMTP_FROM: 'test@example.com',
+      // Kept in step with SMTP_FROM so the lead path can never resolve to the real
+      // production inbox when it runs under test.
+      LEAD_NOTIFICATION_EMAIL: 'test@example.com',
     },
   },
 });

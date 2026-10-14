@@ -257,6 +257,8 @@ SMTP_USER=...
 SMTP_PASS=...
 SMTP_SECURE=false
 EMAIL_FROM=noreply@remotedays.app
+SMTP_FROM="Remote Days" <noreply@remotedays.app>
+LEAD_NOTIFICATION_EMAIL=hello@remotedays.app
 
 # Web
 VITE_API_URL=https://api.remotedays.app

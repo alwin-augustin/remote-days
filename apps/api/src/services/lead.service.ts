@@ -7,7 +7,9 @@ export class LeadService {
 
   async submitLead(data: CreateLeadType) {
     const { email, message } = data;
-    const adminEmail = config.SMTP_FROM || 'contact@remotedays.app'; // Fallback
+    // Not SMTP_FROM: that is the From header, which the relay insists is a
+    // verified sender and is usually a no-reply address nobody reads.
+    const adminEmail = config.LEAD_NOTIFICATION_EMAIL;
 
     const subject = `New Lead: ${email}`;
     const text = `You have received a new contact request.\n\nEmail: ${email}\nMessage: ${message || 'No message provided'}`;

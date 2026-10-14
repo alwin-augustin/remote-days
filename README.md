@@ -300,6 +300,7 @@ SMTP_PORT=587
 SMTP_USER=your-user
 SMTP_PASS=your-pass
 SMTP_FROM="Remote Days" <noreply@remotedays.app>
+LEAD_NOTIFICATION_EMAIL=hello@remotedays.app
 APP_URL=https://app.remotedays.app
 EMAIL_FROM=noreply@remotedays.app
 MAX_HOME_DAYS=104
