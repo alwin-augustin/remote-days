@@ -66,10 +66,10 @@ export default function ResetPassword() {
 
     if (!token) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+            <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
                 <Card className="w-full max-w-md">
                     <CardHeader>
-                        <CardTitle className="text-red-500">Invalid Link</CardTitle>
+                        <CardTitle className="text-destructive">Invalid Link</CardTitle>
                         <CardDescription>
                             This password reset link is invalid or missing a token.
                         </CardDescription>
@@ -87,7 +87,7 @@ export default function ResetPassword() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle>Reset Password</CardTitle>

@@ -22,7 +22,8 @@ import os
 from datetime import datetime
 
 # === BRAND COLORS ===
-PRIMARY_BLUE = colors.HexColor('#3B82F6')  # Primary brand blue
+# Kept in step with brand/BRAND.md: brand blue is #2563EB, the plate blue #1D4ED8.
+PRIMARY_BLUE = colors.HexColor('#2563EB')  # Primary brand blue
 DARK_NAVY = colors.HexColor('#0F172A')     # Deep navy for text
 LIGHT_GRAY = colors.HexColor('#F8FAFC')    # Light background
 MEDIUM_GRAY = colors.HexColor('#64748B')   # Muted text
@@ -186,6 +187,23 @@ def create_header_footer(canvas, doc):
 
     canvas.restoreState()
 
+def create_logo_mark(size=26, color=None):
+    """The Remote Days mark: the counted day above the threshold rule.
+
+    Mirrors brand/logo-mark.svg on its 64-unit grid, with the Y axis flipped
+    for reportlab's bottom-left origin.
+    """
+    color = color or PRIMARY_BLUE
+    s = size / 64.0
+    drawing = Drawing(size, size)
+    # The day.
+    drawing.add(Circle(32 * s, (64 - 22) * s, 15 * s, fillColor=color, strokeColor=None))
+    # The threshold rule, with rounded ends (svg 5,48 54x8 rx4).
+    drawing.add(Rect(5 * s, (64 - 56) * s, 54 * s, 8 * s,
+                     rx=4 * s, ry=4 * s, fillColor=color, strokeColor=None))
+    return drawing
+
+
 def create_feature_box(title, items, color=PRIMARY_BLUE):
     """Create a styled feature box"""
     data = [[Paragraph(f"<b>{title}</b>", ParagraphStyle(
@@ -238,9 +256,9 @@ def build_pdf():
 
     # === PAGE 1: OVERVIEW ===
 
-    # Logo placeholder (blue square with text)
+    # Brand lockup: the mark, then the wordmark.
     logo_table = Table([[
-        Paragraph("<font color='#3B82F6' size='24'><b>⬡</b></font>", styles['CustomBody']),
+        create_logo_mark(26),
         Paragraph("<font color='#0F172A' size='18'><b>Remote Days</b></font>",
                   ParagraphStyle(name='LogoText', fontSize=18, fontName='Helvetica-Bold', textColor=DARK_NAVY))
     ]], colWidths=[12*mm, 50*mm])
@@ -605,7 +623,7 @@ def build_pdf():
     story.append(Paragraph("<b>Ready to Ensure Compliance?</b>", contact_style))
     story.append(Spacer(1, 2*mm))
     story.append(Paragraph(
-        "Contact us at <font color='#3B82F6'><b>contact@remotedays.app</b></font> | www.remotedays.app",
+        "Contact us at <font color='#2563EB'><b>contact@remotedays.app</b></font> | www.remotedays.app",
         contact_style
     ))
 

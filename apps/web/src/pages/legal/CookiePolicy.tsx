@@ -9,7 +9,7 @@ export default function CookiePolicy() {
   const contactEmail = 'privacy@remotedays.app';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-muted/40 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link to="/login">
@@ -28,7 +28,7 @@ export default function CookiePolicy() {
           <CardContent className="prose prose-sm max-w-none pt-6">
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">1. What Are Cookies</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 Cookies are small text files that are placed on your device when you visit
                 a website. They are widely used to make websites work more efficiently and
                 to provide information to website owners. Cookies help us improve your
@@ -39,12 +39,12 @@ export default function CookiePolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">2. How We Use Cookies</h2>
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 {companyName} uses only essential cookies that are strictly necessary for
                 the application to function. We do not use advertising, marketing, or
                 third-party tracking cookies.
               </p>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 Our approach to cookies aligns with GDPR requirements, which allow essential
                 cookies without explicit consent as they are necessary for the service you
                 have requested.
@@ -56,40 +56,40 @@ export default function CookiePolicy() {
 
               <div className="mb-6">
                 <h3 className="text-lg font-medium mb-3">Essential Cookies</h3>
-                <p className="text-gray-700 mb-3">
+                <p className="text-muted-foreground mb-3">
                   These cookies are necessary for the application to function and cannot
                   be disabled.
                 </p>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full border border-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full border border-border">
+                    <thead className="bg-muted/40">
                       <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">
+                        <th className="px-4 py-2 text-left text-sm font-medium text-muted-foreground border-b">
                           Cookie Name
                         </th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">
+                        <th className="px-4 py-2 text-left text-sm font-medium text-muted-foreground border-b">
                           Purpose
                         </th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">
+                        <th className="px-4 py-2 text-left text-sm font-medium text-muted-foreground border-b">
                           Duration
                         </th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
-                        <td className="px-4 py-2 text-sm text-gray-700 border-b">token</td>
-                        <td className="px-4 py-2 text-sm text-gray-700 border-b">
+                        <td className="px-4 py-2 text-sm text-muted-foreground border-b">token</td>
+                        <td className="px-4 py-2 text-sm text-muted-foreground border-b">
                           Stores your authentication token to keep you logged in securely.
                           This is an httpOnly cookie for security.
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-700 border-b">Session / 7 days</td>
+                        <td className="px-4 py-2 text-sm text-muted-foreground border-b">Session / 7 days</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-2 text-sm text-gray-700 border-b">cookie_consent</td>
-                        <td className="px-4 py-2 text-sm text-gray-700 border-b">
+                        <td className="px-4 py-2 text-sm text-muted-foreground border-b">cookie_consent</td>
+                        <td className="px-4 py-2 text-sm text-muted-foreground border-b">
                           Remembers that you have acknowledged our cookie notice.
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-700 border-b">1 year</td>
+                        <td className="px-4 py-2 text-sm text-muted-foreground border-b">1 year</td>
                       </tr>
                     </tbody>
                   </table>
@@ -99,10 +99,10 @@ export default function CookiePolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">4. Cookies We Do NOT Use</h2>
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 {companyName} does not use:
               </p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>
                   <strong>Advertising Cookies:</strong> We do not display ads or use
                   cookies to track you for advertising purposes.
@@ -124,18 +124,18 @@ export default function CookiePolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">5. Managing Cookies</h2>
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Most web browsers allow you to control cookies through their settings.
                 You can typically:
               </p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>View what cookies are stored on your device</li>
                 <li>Delete all or specific cookies</li>
                 <li>Block all cookies or cookies from specific sites</li>
                 <li>Block third-party cookies</li>
                 <li>Set your browser to notify you when a cookie is set</li>
               </ul>
-              <p className="text-gray-700 mt-4">
+              <p className="text-muted-foreground mt-4">
                 <strong>Note:</strong> If you disable essential cookies, you will not be
                 able to use {companyName} as the authentication system requires cookies
                 to function.
@@ -144,10 +144,10 @@ export default function CookiePolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">6. Browser-Specific Instructions</h2>
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 For more information on how to manage cookies in your browser:
               </p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>
                   <a
                     href="https://support.google.com/chrome/answer/95647"
@@ -193,7 +193,7 @@ export default function CookiePolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">7. Local Storage</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 In addition to cookies, we may use browser local storage to store
                 non-sensitive preferences like UI settings. Local storage data stays
                 on your device and is not transmitted to our servers. You can clear
@@ -203,7 +203,7 @@ export default function CookiePolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">8. Updates to This Policy</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 We may update this Cookie Policy from time to time to reflect changes in
                 our practices or for operational, legal, or regulatory reasons. The date
                 at the top of this policy indicates when it was last updated. We encourage
@@ -213,7 +213,7 @@ export default function CookiePolicy() {
 
             <section>
               <h2 className="text-xl font-semibold mb-4">9. Contact Us</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 If you have questions about our use of cookies, please contact us at:{' '}
                 <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">
                   {contactEmail}
@@ -223,7 +223,7 @@ export default function CookiePolicy() {
           </CardContent>
         </Card>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm text-muted-foreground">
           <Link to="/legal/privacy" className="hover:underline">Privacy Policy</Link>
           {' | '}
           <Link to="/legal/terms" className="hover:underline">Terms of Service</Link>

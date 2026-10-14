@@ -240,4 +240,42 @@ CREATE TRIGGER trg_audit_entries
 AFTER INSERT OR UPDATE OR DELETE ON entries
 FOR EACH ROW EXECUTE FUNCTION audit_entries_change();
 
+-- 9. Enterprise SSO (OIDC) configuration and identity links
+-- Mirrors migrations/004_enterprise_sso.sql for fresh installs.
+-- Accounts stay pre-provisioned (HR import); the IdP only authenticates.
+CREATE TABLE IF NOT EXISTS sso_settings (
+  id BOOLEAN PRIMARY KEY DEFAULT true,
+  CONSTRAINT sso_settings_singleton CHECK (id),
+  display_name TEXT NOT NULL DEFAULT 'Microsoft',
+  issuer TEXT NOT NULL,
+  tenant_id TEXT,
+  client_id TEXT NOT NULL,
+  client_secret_encrypted TEXT,
+  scopes TEXT NOT NULL DEFAULT 'openid profile email',
+  allowed_email_domains TEXT[] NOT NULL DEFAULT '{}',
+  auto_link_by_email BOOLEAN NOT NULL DEFAULT true,
+  is_enabled BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TRIGGER trg_sso_settings_updated_at
+BEFORE UPDATE ON sso_settings
+FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at();
+
+CREATE TABLE IF NOT EXISTS user_identities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  tenant_id TEXT NOT NULL,
+  subject_id TEXT NOT NULL,
+  email_at_link TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_login_at TIMESTAMPTZ,
+  CONSTRAINT uq_user_identities_subject UNIQUE (provider, tenant_id, subject_id),
+  CONSTRAINT uq_user_identities_user_provider UNIQUE (user_id, provider)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_identities_user ON user_identities (user_id);
+
 -- Done

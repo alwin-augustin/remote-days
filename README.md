@@ -64,8 +64,7 @@ Remote Days is a comprehensive full-stack application designed to help Luxembour
 remote-days/
 ├── apps/
 │   ├── api/         # Fastify backend API (@remotedays/api)
-│   ├── web/         # React frontend (@remotedays/web)
-│   └── mobile/      # React Native/Expo app (@remotedays/mobile)
+│   └── web/         # React frontend (@remotedays/web)
 ├── packages/
 │   ├── types/       # Shared TypeScript types (@remotedays/types)
 │   └── shared/      # Shared business logic (@remotedays/shared)
@@ -197,16 +196,6 @@ apps/web/
 │   └── hooks/          # Custom React hooks
 └── e2e/                # Playwright E2E tests
 
-apps/mobile/
-├── app/                # Expo Router file-based routing
-│   ├── (auth)/         # Authentication screens
-│   ├── (tabs)/         # Tab navigation screens
-│   └── _layout.tsx     # Root layout
-├── components/         # Reusable UI components
-├── context/            # React context providers
-├── hooks/              # Custom React hooks
-├── services/           # API client & offline sync
-└── constants/          # Theme & configuration
 ```
 
 ### Available Scripts
@@ -300,30 +289,6 @@ bash scripts/deploy.sh
    - Build output: `apps/web/dist`
    - Environment variable: `VITE_API_URL=https://api.remotedays.app`
 
-### Mobile (EAS Build)
-
-1. **Development:** Use Expo Go app for rapid development
-   ```bash
-   npx expo start
-   ```
-
-2. **Production builds:** Use EAS Build
-   ```bash
-   # Install EAS CLI
-   npm install -g eas-cli
-
-   # Configure project (first time)
-   eas build:configure
-
-   # Build for iOS
-   eas build --platform ios --profile production
-
-   # Build for Android
-   eas build --platform android --profile production
-   ```
-
-3. **Environment:** Set `EXPO_PUBLIC_API_URL` in `eas.json` or `apps/mobile/.env`
-
 ### Environment Variables
 
 **Backend (.env on EC2):**
@@ -343,11 +308,6 @@ MAX_HOME_DAYS=104
 **Frontend (Cloudflare Pages):**
 ```env
 VITE_API_URL=https://api.remotedays.app
-```
-
-**Mobile (apps/mobile/.env):**
-```env
-EXPO_PUBLIC_API_URL=https://api.remotedays.app
 ```
 
 ## 📚 API Documentation
@@ -383,6 +343,21 @@ Interactive API documentation (Swagger) available at:
 - `PUT /admin/users/:id` - Update user
 - `GET /admin/audit` - View audit logs
 - `PUT /admin/countries/:code` - Update country threshold
+
+## 🎨 Brand
+
+The logo mark is the counted day (a disc) above the threshold rule — the product's
+core idea in two shapes.
+
+The SVGs in [`brand/`](brand/) are the single source of truth. Every raster brand
+asset in `apps/` and `landing/` is generated from them:
+
+```bash
+node scripts/build-brand-assets.mjs
+```
+
+Usage rules, colour values, clear space, minimum sizes and the asset map are in
+[brand/BRAND.md](brand/BRAND.md).
 
 ## 🤝 Contributing
 

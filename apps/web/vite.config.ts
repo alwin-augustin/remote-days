@@ -9,7 +9,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.png'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon.ico',
+        'apple-touch-icon.png',
+        'logo.svg',
+        'logo.png',
+      ],
       manifest: false, // Use existing manifest.json in public folder
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],

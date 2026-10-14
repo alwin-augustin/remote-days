@@ -103,7 +103,7 @@ export default function EmployeeDetails() {
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2">
             <Mail className="h-4 w-4 text-muted-foreground" />
-            <a href={`mailto:${employee.email}`} className="text-blue-600 hover:underline">
+            <a href={`mailto:${employee.email}`} className="text-primary hover:underline">
               {employee.email}
             </a>
           </div>
@@ -120,7 +120,9 @@ export default function EmployeeDetails() {
       <ComplianceStatusCard
         daysUsed={employee.daysUsedCurrentYear}
         maxDays={employee.maxRemoteDays}
-        countryCode={employee.workCountry}
+        // maxRemoteDays is the residence country's allowance, so show that
+        // country's limits rather than the office country's.
+        countryCode={employee.countryOfResidence}
       />
 
       {/* Recent Activity */}

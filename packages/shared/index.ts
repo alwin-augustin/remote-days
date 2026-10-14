@@ -1,9 +1,3 @@
-// API Configuration
-export const API_CONFIG = {
-  baseURL: process.env.EXPO_PUBLIC_API_URL || 'https://api.remotedays.app',
-  timeout: 10000,
-};
-
 // Compliance thresholds
 export const COMPLIANCE_LIMITS = {
   france: 34,

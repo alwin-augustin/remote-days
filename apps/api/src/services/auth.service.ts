@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcrypt';
-import * as jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
+import { signSessionToken } from '../auth/session';
 import { IUserRepository } from '../repositories/user.repository';
 import { ITokenRepository } from '../repositories/token.repository';
 import { EmailService } from './email.service';
@@ -38,15 +38,12 @@ export class AuthService {
       throw new AppError('User account is inactive', 403);
     }
 
-    const token = jwt.sign(
-      {
-        userId: user.user_id,
-        email: user.email,
-        role: user.role,
-      },
-      config.JWT_SECRET,
-      { expiresIn: config.JWT_EXPIRATION } as jwt.SignOptions
-    );
+    // Shared with the SSO path so both front doors mint identical sessions.
+    const token = signSessionToken({
+      userId: user.user_id,
+      email: user.email,
+      role: user.role,
+    });
 
     // Return user info (except password)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

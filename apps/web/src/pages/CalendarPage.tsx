@@ -7,17 +7,19 @@ import { api } from '@/lib/api';
 import type { work_status } from '@remotedays/types';
 import { Loader2, Home, Building, Plane, Stethoscope, HelpCircle, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TONE_CLASSES, type StatusTone } from '@/lib/status';
+import { StatusDot } from '@/components/ui/status-badge';
 import { SectionCard } from '@/components/SectionCard';
 import { InlineErrorState } from '@/components/DataStates';
 
 type Entry = { date: string; status: work_status; id: string };
 
-const STATUS_CONFIG: Record<work_status, { label: string; icon: LucideIcon; color: string; bg: string }> = {
-    home: { label: 'Home', icon: Home, color: 'text-green-700', bg: 'bg-green-100' },
-    office: { label: 'Office', icon: Building, color: 'text-blue-700', bg: 'bg-blue-100' },
-    travel: { label: 'Travel', icon: Plane, color: 'text-yellow-700', bg: 'bg-yellow-100' },
-    sick: { label: 'Sick', icon: Stethoscope, color: 'text-red-700', bg: 'bg-red-100' },
-    unknown: { label: '?', icon: HelpCircle, color: 'text-gray-700', bg: 'bg-gray-100' },
+const STATUS_CONFIG: Record<work_status, { label: string; icon: LucideIcon; tone: StatusTone }> = {
+    home: { label: 'Home', icon: Home, tone: 'success' },
+    office: { label: 'Office', icon: Building, tone: 'info' },
+    travel: { label: 'Travel', icon: Plane, tone: 'warning' },
+    sick: { label: 'Sick', icon: Stethoscope, tone: 'danger' },
+    unknown: { label: 'Not set', icon: HelpCircle, tone: 'neutral' },
 };
 
 export default function CalendarPage() {
@@ -103,6 +105,7 @@ export default function CalendarPage() {
                                     const dayDate = day.date;
                                     const status = getStatusForDate(dayDate);
                                     const config = status ? STATUS_CONFIG[status] : null;
+                                    const classes = config ? TONE_CLASSES[config.tone] : null;
 
                                     return (
                                         <button
@@ -121,10 +124,10 @@ export default function CalendarPage() {
                                             </span>
 
                                             {/* STATIC TEST TEXT AS REQUESTED + Dynamic Status */}
-                                            {config ? (
-                                                <div className={cn("flex flex-col items-center w-[90%] rounded p-1 shadow-sm", config.bg)}>
-                                                    <config.icon className={cn("h-4 w-4", config.color)} />
-                                                    <span className={cn("text-[9px] font-bold uppercase", config.color)}>{config.label}</span>
+                                            {config && classes ? (
+                                                <div className={cn("flex w-[90%] flex-col items-center rounded border p-1", classes.muted)}>
+                                                    <config.icon className={cn("h-4 w-4", classes.icon)} />
+                                                    <span className={cn("text-[9px] font-bold uppercase", classes.text)}>{config.label}</span>
                                                 </div>
                                             ) : (
                                                 <div className="flex-1" />
@@ -141,10 +144,10 @@ export default function CalendarPage() {
 
             <Card className="border-border/70 shadow-sm">
                 <CardContent className="flex flex-wrap items-center justify-center gap-5 py-4 text-xs font-medium text-muted-foreground sm:justify-start">
-                    <span className="flex items-center gap-2"><div className="h-2.5 w-2.5 rounded-full bg-green-500 shadow-sm" /> Home</span>
-                    <span className="flex items-center gap-2"><div className="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-sm" /> Office</span>
-                    <span className="flex items-center gap-2"><div className="h-2.5 w-2.5 rounded-full bg-yellow-500 shadow-sm" /> Travel</span>
-                    <span className="flex items-center gap-2"><div className="h-2.5 w-2.5 rounded-full bg-red-500 shadow-sm" /> Sick</span>
+                    <span className="flex items-center gap-2"><StatusDot tone="success" /> Home</span>
+                    <span className="flex items-center gap-2"><StatusDot tone="info" /> Office</span>
+                    <span className="flex items-center gap-2"><StatusDot tone="warning" /> Travel</span>
+                    <span className="flex items-center gap-2"><StatusDot tone="danger" /> Sick</span>
                 </CardContent>
             </Card>
         </div>

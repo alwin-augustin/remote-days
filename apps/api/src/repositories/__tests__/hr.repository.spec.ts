@@ -71,8 +71,9 @@ describe('HRRepository Integration', () => {
 
   it('should update entry', async () => {
     const entry = await entryRepo.upsert(empId, '2023-01-02', 'home', 'web');
-    // Use the empId itself or another valid UUID as actor
-    const updated = await hrRepo.updateEntry(entry.id, 'office', 'correction', empId);
-    expect(updated.status).toBe('office');
+    // The override path moved off HRRepository onto EntryRepository.updateById,
+    // whose argument order is (id, status, actorId, reason).
+    const updated = await entryRepo.updateById(entry.id, 'office', empId, 'correction');
+    expect(updated?.status).toBe('office');
   });
 });

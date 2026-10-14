@@ -242,7 +242,7 @@ export default function UserManagement() {
                                         <span className={cn(
                                             "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
                                             user.role === 'admin' ? "bg-primary/10 text-primary" :
-                                                user.role === 'hr' ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" :
+                                                user.role === 'hr' ? "bg-info-muted text-info-muted-foreground" :
                                                     "bg-muted text-muted-foreground"
                                         )}>
                                             {user.role}

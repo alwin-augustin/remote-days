@@ -21,6 +21,9 @@ test-results
 .env.local
 .env.*.local
 
+# Azure deployment secrets (pushed to Key Vault, never committed)
+infra/azure/production.env
+
 # Logs
 *.log
 npm-debug.log*

@@ -19,8 +19,7 @@ Remote Days is a cross-border remote work compliance tracker for Luxembourg-base
 ```
 apps/
 ├── api/      # Fastify backend      (@remotedays/api)
-├── web/      # React 19 frontend    (@remotedays/web)
-└── mobile/   # React Native/Expo    (@remotedays/mobile)
+└── web/      # React 19 frontend    (@remotedays/web)
 
 packages/
 ├── types/    # Shared TS interfaces  (@remotedays/types)
@@ -35,7 +34,6 @@ packages/
 # Development
 npm run dev:api          # API on :3000
 npm run dev:web          # Web on :5173
-npm run dev:mobile       # Expo
 docker-compose up        # Full stack with seeded DB
 
 # Build
@@ -108,35 +106,32 @@ bash scripts/deploy.sh
 - Use TanStack Query for all server data (caching, refetch)
 - Forms: React Hook Form + Zod
 
-### Mobile (`apps/mobile/`)
-
-**Stack:** React Native 0.76.5 + Expo 52 + Expo Router 4 (file-based routing)
-
-**Hard constraints:**
-- React **18.3.1** — never upgrade to 19 (React Native requirement)
-- No `react-dom`, no `react-native-web`
-- **Employee-only** — rejects HR/Admin logins at app level
-
-| Type | Location |
-|------|----------|
-| Root layout | `app/_layout.tsx` |
-| Tab screens | `app/(tabs)/` |
-| Auth screens | `app/(auth)/` |
-| Auth context | `context/AuthContext.tsx` |
-| API client | `services/api.ts` (Bearer token) |
-
-**Auth:** Token in `expo-secure-store`. All requests use `Authorization: Bearer {token}`. 401s trigger logout via event emitter in `services/authEvents.ts`.
-
 ### Shared Packages
 
 **`@remotedays/types`** — Pure TS interfaces only. No logic, no imports from other packages. Used by all apps.
 
-**`@remotedays/shared`** — Platform-agnostic logic. Used by Web + Mobile (not API). Key exports:
+**`@remotedays/shared`** — Platform-agnostic logic. Used by the web app (not API). Key exports:
 - `getComplianceStatus(count, limit)` → `'safe' | 'warning' | 'critical' | 'exceeded'`
 - `getDaysRemaining(count, limit)`, `getPercentageUsed(count, limit)`
 - `formatDate()`, `formatDateShort()`, `isToday()`, `isSameDay()`
 - `COMPLIANCE_LIMITS` = `{ FR: 34, BE: 34, DE: 183 }`
-- `API_CONFIG` = `{ baseURL, timeout }`
+
+---
+
+## Brand Assets
+
+`brand/` holds the logo SVGs and is the single source of truth. Every raster brand
+file in `apps/` and `landing/` is **generated** — do not hand-edit `favicon*`,
+`*logo*`, `icon*.png`, `apple-touch-icon.png` or `og-remotedays.png`.
+
+```bash
+node scripts/build-brand-assets.mjs           # regenerate everything
+node scripts/build-brand-assets.mjs --check   # show what would change
+```
+
+Read `brand/BRAND.md` before changing any brand artwork. Two rules that shape the
+mark: the disc and the rule must never touch, and nothing may be thinner than 2 px
+at 16 px (thin forms disappear at favicon size).
 
 ---
 
@@ -265,9 +260,6 @@ EMAIL_FROM=noreply@remotedays.app
 
 # Web
 VITE_API_URL=https://api.remotedays.app
-
-# Mobile
-EXPO_PUBLIC_API_URL=http://localhost:3000
 ```
 
 ---

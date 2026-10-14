@@ -17,7 +17,8 @@ import {
     ShieldCheck,
     type LucideIcon,
     Users,
-    FileSpreadsheet
+    FileSpreadsheet,
+    KeyRound
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,6 +30,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import {
     Sheet,
     SheetClose,
@@ -90,6 +92,7 @@ const HR_LINKS: NavItem[] = [
 const ADMIN_LINKS: NavItem[] = [
     { to: '/admin/users', icon: Settings, label: 'Users', match: ['/admin/users'] },
     { to: '/admin/countries', icon: Building, label: 'Country Limits', match: ['/admin/countries'] },
+    { to: '/admin/sso', icon: KeyRound, label: 'Single Sign-On', match: ['/admin/sso'] },
     { to: '/admin/audit', icon: FileSpreadsheet, label: 'Audit Logs', match: ['/admin/audit'] },
 ];
 
@@ -105,6 +108,7 @@ const PAGE_METADATA: Array<{ match: string; title: string; description: string }
     { match: '/admin/users/import', title: 'User Import', description: 'Bulk import user accounts into the platform.' },
     { match: '/admin/users', title: 'Users', description: 'Manage access, roles, and country assignments.' },
     { match: '/admin/countries', title: 'Country Limits', description: 'Review the annual remote work thresholds by country.' },
+    { match: '/admin/sso', title: 'Single Sign-On', description: 'Connect your corporate identity provider so employees can sign in with their work account.' },
     { match: '/admin/audit', title: 'Audit Logs', description: 'Inspect the system activity trail and export reports.' },
     { match: '/', title: 'Dashboard', description: 'Declare today’s work location and track your compliance status.' },
 ];
@@ -173,11 +177,11 @@ export default function DashboardLayout() {
                     <div className={cn("flex h-16 items-center border-b px-4 lg:h-[64px]", collapsed ? "justify-center px-2" : "justify-between")}>
                         {!collapsed && (
                             <div className="flex items-center gap-2">
-                                <img src="/logo.png" alt="Remote Days" className="h-8 w-8 rounded-lg" />
+                                <img src="/logo.svg" alt="Remote Days" className="h-8 w-8 rounded-lg" />
                                 <span className="font-bold text-lg tracking-tight text-primary">Remote Days</span>
                             </div>
                         )}
-                        {collapsed && <img src="/logo.png" alt="Remote Days" className="h-8 w-8 rounded-lg" />}
+                        {collapsed && <img src="/logo.svg" alt="Remote Days" className="h-8 w-8 rounded-lg" />}
                         <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto text-muted-foreground hover:text-foreground" onClick={() => setCollapsed(!collapsed)}>
                             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                         </Button>
@@ -285,7 +289,8 @@ export default function DashboardLayout() {
                         <p className="truncate text-sm font-semibold">{pageMeta.title}</p>
                         <p className="hidden truncate text-sm text-muted-foreground sm:block">{pageMeta.description}</p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <ThemeToggle />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button

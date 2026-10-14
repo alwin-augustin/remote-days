@@ -65,8 +65,7 @@ Luxembourg has bilateral social security and tax treaties with its neighbours. A
 remote-days/
 ├── apps/
 │   ├── api/          # Fastify backend (@remotedays/api)
-│   ├── web/          # React 19 frontend (@remotedays/web)
-│   └── mobile/       # React Native/Expo app (@remotedays/mobile)
+│   └── web/          # React 19 frontend (@remotedays/web)
 ├── packages/
 │   ├── types/        # Shared TypeScript types (@remotedays/types)
 │   └── shared/       # Shared business logic (@remotedays/shared)
@@ -181,38 +180,6 @@ Request → Route → preHandler (auth) → Controller → Service → Repositor
 
 ---
 
-## Mobile App (`apps/mobile`)
-
-**Stack:** React Native 0.76.5 + Expo 52 + Expo Router 4
-
-**Constraints:**
-- React **18.3.1** (not 19 — React Native requirement)
-- No `react-dom` or `react-native-web`
-- **Employee-only** — blocks HR and Admin logins
-
-### Key File Locations
-
-| Type | Path |
-|------|------|
-| Root layout | `app/_layout.tsx` |
-| Auth context | `context/AuthContext.tsx` |
-| API client | `services/api.ts` |
-| Tab screens | `app/(tabs)/` |
-| Auth screens | `app/(auth)/` |
-
-### Authentication
-
-- Token stored in `expo-secure-store` (OS-level encryption)
-- All API calls include `Authorization: Bearer {token}`
-- 401 responses trigger automatic logout via event emitter
-
-### Key Features
-
-- Offline queue (AsyncStorage) — retries failed declarations on reconnect
-- Push notifications via Expo Notifications
-- Deep link handling for email CTA links
-- Haptic feedback on declaration actions
-
 ---
 
 ## Shared Packages
@@ -238,7 +205,6 @@ isToday(date)          // → boolean
 isSameDay(d1, d2)      // → boolean
 
 COMPLIANCE_LIMITS      // { FR: 34, BE: 34, DE: 183 }
-API_CONFIG             // { baseURL, timeout }
 ```
 
 ---
@@ -330,9 +296,6 @@ EMAIL_FROM=noreply@remotedays.app
 
 # Web
 VITE_API_URL=https://api.remotedays.app
-
-# Mobile
-EXPO_PUBLIC_API_URL=https://api.remotedays.app
 ```
 
 ---

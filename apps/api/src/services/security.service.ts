@@ -189,4 +189,11 @@ export const SecurityEventTypes = {
   UNAUTHORIZED_ACCESS: 'UNAUTHORIZED_ACCESS',
   RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
   SUSPICIOUS_ACTIVITY: 'SUSPICIOUS_ACTIVITY',
+  // Enterprise SSO (OIDC) — authentication delegated to the corporate IdP.
+  SSO_LOGIN_SUCCESS: 'SSO_LOGIN_SUCCESS',
+  SSO_LOGIN_FAILURE: 'SSO_LOGIN_FAILURE',
+  /** A first login bound an external identity to an existing account. */
+  SSO_IDENTITY_LINKED: 'SSO_IDENTITY_LINKED',
+  SSO_SETTINGS_CHANGED: 'SSO_SETTINGS_CHANGED',
+  SSO_IDENTITY_UNLINKED: 'SSO_IDENTITY_UNLINKED',
 } as const;

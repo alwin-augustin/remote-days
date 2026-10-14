@@ -6,7 +6,8 @@ import type { work_status } from '@remotedays/types';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { metaForPercent, TONE_CLASSES } from '@/lib/status';
 import { ArrowLeft, RefreshCcw, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -244,23 +245,8 @@ export default function EmployeeList() {
                                     {filteredEmployees.slice((page - 1) * pageSize, page * pageSize).map(summary => {
                                         const percentUsed = Number(summary.percentUsed || 0);
                                         const todayEntry = todayEntryByUserId.get(summary.userId);
-                                        const getStatusColor = () => {
-                                            if (percentUsed >= 100) return 'text-red-600';
-                                            if (percentUsed >= 90) return 'text-red-500';
-                                            if (percentUsed >= 75) return 'text-orange-600';
-                                            if (percentUsed >= 50) return 'text-amber-600';
-                                            return 'text-green-600';
-                                        };
-
-                                        const getStatusBadge = () => {
-                                            if (percentUsed >= 100) return { label: 'EXCEEDED', class: 'bg-red-500 hover:bg-red-600' };
-                                            if (percentUsed >= 90) return { label: 'CRITICAL', class: 'bg-red-400 hover:bg-red-500' };
-                                            if (percentUsed >= 75) return { label: 'HIGH', class: 'bg-orange-500 hover:bg-orange-600' };
-                                            if (percentUsed >= 50) return { label: 'MODERATE', class: 'bg-amber-500 hover:bg-amber-600' };
-                                            return { label: 'HEALTHY', class: 'bg-green-500 hover:bg-green-600' };
-                                        };
-
-                                        const statusBadge = getStatusBadge();
+                                        const meta = metaForPercent(percentUsed);
+                                        const riskClasses = TONE_CLASSES[meta.tone];
 
                                         return (
                                             <TableRow key={summary.userId}>
@@ -272,13 +258,13 @@ export default function EmployeeList() {
                                                         {summary.firstName} {summary.lastName}
                                                     </Link>
                                                 </TableCell>
-                                                <TableCell>{summary.workCountry}</TableCell>
+                                                <TableCell>{summary.countryOfResidence}</TableCell>
                                                 <TableCell>{summary.daysUsedCurrentYear}</TableCell>
                                                 <TableCell>{summary.maxRemoteDays}</TableCell>
                                                 <TableCell>
                                                     <div className="space-y-1">
                                                         <div className="flex items-center gap-2">
-                                                            <span className={cn("font-bold text-sm", getStatusColor())}>
+                                                            <span className={cn("text-sm font-bold tabular", riskClasses.text)}>
                                                                 {percentUsed.toFixed(1)}%
                                                             </span>
                                                         </div>
@@ -291,9 +277,7 @@ export default function EmployeeList() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge className={statusBadge.class}>
-                                                        {statusBadge.label}
-                                                    </Badge>
+                                                    <StatusBadge tone={meta.tone}>{meta.shortLabel}</StatusBadge>
                                                 </TableCell>
                                                 <TableCell>
                                                     <TooltipProvider>
@@ -330,12 +314,7 @@ export default function EmployeeList() {
                                 {filteredEmployees.slice((page - 1) * pageSize, page * pageSize).map((summary) => {
                                     const percentUsed = Number(summary.percentUsed || 0);
                                     const todayEntry = todayEntryByUserId.get(summary.userId);
-                                    const badgeTone =
-                                        percentUsed >= 100 ? 'bg-red-500 hover:bg-red-600' :
-                                        percentUsed >= 90 ? 'bg-red-400 hover:bg-red-500' :
-                                        percentUsed >= 75 ? 'bg-orange-500 hover:bg-orange-600' :
-                                        percentUsed >= 50 ? 'bg-amber-500 hover:bg-amber-600' :
-                                        'bg-green-500 hover:bg-green-600';
+                                    const meta = metaForPercent(percentUsed);
 
                                     return (
                                         <Card key={summary.userId} className="border-border/70 p-4 shadow-sm">
@@ -345,11 +324,9 @@ export default function EmployeeList() {
                                                         <Link to={`/hr/employees/${summary.userId}`} className="font-semibold hover:underline">
                                                             {summary.firstName} {summary.lastName}
                                                         </Link>
-                                                        <p className="text-sm text-muted-foreground">{summary.workCountry} resident threshold</p>
+                                                        <p className="text-sm text-muted-foreground">{summary.countryOfResidence} resident threshold</p>
                                                     </div>
-                                                    <Badge className={badgeTone}>
-                                                        {percentUsed >= 100 ? 'Exceeded' : percentUsed >= 90 ? 'Critical' : percentUsed >= 75 ? 'High' : percentUsed >= 50 ? 'Moderate' : 'Healthy'}
-                                                    </Badge>
+                                                    <StatusBadge tone={meta.tone}>{meta.shortLabel}</StatusBadge>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <div className="flex items-center justify-between text-sm">

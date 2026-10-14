@@ -125,8 +125,7 @@ export class RequestService {
         typeof request.date === 'object' ? (request.date as any).toISOString().split('T')[0] : request.date,
         request.requested_status,
         `Approved Request #${request.id}: ${request.reason}`,
-        adminId,
-        'admin'
+        adminId
       );
     }
 

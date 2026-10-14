@@ -115,19 +115,19 @@ export default function UserImport() {
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Successfully Imported</CardTitle>
-                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                <CheckCircle className="h-4 w-4 text-success-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-green-600">{result.inserted}</div>
+                                <div className="text-2xl font-bold text-success-muted-foreground">{result.inserted}</div>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Errors</CardTitle>
-                                <AlertCircle className="h-4 w-4 text-red-500" />
+                                <AlertCircle className="h-4 w-4 text-danger-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-red-600">{result.errors.length}</div>
+                                <div className="text-2xl font-bold text-danger-muted-foreground">{result.errors.length}</div>
                             </CardContent>
                         </Card>
                     </div>
@@ -135,7 +135,7 @@ export default function UserImport() {
                     {result.errors.length > 0 && (
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-red-600 flex items-center gap-2">
+                                <CardTitle className="text-danger-muted-foreground flex items-center gap-2">
                                     <AlertCircle className="h-5 w-5" /> Import Errors
                                 </CardTitle>
                             </CardHeader>
@@ -153,7 +153,7 @@ export default function UserImport() {
                                             <TableRow key={i}>
                                                 <TableCell>{err.row}</TableCell>
                                                 <TableCell>{err.email || '-'}</TableCell>
-                                                <TableCell className="text-red-600">{err.error}</TableCell>
+                                                <TableCell className="text-danger-muted-foreground">{err.error}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>

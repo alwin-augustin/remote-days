@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
     inputs:
       deploy_backend:
-        description: 'Force deploy backend'
+        description: 'Force deploy the API + SPA to Fly'
         type: boolean
         default: false
       deploy_frontend:
-        description: 'Force deploy frontend'
+        description: 'Alias for deploy_backend — the SPA ships inside the API image'
         type: boolean
         default: false
 
@@ -22,6 +22,7 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
+  FLY_APP: remotedays
 
 jobs:
   # ===========================================
@@ -60,10 +61,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
+      app: ${{ steps.filter.outputs.app }}
       landing: ${{ steps.filter.outputs.landing }}
-      mobile: ${{ steps.filter.outputs.mobile }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,35 +72,40 @@ jobs:
         id: filter
         with:
           filters: |
-            backend:
+            app:
               - 'apps/api/**'
-              - 'packages/types/**'
-              - 'packages/shared/**'
-            frontend:
               - 'apps/web/**'
-              - 'packages/types/**'
-              - 'packages/shared/**'
+              - 'packages/**'
+              - 'fly.toml'
+              - '.github/workflows/ci-deploy.yml'
             landing:
               - 'landing/**'
-            mobile:
-              - 'apps/mobile/**'
-              - 'packages/types/**'
-              - 'packages/shared/**'
 
   # ===========================================
-  # Deploy Backend to EC2
+  # Apply database migrations
+  #
+  # Runs *before* the deploy so the schema is never behind the code that expects
+  # it. `flyctl deploy` deliberately does not do this: the migration runner is
+  # not part of the image, because tsup bundles only server.ts and the runtime
+  # prunes the dev dependencies ts-node needs.
+  #
+  # This is the only path that applies migrations — nothing is run by hand.
   # ===========================================
-  deploy-backend:
-    name: Deploy Backend
+  migrate:
+    name: Apply Database Migrations
     runs-on: ubuntu-latest
     needs: [ci, changes]
     if: |
       always() &&
       needs.ci.result == 'success' &&
-      (needs.changes.outputs.backend == 'true' || github.event.inputs.deploy_backend == 'true')
+      (needs.changes.outputs.app == 'true' || github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_frontend == 'true')
     environment:
       name: production
-      url: https://api.remotedays.app
+    concurrency:
+      # Shares the deploy's group, so migrations from two pushes cannot overlap
+      # even though each deploy is itself serialised.
+      group: fly-deploy-remotedays
+      cancel-in-progress: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -115,166 +119,128 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build API
-        run: npm run build --workspace=@remotedays/api
-
-      - name: Create deployment package
+      - name: Show migration status
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          mkdir -p deploy
-          cp apps/api/dist/server.js deploy/
-          node -e "
-            const fs = require('fs');
-            const pkg = require('./apps/api/package.json');
-            delete pkg.devDependencies;
-            delete pkg.scripts;
-            pkg.scripts = { start: 'node server.js' };
-            fs.writeFileSync('deploy/package.json', JSON.stringify(pkg, null, 2));
-          "
-          cp ecosystem.config.js deploy/
-          tar -czf deploy.tar.gz -C deploy .
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "DATABASE_URL is not set for this repository"
+            exit 1
+          fi
+          npm run db:migrate:status --workspace=apps/api
 
-      - name: Copy to EC2
-        uses: appleboy/scp-action@v0.1.7
+      - name: Apply pending migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run db:migrate --workspace=apps/api
+
+  # ===========================================
+  # Deploy the API and the SPA to Fly.io
+  #
+  # Both halves live in one app on purpose: the SPA is served by the API itself,
+  # so the browser is same-origin and the session cookie stays first-party.
+  # ===========================================
+  deploy-app:
+    name: Deploy App to Fly
+    runs-on: ubuntu-latest
+    needs: [ci, changes, migrate]
+    if: |
+      always() &&
+      needs.ci.result == 'success' &&
+      needs.migrate.result == 'success' &&
+      (needs.changes.outputs.app == 'true' || github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_frontend == 'true')
+    environment:
+      name: production
+      url: https://app.remotedays.app
+    concurrency:
+      # Literal, not env.FLY_APP: the env context is not available in a
+      # concurrency group. Serialises deploys so two pushes cannot race for the
+      # same Fly machine.
+      group: fly-deploy-remotedays
+      cancel-in-progress: false
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@1.5
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: deploy.tar.gz
-          target: /home/ec2-user/remote-days
+          # Pinned to the version this configuration was validated against.
+          # Bump deliberately, then re-check `flyctl config validate`.
+          version: '0.4.117'
 
-      - name: Deploy and restart
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Stage runtime secrets on Fly
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          APP_URL: ${{ secrets.APP_URL }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
           DAILY_EMAIL_LIMIT: ${{ secrets.DAILY_EMAIL_LIMIT }}
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DATABASE_URL,JWT_SECRET,APP_URL,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,DAILY_EMAIL_LIMIT
-          script: |
-            set -e
-            cd /home/ec2-user/remote-days
-            mkdir -p logs
-
-            # Backup current version
-            if [ -f server.js ]; then
-              mkdir -p /home/ec2-user/backups
-              BACKUP_DIR="/home/ec2-user/backups/$(date +%Y%m%d-%H%M%S)"
-              mkdir -p "$BACKUP_DIR"
-              cp -r *.js package*.json "$BACKUP_DIR"/ 2>/dev/null || true
-            fi
-
-            # Extract new version
-            tar -xzf deploy.tar.gz
-            rm deploy.tar.gz
-
-            # Generate .env
-            cat > .env << EOF
-            DATABASE_URL=${DATABASE_URL}
-            JWT_SECRET=${JWT_SECRET}
-            APP_URL=${APP_URL}
-            NODE_ENV=production
-            PORT=3000
-            SMTP_HOST=${SMTP_HOST}
-            SMTP_PORT=${SMTP_PORT}
-            SMTP_USER=${SMTP_USER}
-            SMTP_PASS=${SMTP_PASS}
-            EMAIL_FROM=${EMAIL_FROM}
-            DAILY_EMAIL_LIMIT=${DAILY_EMAIL_LIMIT}
-            EOF
-
-            # Install dependencies
-            npm install --production --no-progress --quiet --no-audit
-
-            # Restart
-            pm2 startOrRestart ecosystem.config.js
-            pm2 save
-
-            # Cleanup old backups (keep 5)
-            ls -dt /home/ec2-user/backups/* 2>/dev/null | tail -n +6 | xargs -r rm -rf
-
-            echo "Deployment complete!"
-
-      - name: Health check
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sleep 5
-            for i in {1..5}; do
-              if curl -sf http://localhost:3000/ > /dev/null; then
-                echo "Health check passed!"
-                exit 0
-              fi
-              echo "Attempt $i/5 failed, retrying..."
-              sleep 2
-            done
-            echo "Health check failed"
-            pm2 logs remotedays-api --lines 30
-            exit 1
-
-  # ===========================================
-  # Deploy Frontend to Vercel
-  # ===========================================
-  deploy-frontend:
-    name: Deploy Frontend
-    runs-on: ubuntu-latest
-    needs: [ci, changes]
-    if: |
-      always() &&
-      needs.ci.result == 'success' &&
-      (needs.changes.outputs.frontend == 'true' || github.event.inputs.deploy_frontend == 'true')
-    environment:
-      name: production
-      url: ${{ steps.deploy.outputs.url }}
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
-
-      - name: Build Web App
-        run: npm run build --workspace=@remotedays/web
-        env:
-          VITE_API_URL: https://api.remotedays.app
-
-      - name: Pull Vercel Environment
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: apps/web
-
-      - name: Build for Vercel (prebuilt)
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: apps/web
-
-      - name: Deploy to Vercel (prebuilt)
-        id: deploy
         run: |
-          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=$URL" >> $GITHUB_OUTPUT
-        working-directory: apps/web
+          set -euo pipefail
+
+          # `--stage` stores the secrets without rolling the machines, so the
+          # deploy below applies them in a single rollout instead of two.
+          #
+          # Values are passed through printf and never re-parsed by the shell,
+          # so a password containing $ " \ or a quote survives intact.
+          {
+            printf 'APP_URL=%s\n' 'https://app.remotedays.app'
+            printf 'API_PUBLIC_URL=%s\n' 'https://api.remotedays.app'
+
+            for name in DATABASE_URL JWT_SECRET EMAIL_FROM SMTP_HOST SMTP_PORT \
+                        SMTP_USER SMTP_PASS SMTP_FROM DAILY_EMAIL_LIMIT; do
+              value="$(printenv "$name" || true)"
+              if [ -n "$value" ]; then
+                printf '%s=%s\n' "$name" "$value"
+              else
+                echo "::warning::$name is not set for this repository — skipping"
+              fi
+            done
+          } | flyctl secrets import --stage
+
+      - name: Deploy
+        run: flyctl deploy --remote-only
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          BASE="https://${FLY_APP}.fly.dev"
+
+          # The SPA: the proxy returns 200 once a machine is running and passing
+          # its health check, which after an autostop means a cold start.
+          code=""
+          for attempt in $(seq 1 12); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE/" || true)"
+            if [ "$code" = "200" ]; then break; fi
+            echo "attempt ${attempt}/12: GET / -> ${code}"
+            sleep 5
+          done
+          if [ "$code" != "200" ]; then
+            echo "The SPA did not come up (last status: ${code})"
+            flyctl logs --app "$FLY_APP" --no-tail | tail -50
+            exit 1
+          fi
+
+          if ! curl -fsS "$BASE/" | grep -q '<div id="root">'; then
+            echo "GET / answered 200 but did not look like the SPA shell"
+            exit 1
+          fi
+          echo "SPA shell served from the API's origin."
+
+          health="$(curl -fsS "$BASE/health")"
+          echo "health: ${health}"
+          case "$health" in
+            *'"db":"ok"'*) echo "Database reachable." ;;
+            *) echo "The API is up but cannot reach its database."; exit 1 ;;
+          esac
 
   # ===========================================
   # Deploy Landing Page to Vercel
@@ -315,14 +281,14 @@ jobs:
   summary:
     name: Summary
     runs-on: ubuntu-latest
-    needs: [ci, changes, deploy-backend, deploy-frontend, deploy-landing]
+    needs: [ci, changes, migrate, deploy-app, deploy-landing]
     if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Generate Summary
         env:
           CI_RESULT: ${{ needs.ci.result }}
-          BACKEND_RESULT: ${{ needs.deploy-backend.result }}
-          FRONTEND_RESULT: ${{ needs.deploy-frontend.result }}
+          MIGRATE_RESULT: ${{ needs.migrate.result }}
+          APP_RESULT: ${{ needs.deploy-app.result }}
           LANDING_RESULT: ${{ needs.deploy-landing.result }}
         run: |
           echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
@@ -336,20 +302,20 @@ jobs:
             echo "| CI | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
 
-          if [ "$BACKEND_RESULT" = "success" ]; then
-            echo "| Backend | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
-          elif [ "$BACKEND_RESULT" = "skipped" ]; then
-            echo "| Backend | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          if [ "$MIGRATE_RESULT" = "success" ]; then
+            echo "| Migrations | ✅ Applied |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$MIGRATE_RESULT" = "skipped" ]; then
+            echo "| Migrations | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "| Backend | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+            echo "| Migrations | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
 
-          if [ "$FRONTEND_RESULT" = "success" ]; then
-            echo "| Frontend | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
-          elif [ "$FRONTEND_RESULT" = "skipped" ]; then
-            echo "| Frontend | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          if [ "$APP_RESULT" = "success" ]; then
+            echo "| App (API + SPA on Fly) | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$APP_RESULT" = "skipped" ]; then
+            echo "| App (API + SPA on Fly) | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "| Frontend | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+            echo "| App (API + SPA on Fly) | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
 
           if [ "$LANDING_RESULT" = "success" ]; then

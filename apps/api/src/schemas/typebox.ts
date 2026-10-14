@@ -222,3 +222,37 @@ export const AuditQuerystring = Type.Object({
 });
 
 export type AuditQuerystringType = Static<typeof AuditQuerystring>;
+
+// ---------------------------------------------------------------------------
+// Enterprise SSO schemas
+// ---------------------------------------------------------------------------
+
+/**
+ * Admin-configurable OIDC settings. camelCase, matching the API's camelCase
+ * response convention so the admin form round-trips without translation.
+ *
+ * `clientSecret` is tri-state: omitted = keep the stored secret, null or "" =
+ * clear it, a value = replace it.
+ */
+export const SsoSettingsBody = Type.Object(
+  {
+    displayName: Type.String({ minLength: 1, maxLength: 60 }),
+    issuer: Type.String({ minLength: 8, maxLength: 500 }),
+    tenantId: Type.Optional(Type.Union([Type.String({ maxLength: 100 }), Type.Null()])),
+    clientId: Type.String({ minLength: 1, maxLength: 255 }),
+    clientSecret: Type.Optional(Type.Union([Type.String({ maxLength: 1000 }), Type.Null()])),
+    scopes: Type.Optional(Type.String({ maxLength: 300 })),
+    allowedEmailDomains: Type.Optional(Type.Array(Type.String({ maxLength: 253 }))),
+    autoLinkByEmail: Type.Optional(Type.Boolean()),
+    isEnabled: Type.Boolean(),
+  },
+  { additionalProperties: false }
+);
+
+export const SsoTestBody = Type.Object({ issuer: Type.String({ minLength: 8, maxLength: 500 }) });
+
+export const SsoIdentityParams = Type.Object({ userId: UUIDString });
+
+export type SsoSettingsBodyType = Static<typeof SsoSettingsBody>;
+export type SsoTestBodyType = Static<typeof SsoTestBody>;
+export type SsoIdentityParamsType = Static<typeof SsoIdentityParams>;

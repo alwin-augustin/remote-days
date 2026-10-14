@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
 
+// Field names mirror the API contract (`EmployeeStats` in @remotedays/types).
 export type ComplianceStats = {
-  remoteDaysUsed: number;
+  remoteDaysCount: number;
   remoteDaysLimit: number;
   daysRemaining: number;
   percentageUsed: number;

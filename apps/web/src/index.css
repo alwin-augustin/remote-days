@@ -6,72 +6,134 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    /* Pure White */
-    --foreground: 224 71.4% 4.1%;
-    /* Deep Navy/Black */
+    color-scheme: light;
+
+    /* --- Surfaces --- */
+    --background: 210 40% 98%;
+    /* #F8FAFC cool page canvas */
+    --foreground: 222 47% 11%;
+    /* #0F172A primary text */
 
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Vibrant Primary Blue */
-    --primary: 221.2 83.2% 53.3%;
+    /* --- Brand / actions --- */
+    --primary: 221 83% 53%;
+    /* #2563EB */
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 220 14.3% 95.9%;
-    /* Subtle Blue-Grey */
-    --secondary-foreground: 220.9 39.3% 11%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    /* #64748B ~4.7:1 on white */
 
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220.9 39.3% 11%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221.2 83.2% 53.3%;
+    /* --- Structure --- */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
 
-    --radius: 0.75rem;
-    /* 12px for softer corners */
+    /* --- Semantic status (light) — AA on their muted surfaces --- */
+    --success: 142 72% 29%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 138 76% 97%;
+    --success-muted-foreground: 142 72% 26%;
+    --success-border: 141 79% 85%;
+
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 48 100% 96%;
+    --warning-muted-foreground: 26 90% 37%;
+    --warning-border: 46 97% 65%;
+
+    --danger: 0 72% 45%;
+    --danger-foreground: 0 0% 100%;
+    --danger-muted: 0 86% 97%;
+    --danger-muted-foreground: 0 74% 38%;
+    --danger-border: 0 96% 89%;
+
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
+    --info-muted: 214 100% 97%;
+    --info-muted-foreground: 224 76% 40%;
+    --info-border: 213 97% 87%;
+
+    --radius: 0.625rem;
+    /* 10px — deliberate, enterprise-appropriate corners */
   }
 
   .dark {
-    --background: 224 71.4% 4.1%;
-    /* Deep Navy Background */
-    --foreground: 210 20% 98%;
+    color-scheme: dark;
 
-    --card: 224 71.4% 6.5%;
-    /* Slightly Lighter Navy */
-    --card-foreground: 210 20% 98%;
+    /* --- Surfaces (layered, never pure black) --- */
+    --background: 220 49% 8%;
+    /* #0B1220 */
+    --foreground: 210 40% 98%;
 
-    --popover: 224 71.4% 6.5%;
-    --popover-foreground: 210 20% 98%;
+    --card: 222 47% 11%;
+    /* #0F172A */
+    --card-foreground: 210 40% 98%;
 
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --popover: 222 47% 12%;
+    --popover-foreground: 210 40% 98%;
 
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
+    /* --- Brand / actions --- */
+    --primary: 217 91% 60%;
+    /* #3B82F6 */
+    --primary-foreground: 222 47% 11%;
 
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
 
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 20% 65%;
+    /* #94A3B8 */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
+    --accent: 217 33% 18%;
+    --accent-foreground: 210 40% 98%;
 
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 217.2 91.2% 59.8%;
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* --- Structure --- */
+    --border: 217 33% 20%;
+    --input: 217 33% 22%;
+    --ring: 217 91% 60%;
+
+    /* --- Semantic status (dark) --- */
+    --success: 142 69% 45%;
+    --success-foreground: 144 61% 8%;
+    --success-muted: 142 45% 12%;
+    --success-muted-foreground: 141 79% 72%;
+    --success-border: 142 55% 24%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 26 83% 10%;
+    --warning-muted: 32 55% 13%;
+    --warning-muted-foreground: 45 96% 64%;
+    --warning-border: 32 70% 28%;
+
+    --danger: 0 84% 60%;
+    --danger-foreground: 0 0% 100%;
+    --danger-muted: 0 45% 14%;
+    --danger-muted-foreground: 0 94% 80%;
+    --danger-border: 0 55% 30%;
+
+    --info: 213 94% 68%;
+    --info-foreground: 222 47% 11%;
+    --info-muted: 217 55% 15%;
+    --info-muted-foreground: 213 97% 87%;
+    --info-border: 217 55% 32%;
   }
 }
 
@@ -80,7 +142,40 @@
     @apply border-border;
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Theme switches should feel intentional, not flicker between hard-coded colors */
+  body,
+  .theme-surface {
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  /* Focus visible should read clearly against both themes */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Numeric data reads consistently in tables and KPIs */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

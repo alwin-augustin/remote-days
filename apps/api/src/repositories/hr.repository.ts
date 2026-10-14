@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { work_status } from '@remotedays/types';
 
 export interface EmployeeSummary {
   user_id: string;
@@ -92,7 +93,10 @@ export class HRRepository implements IHRRepository {
           ELSE 'green'
         END AS traffic_light
       FROM user_days_used udu
-      JOIN country_thresholds ct ON udu.work_country = ct.country_code
+      -- The allowance applies to the country the employee works *from* (their
+      -- country of residence), not the office country. Kept in sync with
+      -- EntryRepository.getStatsForYear, which uses country_of_residence.
+      JOIN country_thresholds ct ON udu.country_of_residence = ct.country_code
       ORDER BY udu.last_name, udu.first_name;
       `
     );
@@ -169,7 +173,7 @@ export class HRRepository implements IHRRepository {
       WITH user_days_used AS (
         SELECT
           u.user_id,
-          u.work_country,
+          u.country_of_residence,
           COALESCE(COUNT(e.id) FILTER (WHERE e.status = 'home' AND date_part('year', e.date) = date_part('year', CURRENT_DATE)), 0) AS days_used_current_year
         FROM users u
         LEFT JOIN entries e ON u.user_id = e.user_id
@@ -180,7 +184,8 @@ export class HRRepository implements IHRRepository {
         SELECT
           (udu.days_used_current_year * 100.0 / ct.max_remote_days) as percent_used
         FROM user_days_used udu
-        JOIN country_thresholds ct ON udu.work_country = ct.country_code
+        -- Threshold of the residence country (see getEmployeeSummaries).
+        JOIN country_thresholds ct ON udu.country_of_residence = ct.country_code
       )
       SELECT
         COUNT(*) FILTER (WHERE percent_used >= 100) as exceeded_count,

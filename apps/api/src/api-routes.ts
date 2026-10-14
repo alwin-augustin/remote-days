@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import authRoutes from './auth/auth.routes';
+import ssoRoutes from './auth/sso.routes';
 import adminRoutes from './admin/admin.routes';
 import ctaRoutes from './cta/cta.routes';
 import hrRoutes from './hr/hr.routes';
@@ -7,6 +8,7 @@ import entriesRoutes from './entries/entries.routes';
 import holidayRoutes from './admin/holidays/holiday.routes';
 import requestRoutes from './requests/request.routes';
 import auditRoutes from './admin/audit.routes';
+import ssoAdminRoutes from './admin/sso.routes';
 import pushTokenRoutes from './users/push-token.routes';
 import leadRoutes from './lead/lead.routes';
 
@@ -20,6 +22,10 @@ import { UserService } from './services/user.service';
 import { AuthService } from './services/auth.service';
 import { EmailService } from './services/email.service';
 import { AuthController } from './auth/auth.controller';
+import { SsoController } from './auth/sso.controller';
+import { SsoAdminController } from './admin/sso.controller';
+import { SsoRepository } from './repositories/sso.repository';
+import { SsoService } from './services/sso.service';
 import { CountryRepository } from './repositories/country.repository';
 import { CountryService } from './services/country.service';
 import { AdminController } from './admin/admin.controller';
@@ -75,6 +81,12 @@ export default async function apiRoutes(server: FastifyInstance) {
 
   const securityService = new SecurityService(server);
 
+  // Enterprise SSO (OIDC): link-only authentication against the corporate IdP.
+  const ssoRepo = new SsoRepository(pool);
+  const ssoService = new SsoService(ssoRepo);
+  const ssoController = new SsoController(ssoService, securityService);
+  const ssoAdminController = new SsoAdminController(ssoService, securityService);
+
   const entriesController = new EntriesController(entryService);
   const authController = new AuthController(authService, userService, securityService);
   const adminController = new AdminController(userService);
@@ -88,6 +100,8 @@ export default async function apiRoutes(server: FastifyInstance) {
 
   server.register(entriesRoutes, { prefix: '', controller: entriesController });
   server.register(authRoutes, { prefix: '', controller: authController });
+  server.register(ssoRoutes, { prefix: '', controller: ssoController });
+  server.register(ssoAdminRoutes, { prefix: '', controller: ssoAdminController });
   server.register(adminRoutes, { prefix: '', adminController, countryController });
   server.register(hrRoutes, { prefix: '', hrController });
   server.register(ctaRoutes, { prefix: '', ctaController });

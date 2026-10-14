@@ -9,7 +9,7 @@ export default function PrivacyPolicy() {
   const contactEmail = 'privacy@remotedays.app';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-muted/40 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link to="/login">
@@ -28,12 +28,12 @@ export default function PrivacyPolicy() {
           <CardContent className="prose prose-sm max-w-none pt-6">
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">1. Introduction</h2>
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 {companyName} ("we", "our", or "us") is committed to protecting your privacy.
                 This Privacy Policy explains how we collect, use, disclose, and safeguard your
                 information when you use our remote work compliance tracking application.
               </p>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 We comply with the General Data Protection Regulation (GDPR) and other applicable
                 data protection laws in the European Union and Luxembourg.
               </p>
@@ -41,7 +41,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">2. Data Controller</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 The data controller responsible for your personal data is your employer who has
                 subscribed to {companyName} services. {companyName} acts as a data processor on
                 behalf of your employer.
@@ -50,8 +50,8 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">3. Information We Collect</h2>
-              <p className="text-gray-700 mb-4">We collect the following types of information:</p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
+              <p className="text-muted-foreground mb-4">We collect the following types of information:</p>
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>
                   <strong>Account Information:</strong> Name, email address, country of residence,
                   work country, and employment details provided by your employer.
@@ -72,10 +72,10 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">4. Legal Basis for Processing</h2>
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 We process your personal data based on the following legal grounds:
               </p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>
                   <strong>Contractual Necessity:</strong> Processing is necessary to perform the
                   employment contract between you and your employer.
@@ -93,8 +93,8 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">5. How We Use Your Information</h2>
-              <p className="text-gray-700 mb-4">We use collected information to:</p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
+              <p className="text-muted-foreground mb-4">We use collected information to:</p>
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>Track and monitor remote work days for tax compliance</li>
                 <li>Generate compliance reports for HR and payroll purposes</li>
                 <li>Send daily reminders to record work location</li>
@@ -106,10 +106,10 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">6. Data Sharing and Disclosure</h2>
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 We may share your information with:
               </p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>
                   <strong>Your Employer:</strong> HR and administrative personnel who require
                   access for compliance management.
@@ -123,14 +123,14 @@ export default function PrivacyPolicy() {
                   governmental authority.
                 </li>
               </ul>
-              <p className="text-gray-700 mt-4">
+              <p className="text-muted-foreground mt-4">
                 We do not sell your personal data to third parties.
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">7. Data Retention</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 We retain your personal data for as long as necessary to fulfill the purposes
                 outlined in this policy, unless a longer retention period is required by law.
                 Work location records are typically retained for the current year plus 7 years
@@ -141,10 +141,10 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">8. Your Rights Under GDPR</h2>
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 You have the following rights regarding your personal data:
               </p>
-              <ul className="list-disc pl-6 text-gray-700 space-y-2">
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>
                   <strong>Right of Access:</strong> Request a copy of your personal data.
                 </li>
@@ -167,7 +167,7 @@ export default function PrivacyPolicy() {
                   <strong>Right to Object:</strong> Object to certain types of data processing.
                 </li>
               </ul>
-              <p className="text-gray-700 mt-4">
+              <p className="text-muted-foreground mt-4">
                 To exercise these rights, use the data export feature in the application or
                 contact your employer's HR department. You may also contact us directly at{' '}
                 <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">
@@ -178,7 +178,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">9. Data Security</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 We implement appropriate technical and organizational measures to protect your
                 personal data, including encryption in transit and at rest, access controls,
                 regular security assessments, and secure development practices. However, no
@@ -188,7 +188,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">10. International Data Transfers</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 Your data is processed and stored within the European Economic Area (EEA).
                 If any data is transferred outside the EEA, we ensure appropriate safeguards
                 are in place, such as Standard Contractual Clauses approved by the European
@@ -198,7 +198,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">11. Cookies</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 We use essential cookies for authentication and session management. These are
                 strictly necessary for the application to function. We do not use advertising
                 or tracking cookies. For more information, see our{' '}
@@ -210,7 +210,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">12. Changes to This Policy</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 We may update this Privacy Policy from time to time. We will notify you of
                 significant changes via email or through the application. We encourage you
                 to review this policy periodically.
@@ -219,11 +219,11 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold mb-4">13. Contact Us</h2>
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 For questions about this Privacy Policy or to exercise your data rights,
                 contact us at:
               </p>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 Email:{' '}
                 <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">
                   {contactEmail}
@@ -233,7 +233,7 @@ export default function PrivacyPolicy() {
 
             <section>
               <h2 className="text-xl font-semibold mb-4">14. Supervisory Authority</h2>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 If you believe your data protection rights have been violated, you have the
                 right to lodge a complaint with the Commission Nationale pour la Protection
                 des Données (CNPD), the data protection authority in Luxembourg, or your
@@ -243,7 +243,7 @@ export default function PrivacyPolicy() {
           </CardContent>
         </Card>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm text-muted-foreground">
           <Link to="/legal/terms" className="hover:underline">Terms of Service</Link>
           {' | '}
           <Link to="/legal/cookies" className="hover:underline">Cookie Policy</Link>

@@ -1,4 +1,5 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TONE_CLASSES, type StatusTone } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -15,39 +16,41 @@ interface TrendIndicatorProps {
   className?: string;
 }
 
-export function TrendIndicator({ trend, tooltipText, className }: TrendIndicatorProps) {
-  const config = {
-    'increasing-fast': {
-      icon: TrendingUp,
-      color: 'text-red-600',
-      label: 'Using much faster than average',
-      symbols: '▲▲',
-    },
-    'increasing': {
-      icon: TrendingUp,
-      color: 'text-orange-600',
-      label: 'Using faster than average',
-      symbols: '▲',
-    },
-    'steady': {
-      icon: Minus,
-      color: 'text-blue-600',
-      label: 'On pace',
-      symbols: '→',
-    },
-    'decreasing': {
-      icon: TrendingDown,
-      color: 'text-green-600',
-      label: 'Using slower than average',
-      symbols: '▼',
-    },
-  };
+const TREND_CONFIG: Record<TrendType, { icon: typeof TrendingUp; tone: StatusTone; label: string; symbols: string }> = {
+  'increasing-fast': {
+    icon: TrendingUp,
+    tone: 'danger',
+    label: 'Using much faster than average',
+    symbols: '▲▲',
+  },
+  increasing: {
+    icon: TrendingUp,
+    tone: 'warning',
+    label: 'Using faster than average',
+    symbols: '▲',
+  },
+  steady: {
+    icon: Minus,
+    tone: 'info',
+    label: 'On pace',
+    symbols: '→',
+  },
+  decreasing: {
+    icon: TrendingDown,
+    tone: 'success',
+    label: 'Using slower than average',
+    symbols: '▼',
+  },
+};
 
-  const { icon: Icon, color, label, symbols } = config[trend];
+export function TrendIndicator({ trend, tooltipText, className }: TrendIndicatorProps) {
+  const config = TREND_CONFIG[trend];
+  const { icon: Icon, label, symbols } = config;
+  const color = TONE_CLASSES[config.tone].text;
 
   const content = (
     <div className={cn('flex items-center gap-1', className)}>
-      <Icon className={cn('h-3 w-3', color)} />
+      <Icon className={cn('h-3 w-3', color)} aria-hidden />
       <span className={cn('text-xs font-medium', color)}>{symbols}</span>
     </div>
   );

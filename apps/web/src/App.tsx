@@ -12,6 +12,7 @@ import EmployeeDetails from '@/pages/hr/EmployeeDetails';
 import UserManagement from '@/pages/admin/UserManagement';
 import CountryThresholds from '@/pages/admin/CountryThresholds';
 import AuditLogs from '@/pages/admin/AuditLogs';
+import SSOSettings from '@/pages/admin/SSOSettings';
 import UserImport from '@/pages/admin/UserImport';
 import Holidays from '@/pages/admin/Holidays';
 import Requests from '@/pages/admin/Requests';
@@ -74,6 +75,14 @@ function App() {
             <Route path="/admin/users/import" element={<FeatureErrorBoundary featureName="User Import"><UserImport /></FeatureErrorBoundary>} />
             <Route path="/admin/countries" element={<FeatureErrorBoundary featureName="Country Limits"><CountryThresholds /></FeatureErrorBoundary>} />
             <Route path="/admin/audit" element={<FeatureErrorBoundary featureName="Audit Logs"><AuditLogs /></FeatureErrorBoundary>} />
+          </Route>
+        </Route>
+
+        {/* Admin-only Routes — SSO configuration repoints authentication for the
+            whole deployment, so it is deliberately not available to HR. */}
+        <Route element={<ProtectedRoute roles={['admin']} />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/admin/sso" element={<FeatureErrorBoundary featureName="Single Sign-On"><SSOSettings /></FeatureErrorBoundary>} />
           </Route>
         </Route>
 

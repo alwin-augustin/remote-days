@@ -15,7 +15,7 @@ import { CheckCircle2 } from 'lucide-react';
 
 type EntryItem = { date: string; status: work_status };
 type ComplianceStats = {
-    remoteDaysUsed: number;
+    remoteDaysCount: number;
     remoteDaysLimit: number;
     daysRemaining: number;
     percentageUsed: number;
@@ -76,8 +76,8 @@ export default function Dashboard() {
             />
 
             {currentStatus ? (
-                <Alert className="border-emerald-200 bg-emerald-50 text-emerald-950">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-700" />
+                <Alert className="border-success-border bg-success-muted text-success-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4" />
                     <AlertTitle>Today is already declared</AlertTitle>
                     <AlertDescription>
                         Your current status is <span className="font-medium capitalize">{currentStatus}</span>. Use a correction request if that needs to change.
@@ -102,7 +102,7 @@ export default function Dashboard() {
                 )}
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
                 <div className="space-y-6">
                     {isStatsError ? (
                         <InlineErrorState description="We couldn't load your compliance summary right now." />
@@ -110,7 +110,7 @@ export default function Dashboard() {
                         <Skeleton className="h-64 w-full" />
                     ) : (
                         <ComplianceStatusCard
-                            daysUsed={stats?.remoteDaysUsed ?? 0}
+                            daysUsed={stats?.remoteDaysCount ?? 0}
                             maxDays={stats?.remoteDaysLimit ?? 34}
                             countryCode={countryCode}
                         />

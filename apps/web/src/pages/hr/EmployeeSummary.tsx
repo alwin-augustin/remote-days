@@ -113,7 +113,9 @@ export default function EmployeeSummary() {
             alerts.push({
                 id: `exceeded-${emp.userId}`,
                 type: 'exceeded',
-                title: `${emp.firstName} ${emp.lastName} (${emp.workCountry})`,
+                // The allowance in the description is the resident country's, so
+                // label the employee with the same country to stay consistent.
+                title: `${emp.firstName} ${emp.lastName} (${emp.countryOfResidence})`,
                 description: `${emp.daysUsedCurrentYear}/${emp.maxRemoteDays} days used (${Number(emp.percentUsed).toFixed(0)}%)`,
                 actionLabel: 'View Details',
                 onAction: () => handleRiskFilterChange('exceeded'),

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="rdmark">
+  <title id="rdmark">Remote Days</title>
+  <!-- The day: the unit the product counts. -->
+  <circle cx="32" cy="22" r="15" fill="#2563EB"/>
+  <!-- The threshold: the statutory limit it is measured against. -->
+  <rect x="5" y="48" width="54" height="8" rx="4" fill="#2563EB"/>
+</svg>

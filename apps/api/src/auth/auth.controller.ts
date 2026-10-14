@@ -3,8 +3,8 @@ import { User } from '@remotedays/types';
 import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
 import { SecurityService, SecurityEventTypes } from '../services/security.service';
-import { config } from '../config/env';
 import { AppError } from '../errors/app-error';
+import { sessionCookieOptions } from './session';
 
 export class AuthController {
   constructor(
@@ -59,12 +59,7 @@ export class AuthController {
       );
 
       return reply
-        .setCookie('token', token, {
-          path: '/',
-          httpOnly: true,
-          secure: config.NODE_ENV === 'production',
-          sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax',
-        })
+        .setCookie('token', token, sessionCookieOptions())
         .code(200)
         .send({ message: 'Login successful', user });
     } catch (error) {

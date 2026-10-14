@@ -8,8 +8,13 @@
  *   npm run db:migrate                 # Run all pending migrations
  *   npm run db:migrate:status          # Show migration status
  *   npm run db:migrate:rollback        # Rollback last migration (if down file exists)
+ *
+ * Bookkeeping note: `schema_migrations` is created by docker/postgres/init.sql as
+ * (id SERIAL, name TEXT, applied_at TIMESTAMPTZ), and the migration files
+ * themselves record their own `name` (e.g. '002_security_tables'). This runner
+ * keys off that same `name` value — the filename without the `.sql` suffix — so
+ * it stays consistent with both the bootstrap schema and the migration files.
  */
-
 import * as fs from 'fs';
 import * as path from 'path';
 import fastify from 'fastify';
@@ -20,28 +25,41 @@ dotenv.config({ path: '../../.env' });
 
 const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
-interface Migration {
-  id: string;
-  filename: string;
+interface AppliedMigration {
+  name: string;
   applied_at?: Date;
+}
+
+interface MigrationFile {
+  /** Stable key recorded in schema_migrations, e.g. "004_enterprise_sso". */
+  key: string;
+  filename: string;
+  filepath: string;
 }
 
 async function ensureMigrationsTable(client: any): Promise<void> {
   await client.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
-      id VARCHAR(255) PRIMARY KEY,
-      filename VARCHAR(255) NOT NULL,
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
       applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+  `);
+
+  // Makes both this runner's bookkeeping and a migration file's own
+  // `INSERT ... ON CONFLICT DO NOTHING` idempotent.
+  await client.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_schema_migrations_name
+      ON schema_migrations (name);
   `);
 }
 
 async function getAppliedMigrations(client: any): Promise<Set<string>> {
-  const { rows } = await client.query('SELECT id FROM schema_migrations ORDER BY id');
-  return new Set(rows.map((row: { id: string }) => row.id));
+  const { rows } = await client.query('SELECT name FROM schema_migrations ORDER BY name');
+  return new Set(rows.map((row: AppliedMigration) => row.name));
 }
 
-function getMigrationFiles(): { id: string; filename: string; filepath: string }[] {
+function getMigrationFiles(): MigrationFile[] {
   if (!fs.existsSync(MIGRATIONS_DIR)) {
     console.log('No migrations directory found at:', MIGRATIONS_DIR);
     return [];
@@ -53,13 +71,12 @@ function getMigrationFiles(): { id: string; filename: string; filepath: string }
     .sort();
 
   return files.map((filename) => {
-    // Extract migration ID from filename (e.g., "001_create_table.sql" -> "001")
-    const match = filename.match(/^(\d+)/);
-    if (!match) {
+    // Expect "001_description.sql" so migrations have a deterministic order.
+    if (!/^\d+/.test(filename)) {
       throw new Error(`Invalid migration filename format: ${filename}. Expected format: 001_description.sql`);
     }
     return {
-      id: match[1],
+      key: filename.replace(/\.sql$/, ''),
       filename,
       filepath: path.join(MIGRATIONS_DIR, filename),
     };
@@ -86,7 +103,7 @@ async function runMigrations(): Promise<void> {
       return;
     }
 
-    const pendingMigrations = migrationFiles.filter((m) => !appliedMigrations.has(m.id));
+    const pendingMigrations = migrationFiles.filter((m) => !appliedMigrations.has(m.key));
 
     if (pendingMigrations.length === 0) {
       console.log('✅ All migrations are already applied.');
@@ -104,9 +121,9 @@ async function runMigrations(): Promise<void> {
 
       try {
         await client.query(sql);
-        await client.query('INSERT INTO schema_migrations (id, filename) VALUES ($1, $2)', [
-          migration.id,
-          migration.filename,
+        // ON CONFLICT keeps this safe when a migration file also records itself.
+        await client.query('INSERT INTO schema_migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', [
+          migration.key,
         ]);
         await client.query('COMMIT');
         console.log(`✅ Applied: ${migration.filename}\n`);
@@ -137,30 +154,28 @@ async function showStatus(): Promise<void> {
 
   try {
     await ensureMigrationsTable(client);
-    const { rows: appliedRows } = await client.query<Migration>(
-      'SELECT id, filename, applied_at FROM schema_migrations ORDER BY id'
+    const { rows: appliedRows } = await client.query<AppliedMigration>(
+      'SELECT name, applied_at FROM schema_migrations ORDER BY name'
     );
-    const appliedSet = new Set(appliedRows.map((r) => r.id));
     const migrationFiles = getMigrationFiles();
 
-    console.log('Migrations:\n');
-    console.log('ID     | Status   | Filename                          | Applied At');
-    console.log('-------|----------|-----------------------------------|---------------------------');
+    console.log('Migration                      | Status   | Applied At');
+    console.log('-------------------------------|----------|---------------------------');
 
     for (const file of migrationFiles) {
-      const applied = appliedRows.find((r) => r.id === file.id);
+      const applied = appliedRows.find((r) => r.name === file.key);
       const status = applied ? '✅ Applied' : '⏳ Pending';
       const appliedAt = applied?.applied_at
         ? new Date(applied.applied_at).toISOString().replace('T', ' ').slice(0, 19)
         : '-';
-      console.log(`${file.id.padEnd(6)} | ${status.padEnd(8)} | ${file.filename.padEnd(33)} | ${appliedAt}`);
+      console.log(`${file.key.padEnd(30)} | ${status.padEnd(8)} | ${appliedAt}`);
     }
 
-    // Check for orphaned migrations (in DB but file missing)
-    const orphaned = appliedRows.filter((r) => !migrationFiles.find((f) => f.id === r.id));
+    // Check for orphaned migrations (recorded in DB but no file on disk)
+    const orphaned = appliedRows.filter((r) => !migrationFiles.find((f) => f.key === r.name));
     if (orphaned.length > 0) {
-      console.log('\n⚠️  Orphaned migrations (in DB but file missing):');
-      orphaned.forEach((m) => console.log(`   - ${m.id}: ${m.filename}`));
+      console.log('\n⚠️  Orphaned migrations (recorded but file missing):');
+      orphaned.forEach((m) => console.log(`   - ${m.name}`));
     }
 
     console.log('');
@@ -182,8 +197,8 @@ async function rollback(): Promise<void> {
   try {
     await ensureMigrationsTable(client);
 
-    const { rows } = await client.query<Migration>(
-      'SELECT id, filename FROM schema_migrations ORDER BY id DESC LIMIT 1'
+    const { rows } = await client.query<AppliedMigration>(
+      'SELECT name, applied_at FROM schema_migrations ORDER BY applied_at DESC, id DESC LIMIT 1'
     );
 
     if (rows.length === 0) {
@@ -192,7 +207,7 @@ async function rollback(): Promise<void> {
     }
 
     const lastMigration = rows[0];
-    const downFilename = lastMigration.filename.replace('.sql', '.down.sql');
+    const downFilename = `${lastMigration.name}.down.sql`;
     const downFilepath = path.join(MIGRATIONS_DIR, downFilename);
 
     if (!fs.existsSync(downFilepath)) {
@@ -201,7 +216,7 @@ async function rollback(): Promise<void> {
       process.exit(1);
     }
 
-    console.log(`⏳ Rolling back: ${lastMigration.filename}`);
+    console.log(`⏳ Rolling back: ${lastMigration.name}`);
 
     const sql = fs.readFileSync(downFilepath, 'utf-8');
 
@@ -209,12 +224,12 @@ async function rollback(): Promise<void> {
 
     try {
       await client.query(sql);
-      await client.query('DELETE FROM schema_migrations WHERE id = $1', [lastMigration.id]);
+      await client.query('DELETE FROM schema_migrations WHERE name = $1', [lastMigration.name]);
       await client.query('COMMIT');
-      console.log(`✅ Rolled back: ${lastMigration.filename}\n`);
+      console.log(`✅ Rolled back: ${lastMigration.name}\n`);
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error(`❌ Rollback failed: ${lastMigration.filename}`);
+      console.error(`❌ Rollback failed: ${lastMigration.name}`);
       throw error;
     }
   } finally {
@@ -224,7 +239,13 @@ async function rollback(): Promise<void> {
 }
 
 // CLI handling
-const command = process.argv[2];
+//
+// The npm scripts invoke this as
+//   ts-node -r dotenv/config src/scripts/migrate.ts dotenv_config_path=../../.env [command]
+// so the sub-command is not necessarily argv[2] — scan the arguments instead of
+// reading a fixed position, otherwise `status`/`rollback` silently run migrations.
+const cliArgs = process.argv.slice(2);
+const command = (['status', 'rollback'] as const).find((candidate) => cliArgs.includes(candidate));
 
 (async () => {
   try {

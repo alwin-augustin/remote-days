@@ -33,23 +33,16 @@ This document lists all required GitHub Secrets and Variables for the CI/CD pipe
 | `VERCEL_PROJECT_ID_WEB` | Vercel project ID for **web app** | From `.vercel/project.json` in `apps/web` |
 | `VERCEL_PROJECT_ID_LANDING` | Vercel project ID for **landing page** | From `.vercel/project.json` in `landing` |
 
-### Mobile Build (Expo/EAS)
-
-| Secret Name | Description | How to Get |
-|-------------|-------------|------------|
-| `EXPO_TOKEN` | Expo access token | [Expo Dashboard](https://expo.dev/settings/access-tokens) → Create Token |
-
 ---
 
 ## GitHub Variables (Repository Settings → Secrets and variables → Actions → Variables)
 
 | Variable Name | Description | Production Value |
 |---------------|-------------|------------------|
-| `API_URL` | Backend API URL (used by both web & mobile) | `https://api.remotedays.app` |
+| `API_URL` | Backend API URL (consumed as `VITE_API_URL`) | `https://api.remotedays.app` |
 
-**Note:** This single variable is mapped to:
-- `VITE_API_URL` for web builds (Vite requires this prefix)
-- `EXPO_PUBLIC_API_URL` for mobile builds (Expo requires this prefix)
+**Note:** The variable is exposed to the Web build as `VITE_API_URL`, because Vite
+requires that prefix.
 
 ---
 
@@ -260,7 +253,6 @@ For each project, go to **Settings → Environment Variables** and add:
 | `deploy-backend.yml` | `apps/api/**`, `packages/types/**` | Build → Test → Deploy to EC2 → Health check |
 | `deploy-frontend.yml` | `apps/web/**`, `packages/types/**`, `packages/shared/**` | Deploy web app to Vercel |
 | `deploy-landing.yml` | `landing/**` | Deploy landing page to Vercel |
-| `build-mobile.yml` | `apps/mobile/**`, `packages/types/**`, `packages/shared/**` | Validate → EAS Build |
 
 **Note:** Each deployment only triggers when its specific files change. The `packages/shared` is NOT used by API (per CLAUDE.md), so API doesn't redeploy when shared changes.
 

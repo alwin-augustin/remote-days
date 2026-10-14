@@ -1,96 +1,38 @@
-export type ComplianceLevel = 'healthy' | 'planAhead' | 'approaching' | 'critical' | 'exceeded';
+import { metaForPercent, type ComplianceLevel, type StatusTone } from '@/lib/status';
+
+export type { ComplianceLevel };
 
 export interface ComplianceThreshold {
   level: ComplianceLevel;
+  tone: StatusTone;
   label: string;
   message: string;
-  color: {
-    bg: string;
-    border: string;
-    text: string;
-    progress: string;
-  };
   icon: 'CheckCircle' | 'AlertCircle' | 'AlertTriangle' | 'AlertOctagon' | 'XCircle';
   actionRequired: boolean;
 }
 
+const COMPLIANCE_MESSAGE: Record<ComplianceLevel, string> = {
+  exceeded: 'You have exceeded your annual remote work allowance. Contact HR immediately.',
+  critical: 'You are very close to your limit. Please manage remaining days carefully.',
+  approaching: 'You are nearing your annual limit. Plan your remaining remote days carefully.',
+  planAhead: 'You have used more than half your allowance. Consider spacing remote days evenly.',
+  healthy: 'You are managing your remote work well. Keep up the good work!',
+};
+
+const COMPLIANCE_ICON: Record<ComplianceLevel, ComplianceThreshold['icon']> = {
+  exceeded: 'XCircle',
+  critical: 'AlertOctagon',
+  approaching: 'AlertTriangle',
+  planAhead: 'AlertCircle',
+  healthy: 'CheckCircle',
+};
+
 export function getComplianceLevel(percentUsed: number): ComplianceThreshold {
-  if (percentUsed >= 100) {
-    return {
-      level: 'exceeded',
-      label: 'Limit Exceeded',
-      message: 'You have exceeded your annual remote work allowance. Contact HR immediately.',
-      color: {
-        bg: 'bg-red-100',
-        border: 'border-red-400',
-        text: 'text-red-900',
-        progress: 'bg-red-600',
-      },
-      icon: 'XCircle',
-      actionRequired: true,
-    };
-  }
-
-  if (percentUsed >= 90) {
-    return {
-      level: 'critical',
-      label: 'Critical - Act Now',
-      message: 'You are very close to your limit. Please manage remaining days carefully.',
-      color: {
-        bg: 'bg-red-50',
-        border: 'border-red-300',
-        text: 'text-red-700',
-        progress: 'bg-red-500',
-      },
-      icon: 'AlertOctagon',
-      actionRequired: true,
-    };
-  }
-
-  if (percentUsed >= 75) {
-    return {
-      level: 'approaching',
-      label: 'Approaching Limit',
-      message: 'You are nearing your annual limit. Plan your remaining remote days carefully.',
-      color: {
-        bg: 'bg-orange-50',
-        border: 'border-orange-300',
-        text: 'text-orange-700',
-        progress: 'bg-orange-500',
-      },
-      icon: 'AlertTriangle',
-      actionRequired: true,
-    };
-  }
-
-  if (percentUsed >= 50) {
-    return {
-      level: 'planAhead',
-      label: 'Plan Ahead',
-      message: 'You have used more than half your allowance. Consider spacing remote days evenly.',
-      color: {
-        bg: 'bg-amber-50',
-        border: 'border-amber-200',
-        text: 'text-amber-700',
-        progress: 'bg-amber-500',
-      },
-      icon: 'AlertCircle',
-      actionRequired: false,
-    };
-  }
-
+  const meta = metaForPercent(percentUsed);
   return {
-    level: 'healthy',
-    label: 'On Track',
-    message: 'You are managing your remote work well. Keep up the good work!',
-    color: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-200',
-      text: 'text-blue-700',
-      progress: 'bg-blue-500',
-    },
-    icon: 'CheckCircle',
-    actionRequired: false,
+    ...meta,
+    message: COMPLIANCE_MESSAGE[meta.level],
+    icon: COMPLIANCE_ICON[meta.level],
   };
 }
 

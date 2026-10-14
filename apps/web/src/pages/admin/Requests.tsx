@@ -13,7 +13,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { REQUEST_STATUS_META, type RequestStatus } from '@/lib/status';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
@@ -70,12 +71,10 @@ export default function Requests() {
     });
 
     const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'pending': return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
-            case 'approved': return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200"><Check className="w-3 h-3 mr-1" /> Approved</Badge>;
-            case 'rejected': return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200"><X className="w-3 h-3 mr-1" /> Rejected</Badge>;
-            default: return <Badge variant="outline">{status}</Badge>;
-        }
+        const meta = REQUEST_STATUS_META[status as RequestStatus];
+        if (!meta) return <StatusBadge tone="neutral">{status}</StatusBadge>;
+        const Icon = status === 'pending' ? Clock : status === 'approved' ? Check : X;
+        return <StatusBadge tone={meta.tone} icon={Icon}>{meta.label}</StatusBadge>;
     };
 
     const pendingRequests = useMemo(
@@ -157,7 +156,7 @@ export default function Requests() {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                    className="text-success-muted-foreground hover:bg-success-muted"
                                                     onClick={() => openDecisionDialog(req, 'approved')}
                                                 >
                                                     Approve
@@ -165,7 +164,7 @@ export default function Requests() {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                    className="text-danger-muted-foreground hover:bg-danger-muted"
                                                     onClick={() => openDecisionDialog(req, 'rejected')}
                                                 >
                                                     Reject

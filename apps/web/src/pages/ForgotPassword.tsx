@@ -50,7 +50,7 @@ export default function ForgotPassword() {
 
     if (isSubmitted) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+            <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
                 <Card className="w-full max-w-md">
                     <CardHeader>
                         <CardTitle>Check your email</CardTitle>
@@ -59,7 +59,7 @@ export default function ForgotPassword() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-gray-500 mb-4">
+                        <p className="text-sm text-muted-foreground mb-4">
                             Please check your inbox and follow the instructions to reset your password.
                             If you don't receive an email within a few minutes, please check your spam folder.
                         </p>
@@ -77,7 +77,7 @@ export default function ForgotPassword() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle>Forgot Password</CardTitle>

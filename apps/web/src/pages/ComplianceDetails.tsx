@@ -8,7 +8,7 @@ import { InlineErrorState } from '@/components/DataStates';
 import { PageHeader } from '@/components/PageHeader';
 
 type ComplianceStats = {
-    remoteDaysUsed: number;
+    remoteDaysCount: number;
     remoteDaysLimit: number;
     daysRemaining: number;
     percentageUsed: number;
@@ -41,7 +41,7 @@ export default function ComplianceDetails() {
         <Skeleton className="h-96 w-full" />
       ) : (
         <ComplianceStatusCard
-          daysUsed={stats?.remoteDaysUsed ?? 0}
+          daysUsed={stats?.remoteDaysCount ?? 0}
           maxDays={stats?.remoteDaysLimit ?? 34}
           countryCode={countryCode}
         />
@@ -57,7 +57,7 @@ export default function ComplianceDetails() {
               <Skeleton className="h-8 w-16" />
             ) : (
               <div className="text-2xl font-bold">
-                {stats ? Math.round((stats.remoteDaysUsed / currentMonthIndex) * 10) / 10 : 0} days
+                {stats ? Math.round((stats.remoteDaysCount / currentMonthIndex) * 10) / 10 : 0} days
               </div>
             )}
           </CardContent>

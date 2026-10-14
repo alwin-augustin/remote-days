@@ -230,7 +230,7 @@ export default function Holidays() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="text-red-500 hover:text-red-700"
+                                            className="text-danger-muted-foreground hover:text-danger"
                                             onClick={() => setHolidayToDelete(holiday)}
                                             aria-label={`Delete holiday ${holiday.name}`}
                                         >

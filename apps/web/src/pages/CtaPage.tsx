@@ -35,10 +35,10 @@ export default function CtaPage() {
     }, [token, email]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-            <Card className="w-full max-w-md shadow-lg border-slate-200">
-                <CardHeader className="text-center pb-2">
-                    <CardTitle className="text-2xl font-bold text-slate-900">
+        <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+            <Card className="w-full max-w-md shadow-sm">
+                <CardHeader className="pb-2 text-center">
+                    <CardTitle className="text-2xl font-bold text-foreground">
                         Work Location Check-in
                     </CardTitle>
                 </CardHeader>
@@ -46,24 +46,24 @@ export default function CtaPage() {
 
                     {status === 'loading' && (
                         <div className="flex flex-col items-center space-y-4">
-                            <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
-                            <p className="text-slate-600 font-medium">Verifying your response...</p>
+                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                            <p className="font-medium text-muted-foreground">Verifying your response...</p>
                         </div>
                     )}
 
                     {status === 'success' && (
                         <div className="flex flex-col items-center space-y-4 animate-in fade-in zoom-in duration-300">
-                            <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                                <CheckCircle2 className="h-10 w-10 text-green-600" />
+                            <div className="mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-success-muted">
+                                <CheckCircle2 className="h-10 w-10 text-success-muted-foreground" />
                             </div>
-                            <div className="text-center space-y-2">
-                                <h3 className="text-xl font-semibold text-slate-800">Success!</h3>
-                                <p className="text-slate-600">
-                                    You have been marked as <span className="font-bold text-slate-900 uppercase">{details?.status}</span> for <span className="font-medium">{details?.date}</span>.
+                            <div className="space-y-2 text-center">
+                                <h3 className="text-xl font-semibold text-foreground">Success!</h3>
+                                <p className="text-muted-foreground">
+                                    You have been marked as <span className="font-bold uppercase text-foreground">{details?.status}</span> for <span className="font-medium">{details?.date}</span>.
                                 </p>
                             </div>
                             <Button
-                                className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                                className="mt-4 w-full"
                                 onClick={() => navigate('/login')}
                             >
                                 Go to Dashboard
@@ -73,15 +73,15 @@ export default function CtaPage() {
 
                     {status === 'error' && (
                         <div className="flex flex-col items-center space-y-4 animate-in fade-in zoom-in duration-300">
-                            <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
-                                <XCircle className="h-10 w-10 text-red-600" />
+                            <div className="mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-danger-muted">
+                                <XCircle className="h-10 w-10 text-danger-muted-foreground" />
                             </div>
-                            <div className="text-center space-y-2">
-                                <h3 className="text-xl font-semibold text-slate-800">Something went wrong</h3>
-                                <p className="text-red-500 font-medium px-4">
+                            <div className="space-y-2 text-center">
+                                <h3 className="text-xl font-semibold text-foreground">Something went wrong</h3>
+                                <p className="px-4 font-medium text-danger-muted-foreground">
                                     {message}
                                 </p>
-                                <p className="text-sm text-slate-500">
+                                <p className="text-sm text-muted-foreground">
                                     The link may be expired or already used.
                                 </p>
                             </div>

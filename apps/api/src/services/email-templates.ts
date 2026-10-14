@@ -73,18 +73,14 @@ export const generateDailyCheckInEmail = (
 
           <!-- Header with Gradient -->
           <tr>
-            <td style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); padding: 40px 48px; text-align: center;">
-              <!-- Logo -->
+            <td style="background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); padding: 40px 48px; text-align: center;">
+              <!-- The mark is white-on-transparent artwork, so it sits directly on
+                   the brand gradient with no backing chip. onerror keeps the
+                   header readable when a client blocks images. -->
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td align="center">
-                    <table role="presentation" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="background-color: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px;">
-                          <img src="https://remotedays.app/assets/logo-white.png" alt="Remote Days" width="32" height="32" style="display: block;" onerror="this.style.display='none'">
-                        </td>
-                      </tr>
-                    </table>
+                    <img src="https://remotedays.app/assets/logo-white.png" alt="Remote Days" width="44" height="44" style="display: block; border: 0;" onerror="this.style.display='none'">
                   </td>
                 </tr>
                 <tr>
@@ -266,7 +262,8 @@ export const generateEmailHtml = (
 
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); padding: 32px 48px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); padding: 32px 48px; text-align: center;">
+              <img src="https://remotedays.app/assets/logo-white.png" alt="" width="40" height="40" style="display: block; margin: 0 auto 14px; border: 0;" onerror="this.style.display='none'">
               <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700;">Remote Days</h1>
             </td>
           </tr>
