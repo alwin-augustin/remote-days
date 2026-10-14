@@ -120,19 +120,31 @@ jobs:
         run: npm ci
 
       - name: Show migration status
+        # The runner imports `db`, which imports `config/env`, and that module
+        # validates its required variables when it is imported. Only DATABASE_URL
+        # and JWT_SECRET have no default, so both must be present here —
+        # JWT_SECRET is never used to sign anything in a migration, it only has
+        # to exist. Scoped per step rather than job-wide so `npm ci` cannot read
+        # them.
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
           set -euo pipefail
-          if [ -z "${DATABASE_URL:-}" ]; then
-            echo "DATABASE_URL is not set for this repository"
-            exit 1
-          fi
+          missing=0
+          for name in DATABASE_URL JWT_SECRET; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is not set for this repository"
+              missing=1
+            fi
+          done
+          [ "$missing" = "0" ] || exit 1
           npm run db:migrate:status --workspace=apps/api
 
       - name: Apply pending migrations
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: npm run db:migrate --workspace=apps/api
 
   # ===========================================
